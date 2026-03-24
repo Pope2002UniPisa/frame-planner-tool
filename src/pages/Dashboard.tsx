@@ -1,12 +1,14 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, BarChart3 } from 'lucide-react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, BarChart3, Search, Filter, Printer, Eye, Newspaper, User, Calendar } from 'lucide-react';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   bozza: { label: 'Bozza', variant: 'outline' },
@@ -26,13 +28,34 @@ const productLabels: Record<string, string> = {
   persiana: 'Persiana',
 };
 
-const CHART_COLORS = ['hsl(var(--accent))', 'hsl(var(--primary))', '#6366f1', '#f59e0b', '#10b981', '#ef4444'];
+const CHART_COLORS = ['#f97316', '#3b82f6', '#6366f1', '#f59e0b', '#10b981', '#ef4444'];
+const LINE_COLORS: Record<string, string> = {
+  Finestra: '#f97316',
+  'Porta Finestra': '#3b82f6',
+  Basculante: '#6366f1',
+  Zanzariera: '#10b981',
+  Persiana: '#f59e0b',
+};
+
+const NEWS_ITEMS = [
+  { id: 1, date: '2026-03-20', title: 'Sconto in fattura 50% – Prorogato fino a giugno 2026', tag: 'Agevolazione' },
+  { id: 2, date: '2026-03-15', title: 'Nuovo modello Finestra EcoPlus: isolamento termico superiore', tag: 'Nuovo prodotto' },
+  { id: 3, date: '2026-03-10', title: 'Conto Termico 2.0: come accedere agli incentivi', tag: 'Agevolazione' },
+  { id: 4, date: '2026-03-05', title: 'Tapparelle motorizzate: promozione -15% fino ad aprile', tag: 'Promozione' },
+];
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loadingData, setLoadingData] = useState(true);
+  // Filters
+  const [searchText, setSearchText] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterProduct, setFilterProduct] = useState('all');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -56,13 +79,25 @@ export default function Dashboard() {
     completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
   }), [measurements]);
 
-  const productStats = useMemo(() => {
-    const counts: Record<string, number> = {};
+  // Monthly line chart data for products
+  const monthlyProductData = useMemo(() => {
+    const months: Record<string, Record<string, number>> = {};
     measurements.forEach(m => {
+      const d = new Date(m.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = productLabels[m.product_type] || m.product_type;
-      counts[label] = (counts[label] || 0) + 1;
+      if (!months[key]) months[key] = {};
+      months[key][label] = (months[key][label] || 0) + 1;
     });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    return Object.entries(months)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, counts]) => ({ month, ...counts }));
+  }, [measurements]);
+
+  const productTypes = useMemo(() => {
+    const s = new Set<string>();
+    measurements.forEach(m => s.add(productLabels[m.product_type] || m.product_type));
+    return Array.from(s);
   }, [measurements]);
 
   const statusChartData = useMemo(() => [
@@ -71,6 +106,30 @@ export default function Dashboard() {
     { name: 'Preventivate', value: stats.quoted, color: '#f59e0b' },
     { name: 'Completate', value: stats.completed, color: '#10b981' },
   ].filter(d => d.value > 0), [stats]);
+
+  // Filtered measurements
+  const filteredMeasurements = useMemo(() => {
+    return measurements.filter(m => {
+      if (filterStatus !== 'all') {
+        if (filterStatus === 'bozza' && m.status !== 'bozza') return false;
+        if (filterStatus === 'inviata' && m.status !== 'ricevuto' && m.status !== 'submitted') return false;
+        if (filterStatus === 'quoted' && m.status !== 'quoted') return false;
+        if (filterStatus === 'completed' && m.status !== 'completed' && m.status !== 'ordered') return false;
+      }
+      if (filterProduct !== 'all' && m.product_type !== filterProduct) return false;
+      if (searchText) {
+        const s = searchText.toLowerCase();
+        if (!((m.client_name || '').toLowerCase().includes(s) || (m.client_address || '').toLowerCase().includes(s))) return false;
+      }
+      if (filterDateFrom && new Date(m.created_at) < new Date(filterDateFrom)) return false;
+      if (filterDateTo && new Date(m.created_at) > new Date(filterDateTo + 'T23:59:59')) return false;
+      return true;
+    });
+  }, [measurements, filterStatus, filterProduct, searchText, filterDateFrom, filterDateTo]);
+
+  const handlePrint = (m: any) => {
+    navigate(`/misurazione/${m.id}/stampa`);
+  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -89,12 +148,9 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/nuova-misurazione">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Nuova Misurazione</span>
-              </Button>
-            </Link>
+            <Button variant="outline" size="icon" onClick={() => navigate('/profilo')} title="Profilo">
+              <User className="h-4 w-4" />
+            </Button>
             <Button variant="outline" size="icon" onClick={signOut}>
               <LogOut className="h-4 w-4" />
             </Button>
@@ -103,6 +159,27 @@ export default function Dashboard() {
       </header>
 
       <main className="container py-8">
+        {/* News Section */}
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-heading flex items-center gap-2">
+              <Newspaper className="h-4 w-4 text-accent" />
+              Novità e Promozioni
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {NEWS_ITEMS.map(n => (
+                <div key={n.id} className="rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                  <Badge variant="secondary" className="mb-1 text-xs">{n.tag}</Badge>
+                  <p className="text-sm font-medium text-foreground line-clamp-2">{n.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{new Date(n.date).toLocaleDateString('it-IT')}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats cards */}
         <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
           <StatCard icon={FileText} label="Totale" value={stats.total} />
@@ -115,7 +192,6 @@ export default function Dashboard() {
         {/* Charts */}
         {measurements.length > 0 && (
           <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Status pie chart */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-heading flex items-center gap-2">
@@ -137,26 +213,24 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Product bar chart */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-heading flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  Per tipologia prodotto
+                  Andamento per tipologia
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={productStats}>
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <LineChart data={monthlyProductData}>
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                     <Tooltip />
-                    <Bar dataKey="value" name="Misurazioni" radius={[4, 4, 0, 0]}>
-                      {productStats.map((_, i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                    <Legend />
+                    {productTypes.map(pt => (
+                      <Line key={pt} type="monotone" dataKey={pt} stroke={LINE_COLORS[pt] || '#8884d8'} strokeWidth={2} dot={{ r: 3 }} />
+                    ))}
+                  </LineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -179,23 +253,77 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Measurements list */}
+        {/* Measurements list with filters */}
         <div>
           <h2 className="mb-4 text-xl font-bold font-heading text-foreground">Le tue misurazioni</h2>
+
+          {/* Filters */}
+          <div className="mb-4 space-y-3">
+            <div className="flex flex-wrap gap-3">
+              <div className="flex-1 min-w-[200px]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input placeholder="Cerca per cliente o indirizzo..." className="pl-10" value={searchText} onChange={e => setSearchText(e.target.value)} />
+                </div>
+              </div>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[160px]">
+                  <Filter className="h-3.5 w-3.5 mr-1" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti gli stati</SelectItem>
+                  <SelectItem value="bozza">Bozze</SelectItem>
+                  <SelectItem value="inviata">Inviate</SelectItem>
+                  <SelectItem value="quoted">Preventivate</SelectItem>
+                  <SelectItem value="completed">Completate</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterProduct} onValueChange={setFilterProduct}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i prodotti</SelectItem>
+                  <SelectItem value="finestra">Finestra</SelectItem>
+                  <SelectItem value="porta_finestra">Porta Finestra</SelectItem>
+                  <SelectItem value="basculante">Basculante</SelectItem>
+                  <SelectItem value="zanzariera">Zanzariera</SelectItem>
+                  <SelectItem value="persiana">Persiana</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                <Input type="date" className="w-[150px]" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} />
+                <span className="text-muted-foreground text-sm">—</span>
+                <Input type="date" className="w-[150px]" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} />
+              </div>
+              {(searchText || filterStatus !== 'all' || filterProduct !== 'all' || filterDateFrom || filterDateTo) && (
+                <Button variant="ghost" size="sm" onClick={() => { setSearchText(''); setFilterStatus('all'); setFilterProduct('all'); setFilterDateFrom(''); setFilterDateTo(''); }}>
+                  Cancella filtri
+                </Button>
+              )}
+            </div>
+          </div>
+
           {loadingData ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />)}
             </div>
-          ) : measurements.length === 0 ? (
+          ) : filteredMeasurements.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <Ruler className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-muted-foreground">Nessuna misurazione ancora. Inizia inserendone una!</p>
+                <p className="text-muted-foreground">
+                  {measurements.length === 0 ? 'Nessuna misurazione ancora. Inizia inserendone una!' : 'Nessuna misurazione corrisponde ai filtri selezionati.'}
+                </p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
-              {measurements.map(m => (
+              {filteredMeasurements.map(m => (
                 <Card key={m.id} className="transition-shadow hover:shadow-card-hover">
                   <CardContent className="flex items-center gap-4 py-4">
                     <div className="hidden rounded-lg bg-muted p-3 sm:block">
@@ -211,8 +339,22 @@ export default function Dashboard() {
                       <p className="text-sm text-muted-foreground">
                         {m.width_mm}×{m.height_mm} mm • {m.client_name || 'Senza nome'}
                       </p>
+                      {m.client_address && <p className="text-xs text-muted-foreground">{m.client_address}</p>}
                     </div>
-                    <div className="text-right text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      {m.status === 'bozza' && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/misurazione/${m.id}/modifica`)} title="Modifica">
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/misurazione/${m.id}/stampa`)} title="Stampa/PDF">
+                        <Printer className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/misurazione/${m.id}`)} title="Visualizza">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="text-right text-sm text-muted-foreground whitespace-nowrap">
                       {new Date(m.created_at).toLocaleDateString('it-IT')}
                     </div>
                   </CardContent>

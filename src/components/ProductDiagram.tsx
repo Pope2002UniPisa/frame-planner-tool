@@ -71,9 +71,9 @@ export default function ProductDiagram({
 
   const frameThickness = frameType === 'ridotto' ? 4 : frameType === 'maggiorato' ? 10 : 7;
 
-  const svgW = 380;
-  const svgH = 460;
-  const margin = 70;
+  const svgW = 420;
+  const svgH = 500;
+  const margin = 85;
 
   // 3D perspective offsets
   const depthScale = Math.min(d / 400, 0.3);
@@ -86,7 +86,7 @@ export default function ProductDiagram({
   const drawW = w * scale;
   const drawH = h * scale;
   const offsetX = margin;
-  const offsetY = margin + dyOff;
+  const offsetY = margin + dyOff + 10;
 
   const panelWidth = drawW / panels;
   const handleY = offsetY + drawH * 0.55;
@@ -122,12 +122,12 @@ export default function ProductDiagram({
   const spaceLabels = () => (
     <g>
       {intSpace > 0 && (
-        <text x={offsetX} y={offsetY + drawH + 35} fontSize="8" fill="hsl(var(--accent))" fontFamily="monospace" textAnchor="start">
+        <text x={offsetX} y={offsetY + drawH + 40} fontSize="8" fill="hsl(var(--accent))" fontFamily="monospace" textAnchor="start">
           Int. {intSpace}mm
         </text>
       )}
       {extSpace > 0 && (
-        <text x={offsetX + drawW + dxOff + 14} y={offsetY - dyOff + 14} fontSize="8" fill="hsl(var(--accent))" fontFamily="monospace" textAnchor="start">
+        <text x={offsetX + drawW + dxOff + 18} y={offsetY + drawH * 0.3} fontSize="8" fill="hsl(var(--accent))" fontFamily="monospace" textAnchor="start">
           Est. {extSpace}mm
         </text>
       )}
@@ -171,9 +171,9 @@ export default function ProductDiagram({
         {Array.from({ length: Math.floor((drawH - 16) / 8) }).map((_, i) => (
           <line key={`h${i}`} x1={offsetX + 8} y1={offsetY + 8 + i * 8} x2={offsetX + drawW - 8} y2={offsetY + 8 + i * 8} stroke="hsl(var(--muted-foreground))" strokeWidth="0.3" opacity="0.4" />
         ))}
-        <DimensionH x={offsetX} y={offsetY - dyOff - 22} width={drawW} label={`${w}`} />
-        <DimensionV x={offsetX - 28} y={offsetY} height={drawH} label={`${h}`} />
-        <DepthDimLabel x={offsetX + drawW + 6} y={offsetY - 6} dx={dxOff} dy={dyOff} label={`${d}`} />
+        <DimensionH x={offsetX} y={offsetY - dyOff - 28} width={drawW} label={`${w}`} />
+        <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
+        <DepthDimLabel x={offsetX + drawW + 8} y={offsetY - 8} dx={dxOff} dy={dyOff} label={`${d}`} />
         {spaceLabels()}
       </svg>
     );
@@ -189,9 +189,9 @@ export default function ProductDiagram({
         {Array.from({ length: slats }).map((_, i) => (
           <line key={i} x1={offsetX + 4} y1={offsetY + 6 + i * (drawH / slats)} x2={offsetX + drawW - 4} y2={offsetY + 6 + i * (drawH / slats)} stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" />
         ))}
-        <DimensionH x={offsetX} y={offsetY - dyOff - 22} width={drawW} label={`${w}`} />
-        <DimensionV x={offsetX - 28} y={offsetY} height={drawH} label={`${h}`} />
-        <DepthDimLabel x={offsetX + drawW + 6} y={offsetY - 6} dx={dxOff} dy={dyOff} label={`${d}`} />
+        <DimensionH x={offsetX} y={offsetY - dyOff - 28} width={drawW} label={`${w}`} />
+        <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
+        <DepthDimLabel x={offsetX + drawW + 8} y={offsetY - 8} dx={dxOff} dy={dyOff} label={`${d}`} />
         {spaceLabels()}
       </svg>
     );
@@ -208,16 +208,15 @@ export default function ProductDiagram({
           <line key={i} x1={offsetX + 6} y1={offsetY + 6 + i * ((drawH - 12) / 4)} x2={offsetX + drawW - 6} y2={offsetY + 6 + i * ((drawH - 12) / 4)} stroke="hsl(var(--muted-foreground))" strokeWidth="0.8" />
         ))}
         <rect x={offsetX + drawW / 2 - 15} y={offsetY + drawH - 30} width={30} height={4} rx={2} fill="hsl(var(--foreground))" />
-        <DimensionH x={offsetX} y={offsetY - dyOff - 22} width={drawW} label={`${w}`} />
-        <DimensionV x={offsetX - 28} y={offsetY} height={drawH} label={`${h}`} />
-        <DepthDimLabel x={offsetX + drawW + 6} y={offsetY - 6} dx={dxOff} dy={dyOff} label={`${d}`} />
+        <DimensionH x={offsetX} y={offsetY - dyOff - 28} width={drawW} label={`${w}`} />
+        <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
+        <DepthDimLabel x={offsetX + drawW + 8} y={offsetY - 8} dx={dxOff} dy={dyOff} label={`${d}`} />
         {spaceLabels()}
       </svg>
     );
   }
 
   // Default: finestra / porta_finestra
-  // For 2+ panels: single handle in the middle (between panels)
   return (
     <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full max-w-sm mx-auto">
       {/* 3D top face */}
@@ -240,7 +239,7 @@ export default function ProductDiagram({
       />
 
       {/* Frame type label */}
-      <text x={offsetX + drawW / 2} y={offsetY + drawH + 18} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+      <text x={offsetX + drawW / 2} y={offsetY + drawH + 20} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
         Telaio {frameType === 'ridotto' ? 'ridotto' : frameType === 'maggiorato' ? 'maggiorato' : 'standard'}
       </text>
 
@@ -255,7 +254,7 @@ export default function ProductDiagram({
             {/* Panel frame */}
             <rect x={px} y={offsetY + frameThickness} width={pw} height={drawH - frameThickness * 2} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="1" />
 
-            {/* Glass - ALWAYS stays light blue/transparent */}
+            {/* Glass - ALWAYS light blue/transparent - NEVER frame color */}
             <rect
               x={px + glassInset}
               y={offsetY + frameThickness + glassInset}
@@ -273,11 +272,11 @@ export default function ProductDiagram({
               stroke="rgba(200, 230, 255, 0.3)" strokeWidth="1"
             />
 
-            {/* Glass label - positioned at BOTTOM of the glass area */}
+            {/* Glass label - positioned above anta-ribalta triangle */}
             {glassLabel && (
               <text
                 x={px + pw / 2}
-                y={offsetY + drawH - frameThickness - glassInset - 4}
+                y={offsetY + drawH - frameThickness - glassInset - (panelType === 'anta_ribalta' ? 22 : 4)}
                 textAnchor="middle"
                 fontSize="7"
                 fill="hsl(var(--muted-foreground))"
@@ -300,36 +299,41 @@ export default function ProductDiagram({
 
       {/* Handle: for 2+ panels, single handle at center seam; for 1 panel, on the side */}
       {panelType !== 'scorrevole' && panels >= 2 ? (
-        // Single handle at center between panels
         drawHandle(offsetX + drawW / 2 - 2, handleY)
       ) : panelType !== 'scorrevole' ? (
-        // Single panel handle
         drawHandle(
           openingDirection === 'sinistra' ? offsetX + frameThickness + 10 : offsetX + drawW - frameThickness - 14,
           handleY
         )
       ) : null}
 
-      {/* Dimension annotations - well spaced */}
-      <DimensionH x={offsetX} y={offsetY - dyOff - 22} width={drawW} label={`${w}`} />
-      <DimensionV x={offsetX - 28} y={offsetY} height={drawH} label={`${h}`} />
-      <DepthDimLabel x={offsetX + drawW + 6} y={offsetY - 6} dx={dxOff} dy={dyOff} label={`${d}`} />
+      {/* Dimension annotations - well spaced from everything */}
+      <DimensionH x={offsetX} y={offsetY - dyOff - 28} width={drawW} label={`${w}`} />
+      <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
+      <DepthDimLabel x={offsetX + drawW + 8} y={offsetY - 8} dx={dxOff} dy={dyOff} label={`${d}`} />
 
-      {/* View label */}
+      {/* View label - positioned at top-left, NOT overlapping with width dimension */}
       {view && (
-        <text x={offsetX + drawW / 2} y={offsetY - dyOff - 38} textAnchor="middle" fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
+        <text x={8} y={16} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
           {view === 'internal' ? '🏠 Vista Interna' : '🌳 Vista Esterna'}
         </text>
       )}
 
-      {/* Color labels - far from dimension lines */}
+      {/* Color labels - positioned far from dimensions */}
+      {view && (
+        <text x={offsetX + drawW + dxOff + 18} y={offsetY + drawH / 2} fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace" textAnchor="start">
+          {view === 'internal'
+            ? `Int: ${COLOR_OPTIONS.find(c => c.value === colorInternal)?.label || ''}`
+            : `Est: ${COLOR_OPTIONS.find(c => c.value === colorExternal)?.label || ''}`}
+        </text>
+      )}
       {!view && colorExternal && (
-        <text x={offsetX + drawW / 2} y={offsetY - dyOff - 36} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
+        <text x={8} y={svgH - 8} fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
           Est: {COLOR_OPTIONS.find(c => c.value === colorExternal)?.label || colorExternal}
         </text>
       )}
       {!view && colorInternal && (
-        <text x={offsetX + drawW + dxOff + 16} y={offsetY + drawH / 2} fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace" textAnchor="start">
+        <text x={offsetX + drawW + dxOff + 18} y={offsetY + drawH / 2} fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace" textAnchor="start">
           Int: {COLOR_OPTIONS.find(c => c.value === colorInternal)?.label || colorInternal}
         </text>
       )}
@@ -339,10 +343,10 @@ export default function ProductDiagram({
       {/* Handle height for porta_finestra */}
       {productType === 'porta_finestra' && (
         <>
-          <line x1={offsetX + drawW + dxOff + 30} y1={handleY} x2={offsetX + drawW + dxOff + 30} y2={offsetY + drawH} stroke="hsl(var(--muted-foreground))" strokeWidth="0.6" />
-          <line x1={offsetX + drawW + dxOff + 27} y1={handleY} x2={offsetX + drawW + dxOff + 33} y2={handleY} stroke="hsl(var(--muted-foreground))" strokeWidth="0.6" />
-          <line x1={offsetX + drawW + dxOff + 27} y1={offsetY + drawH} x2={offsetX + drawW + dxOff + 33} y2={offsetY + drawH} stroke="hsl(var(--muted-foreground))" strokeWidth="0.6" />
-          <text x={offsetX + drawW + dxOff + 38} y={(handleY + offsetY + drawH) / 2} fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="monospace" dominantBaseline="middle">
+          <line x1={offsetX + drawW + dxOff + 35} y1={handleY} x2={offsetX + drawW + dxOff + 35} y2={offsetY + drawH} stroke="hsl(var(--muted-foreground))" strokeWidth="0.6" />
+          <line x1={offsetX + drawW + dxOff + 32} y1={handleY} x2={offsetX + drawW + dxOff + 38} y2={handleY} stroke="hsl(var(--muted-foreground))" strokeWidth="0.6" />
+          <line x1={offsetX + drawW + dxOff + 32} y1={offsetY + drawH} x2={offsetX + drawW + dxOff + 38} y2={offsetY + drawH} stroke="hsl(var(--muted-foreground))" strokeWidth="0.6" />
+          <text x={offsetX + drawW + dxOff + 44} y={(handleY + offsetY + drawH) / 2} fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="monospace" dominantBaseline="middle">
             {Math.round((h * (drawH - (handleY - offsetY)) / drawH))}
           </text>
         </>
@@ -530,7 +534,7 @@ function DepthDimLabel({ x, y, dx, dy, label }: { x: number; y: number; dx: numb
       <line x1={x} y1={y} x2={x + dx} y2={y - dy} stroke="hsl(var(--foreground))" strokeWidth="0.8" />
       <line x1={x - 2} y1={y + 2} x2={x + 2} y2={y - 2} stroke="hsl(var(--foreground))" strokeWidth="0.8" />
       <line x1={x + dx - 2} y1={y - dy + 2} x2={x + dx + 2} y2={y - dy - 2} stroke="hsl(var(--foreground))" strokeWidth="0.8" />
-      <text x={x + dx / 2 + 10} y={y - dy / 2 - 10} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
+      <text x={x + dx / 2 + 12} y={y - dy / 2 - 12} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
         {label}
       </text>
     </g>
