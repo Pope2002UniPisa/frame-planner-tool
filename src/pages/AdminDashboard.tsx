@@ -341,6 +341,7 @@ export default function AdminDashboard() {
                         <Tooltip />
                       </PieChart>
                     </ResponsiveContainer>
+                    <p className="text-xs text-muted-foreground mt-1">Totale misurazioni: <span className="font-bold text-foreground">{stats.drafts + stats.sent + stats.quoted + stats.completed}</span></p>
                   </CardContent>
                 </Card>
                 <Card>
