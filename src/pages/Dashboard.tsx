@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, LogOut, Ruler, Clock, CheckCircle, FileText, Package, Send, Edit3 } from 'lucide-react';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, BarChart3 } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   bozza: { label: 'Bozza', variant: 'outline' },
@@ -25,6 +26,8 @@ const productLabels: Record<string, string> = {
   persiana: 'Persiana',
 };
 
+const CHART_COLORS = ['hsl(var(--accent))', 'hsl(var(--primary))', '#6366f1', '#f59e0b', '#10b981', '#ef4444'];
+
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const [measurements, setMeasurements] = useState<any[]>([]);
@@ -33,7 +36,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
-    
     const fetchData = async () => {
       const [{ data: mData }, { data: pData }] = await Promise.all([
         supabase.from('measurements').select('*').order('created_at', { ascending: false }),
@@ -46,20 +48,35 @@ export default function Dashboard() {
     fetchData();
   }, [user]);
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
-  if (!user) return <Navigate to="/auth" replace />;
-
-  const stats = {
+  const stats = useMemo(() => ({
     total: measurements.length,
     drafts: measurements.filter(m => m.status === 'bozza').length,
     sent: measurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted' || m.status === 'in_review').length,
     quoted: measurements.filter(m => m.status === 'quoted').length,
     completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
-  };
+  }), [measurements]);
+
+  const productStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    measurements.forEach(m => {
+      const label = productLabels[m.product_type] || m.product_type;
+      counts[label] = (counts[label] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+  }, [measurements]);
+
+  const statusChartData = useMemo(() => [
+    { name: 'Bozze', value: stats.drafts, color: '#94a3b8' },
+    { name: 'Inviate', value: stats.sent, color: '#3b82f6' },
+    { name: 'Preventivate', value: stats.quoted, color: '#f59e0b' },
+    { name: 'Completate', value: stats.completed, color: '#10b981' },
+  ].filter(d => d.value > 0), [stats]);
+
+  if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
+  if (!user) return <Navigate to="/auth" replace />;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card shadow-card">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
@@ -86,7 +103,7 @@ export default function Dashboard() {
       </header>
 
       <main className="container py-8">
-        {/* Stats */}
+        {/* Stats cards */}
         <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
           <StatCard icon={FileText} label="Totale" value={stats.total} />
           <StatCard icon={Edit3} label="Bozze" value={stats.drafts} />
@@ -94,6 +111,57 @@ export default function Dashboard() {
           <StatCard icon={Package} label="Preventivate" value={stats.quoted} />
           <StatCard icon={CheckCircle} label="Completate" value={stats.completed} />
         </div>
+
+        {/* Charts */}
+        {measurements.length > 0 && (
+          <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Status pie chart */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-heading flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  Stato misurazioni
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={statusChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name}: ${value}`}>
+                      {statusChartData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Product bar chart */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-heading flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  Per tipologia prodotto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={productStats}>
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="value" name="Misurazioni" radius={[4, 4, 0, 0]}>
+                      {productStats.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* CTA */}
         <Card className="mb-8 gradient-primary border-0">
