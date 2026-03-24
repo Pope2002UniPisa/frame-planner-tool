@@ -65,6 +65,7 @@ const initialForm = {
   laying_type: '',
   remove_old: false,
   delivery_time: '',
+  delivery_date: '',
   notes: '',
 };
 
