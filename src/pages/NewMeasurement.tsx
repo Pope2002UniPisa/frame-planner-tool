@@ -542,27 +542,46 @@ export default function NewMeasurement() {
             {step === 6 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Vetro</CardTitle>
-                <CardDescription>Seleziona la tipologia di vetro</CardDescription>
+                <CardDescription>
+                  {form.product_type === 'porta_finestra' 
+                    ? 'La porta è cieca di default. Puoi aggiungere un vetro se desiderato.'
+                    : 'Seleziona la tipologia di vetro'}
+                </CardDescription>
                 <RadioGroup value={form.glass_type} onValueChange={v => update('glass_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {[
-                    { value: 'doppio', label: 'Doppio vetro' },
-                    { value: 'triplo', label: 'Triplo vetro' },
-                    { value: 'basso_emissivo', label: 'Basso emissivo' },
-                    { value: 'antisfondamento', label: 'Antisfondamento' },
-                    { value: 'satinato', label: 'Satinato' },
-                    { value: 'selettivo', label: 'Selettivo' },
-                  ].map(opt => (
-                    <Label
-                      key={opt.value}
-                      htmlFor={`glass-${opt.value}`}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                        form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'
-                      }`}
-                    >
-                      <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
-                      {opt.label}
-                    </Label>
-                  ))}
+                  {form.product_type === 'porta_finestra' ? (
+                    <>
+                      {[
+                        { value: 'cieca', label: '🚪 Porta cieca (no vetro)' },
+                        { value: 'trasparente', label: '🔍 Vetro trasparente' },
+                        { value: 'satinato', label: '🌫️ Vetro satinato' },
+                        { value: 'a_quadri', label: '🔲 Vetro a quadri' },
+                        { value: 'stondato', label: '🔘 Vetro stondato' },
+                        { value: 'doppio', label: '📐 Doppio vetro' },
+                        { value: 'triplo', label: '📏 Triplo vetro' },
+                      ].map(opt => (
+                        <Label key={opt.value} htmlFor={`glass-${opt.value}`} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                          <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
+                          {opt.label}
+                        </Label>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {[
+                        { value: 'doppio', label: 'Doppio vetro' },
+                        { value: 'triplo', label: 'Triplo vetro' },
+                        { value: 'basso_emissivo', label: 'Basso emissivo' },
+                        { value: 'antisfondamento', label: 'Antisfondamento' },
+                        { value: 'satinato', label: 'Satinato' },
+                        { value: 'selettivo', label: 'Selettivo' },
+                      ].map(opt => (
+                        <Label key={opt.value} htmlFor={`glass-${opt.value}`} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                          <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
+                          {opt.label}
+                        </Label>
+                      ))}
+                    </>
+                  )}
                 </RadioGroup>
               </div>
             )}
