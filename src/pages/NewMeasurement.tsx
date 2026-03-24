@@ -339,6 +339,7 @@ export default function NewMeasurement() {
                 <RadioGroup value={form.product_type} onValueChange={v => update('product_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {[
                     { value: 'finestra', label: '🪟 Finestra' },
+                    { value: 'porta', label: '🚪 Porta' },
                     { value: 'porta_finestra', label: '🚪 Porta Finestra' },
                     { value: 'basculante', label: '🏗️ Basculante' },
                     { value: 'zanzariera', label: '🦟 Zanzariera' },
