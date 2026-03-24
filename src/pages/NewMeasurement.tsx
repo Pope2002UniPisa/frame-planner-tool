@@ -29,9 +29,9 @@ const STEPS = [
 ];
 
 const DELIVERY_OPTIONS = [
-  { value: 'express', label: '🚀 Express (2-3 settimane)', desc: 'Consegna rapida per misure e colori standard', surcharge: '+25%', standard_only: true },
-  { value: 'standard', label: '📦 Standard (4-6 settimane)', desc: 'Tempi normali di produzione', surcharge: 'Prezzo base', standard_only: false },
-  { value: 'economy', label: '📅 Programmata (8-10 settimane)', desc: 'Consegna programmata a lungo termine', surcharge: '-10%', standard_only: false },
+  { value: 'express', label: '🚀 Urgente (2-3 settimane)', desc: 'Consegna rapida per misure e colori standard', surcharge: '+25%', standard_only: true, maxWeeks: 3 },
+  { value: 'standard', label: '📦 Standard (4-6 settimane)', desc: 'Tempi normali di produzione', surcharge: 'Prezzo base', standard_only: false, maxWeeks: 6 },
+  { value: 'economy', label: '📅 Programmata (8+ settimane)', desc: 'Consegna programmata a lungo termine', surcharge: '+10%', standard_only: false, minWeeks: 8 },
 ];
 
 const initialForm = {
