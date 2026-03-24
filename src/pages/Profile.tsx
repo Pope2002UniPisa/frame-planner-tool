@@ -73,13 +73,18 @@ export default function Profile() {
     fetchData();
   }, [user]);
 
-  const stats = useMemo(() => ({
-    total: measurements.length,
-    drafts: measurements.filter(m => m.status === 'bozza').length,
-    sent: measurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted' || m.status === 'in_review').length,
-    quoted: measurements.filter(m => m.status === 'quoted').length,
-    completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
-  }), [measurements]);
+  const stats = useMemo(() => {
+    const total = measurements.length;
+    const drafts = measurements.filter(m => m.status === 'bozza').length;
+    const sent = measurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted' || m.status === 'in_review').length;
+    const quoted = measurements.filter(m => m.status === 'quoted').length;
+    const completed = measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length;
+    const totalEstimated = measurements.reduce((s, m) => s + (Number((m as any).estimated_price) || 0), 0);
+    const totalPaid = measurements.reduce((s, m) => s + (Number((m as any).amount_paid) || 0), 0);
+    const disputes = measurements.filter(m => (m as any).has_dispute).length;
+    const modifications = measurements.filter(m => (m as any).has_modification).length;
+    return { total, drafts, sent, quoted, completed, totalEstimated, totalPaid, remaining: totalEstimated - totalPaid, disputes, modifications };
+  }, [measurements]);
 
   const statusChartData = useMemo(() => [
     { name: 'Bozze', value: stats.drafts, color: '#94a3b8' },
@@ -106,6 +111,23 @@ export default function Profile() {
     return Array.from(s);
   }, [measurements]);
 
+  const paymentChartData = useMemo(() => [
+    { name: 'Pagato', value: stats.totalPaid, color: '#10b981' },
+    { name: 'Da pagare', value: Math.max(0, stats.remaining), color: '#ef4444' },
+  ].filter(d => d.value > 0), [stats]);
+
+  const productPriceData = useMemo(() => {
+    const byType: Record<string, { count: number; total: number }> = {};
+    measurements.forEach(m => {
+      const label = productLabels[m.product_type] || m.product_type;
+      const price = Number((m as any).estimated_price) || 0;
+      if (!byType[label]) byType[label] = { count: 0, total: 0 };
+      byType[label].count++;
+      if (price > 0) byType[label].total += price;
+    });
+    return Object.entries(byType).map(([name, d]) => ({ name, totale: Math.round(d.total), media: d.count > 0 ? Math.round(d.total / d.count) : 0 }));
+  }, [measurements]);
+
   const supplierStats = useMemo(() => {
     if (!selectedSupplier) return null;
     return {
@@ -116,6 +138,83 @@ export default function Profile() {
       completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
     };
   }, [selectedSupplier, measurements]);
+
+  const exportCSV = useCallback(() => {
+    const headers = ['Data', 'Prodotto', 'Cliente', 'Indirizzo', 'Stato', 'Prezzo stimato (€)', 'Pagato (€)', 'Residuo (€)', 'Contestazione', 'Modifica'];
+    const rows = measurements.map(m => [
+      new Date(m.created_at).toLocaleDateString('it-IT'),
+      productLabels[m.product_type] || m.product_type,
+      m.client_name, m.client_address, m.status,
+      Number((m as any).estimated_price) || 0,
+      Number((m as any).amount_paid) || 0,
+      (Number((m as any).estimated_price) || 0) - (Number((m as any).amount_paid) || 0),
+      (m as any).has_dispute ? 'Sì' : 'No',
+      (m as any).has_modification ? 'Sì' : 'No',
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `statistiche_${form.company_name || 'cliente'}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('File Excel/CSV scaricato!');
+  }, [measurements, form.company_name]);
+
+  const exportPDF = useCallback(() => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const fmt = (n: number) => n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Report Statistiche</title>
+      <style>body{font-family:system-ui,sans-serif;padding:40px;color:#1a1a2e}
+      h1{color:#1a1a2e;border-bottom:3px solid #f97316;padding-bottom:12px}
+      h2{color:#f97316;margin-top:30px}
+      table{width:100%;border-collapse:collapse;margin:16px 0}
+      th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:13px}
+      th{background:#1a1a2e;color:white}
+      tr:nth-child(even){background:#f8f8f8}
+      .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}
+      .stat-box{background:#f8f8fc;border-radius:12px;padding:20px;text-align:center;border:1px solid #e5e7eb}
+      .stat-box .value{font-size:28px;font-weight:bold;color:#1a1a2e}
+      .stat-box .label{font-size:12px;color:#666;margin-top:4px}
+      .footer{margin-top:40px;text-align:center;font-size:11px;color:#999}
+      </style></head><body>
+      <h1>📊 Report Statistiche — ${form.company_name || 'Cliente'}</h1>
+      <p style="color:#666">Generato il ${new Date().toLocaleDateString('it-IT')}</p>
+      <div class="summary">
+        <div class="stat-box"><div class="value">${stats.total}</div><div class="label">Misurazioni totali</div></div>
+        <div class="stat-box"><div class="value">€${fmt(stats.totalEstimated)}</div><div class="label">Totale stimato</div></div>
+        <div class="stat-box"><div class="value">€${fmt(stats.totalPaid)}</div><div class="label">Pagato</div></div>
+        <div class="stat-box"><div class="value">€${fmt(stats.remaining)}</div><div class="label">Da pagare</div></div>
+        <div class="stat-box"><div class="value">${stats.disputes}</div><div class="label">Contestazioni</div></div>
+        <div class="stat-box"><div class="value">${stats.modifications}</div><div class="label">Modifiche ordini</div></div>
+      </div>
+      <h2>Stato misurazioni</h2>
+      <div class="summary" style="grid-template-columns:repeat(5,1fr)">
+        <div class="stat-box"><div class="value">${stats.drafts}</div><div class="label">Bozze</div></div>
+        <div class="stat-box"><div class="value">${stats.sent}</div><div class="label">Inviate</div></div>
+        <div class="stat-box"><div class="value">${stats.quoted}</div><div class="label">Preventivate</div></div>
+        <div class="stat-box"><div class="value">${stats.completed}</div><div class="label">Completate</div></div>
+        <div class="stat-box"><div class="value">${stats.total}</div><div class="label">Totale</div></div>
+      </div>
+      <h2>Dettaglio misurazioni</h2>
+      <table><thead><tr><th>Data</th><th>Prodotto</th><th>Cliente</th><th>Stato</th><th>Prezzo €</th><th>Pagato €</th><th>Residuo €</th></tr></thead><tbody>
+      ${measurements.map(m => `<tr>
+        <td>${new Date(m.created_at).toLocaleDateString('it-IT')}</td>
+        <td>${productLabels[m.product_type] || m.product_type}</td>
+        <td>${m.client_name}</td>
+        <td>${m.status}</td>
+        <td>${fmt(Number((m as any).estimated_price) || 0)}</td>
+        <td>${fmt(Number((m as any).amount_paid) || 0)}</td>
+        <td>${fmt((Number((m as any).estimated_price) || 0) - (Number((m as any).amount_paid) || 0))}</td>
+      </tr>`).join('')}
+      </tbody></table>
+      <div class="footer">Documento generato automaticamente dal portale misurazioni</div>
+      </body></html>`);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  }, [measurements, form.company_name, stats]);
 
   const handleSave = async () => {
     if (!profile) return;
