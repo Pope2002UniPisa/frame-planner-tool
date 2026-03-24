@@ -569,12 +569,12 @@ export default function NewMeasurement() {
               <div className="space-y-4">
                 <CardTitle className="font-heading">Vetro</CardTitle>
                 <CardDescription>
-                  {form.product_type === 'porta_finestra' 
+                  {(form.product_type === 'porta_finestra' || form.product_type === 'porta')
                     ? 'La porta è cieca di default. Puoi aggiungere un vetro se desiderato.'
                     : 'Seleziona la tipologia di vetro'}
                 </CardDescription>
                 <RadioGroup value={form.glass_type} onValueChange={v => update('glass_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {form.product_type === 'porta_finestra' ? (
+                  {(form.product_type === 'porta_finestra' || form.product_type === 'porta') ? (
                     <>
                       {[
                         { value: 'cieca', label: '🚪 Porta cieca (no vetro)' },
