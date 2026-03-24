@@ -58,6 +58,8 @@ export default function Profile() {
   const [orgContacts, setOrgContacts] = useState(ORG_ROLES);
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState(false);
+  const [supplierLogos, setSupplierLogos] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) return;
