@@ -82,15 +82,22 @@ export default function AdminDashboard() {
   }, [user, isAdmin]);
 
   // Stats
-  const stats = useMemo(() => ({
-    totalMeasurements: measurements.length,
-    totalClients: profiles.length,
-    drafts: measurements.filter(m => m.status === 'bozza').length,
-    sent: measurements.filter(m => ['ricevuto', 'submitted', 'in_review'].includes(m.status)).length,
-    quoted: measurements.filter(m => m.status === 'quoted').length,
-    completed: measurements.filter(m => ['completed', 'ordered'].includes(m.status)).length,
-    totalRevenue: measurements.reduce((s, m) => s + (Number(m.estimated_price) || 0), 0),
-  }), [measurements, profiles]);
+  const stats = useMemo(() => {
+    const nonDraft = measurements.filter(m => m.status !== 'bozza');
+    const completed = measurements.filter(m => ['completed', 'ordered'].includes(m.status));
+    const paidCompleted = completed.filter(m => m.payment_status === 'pagato');
+    return {
+      totalMeasurements: nonDraft.length,
+      totalClients: profiles.length,
+      drafts: measurements.filter(m => m.status === 'bozza').length,
+      sent: measurements.filter(m => ['ricevuto', 'submitted', 'in_review'].includes(m.status)).length,
+      quoted: measurements.filter(m => m.status === 'quoted').length,
+      completed: completed.length,
+      totalRevenue: nonDraft.reduce((s, m) => s + (Number(m.estimated_price) || 0), 0),
+      realizedRevenue: completed.reduce((s, m) => s + (Number(m.estimated_price) || 0), 0),
+      collectedRevenue: paidCompleted.reduce((s, m) => s + (Number(m.amount_paid) || Number(m.estimated_price) || 0), 0),
+    };
+  }, [measurements, profiles]);
 
   const statusChartData = useMemo(() => [
     { name: 'Bozze', value: stats.drafts, color: '#94a3b8' },
