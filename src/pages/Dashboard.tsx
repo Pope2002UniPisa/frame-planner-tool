@@ -330,7 +330,7 @@ export default function Dashboard() {
                               { label: 'Completate', value: cs.completed },
                               { label: 'Fatt. stimato', value: `€${Math.round(cs.estimatedRevenue).toLocaleString('it-IT')}` },
                               { label: 'Fatt. realizzato', value: `€${Math.round(cs.realizedRevenue).toLocaleString('it-IT')}` },
-                              { label: 'Fatt. riscosso', value: `€${Math.round(cs.collectedRevenue).toLocaleString('it-IT')}` },
+                              { label: 'Fatt. incassato', value: `€${Math.round(cs.collectedRevenue).toLocaleString('it-IT')}` },
                             ].map(st => (
                               <div key={st.label} className="rounded-lg bg-muted p-2 text-center">
                                 <p className="text-xs font-bold text-foreground">{st.value}</p>

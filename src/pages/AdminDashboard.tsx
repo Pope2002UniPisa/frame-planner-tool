@@ -455,7 +455,7 @@ export default function AdminDashboard() {
                           { label: 'Completate', value: c.completed },
                           { label: 'Fatt. stimato', value: `€${Math.round(c.revenue).toLocaleString('it-IT')}` },
                           { label: 'Fatt. realizzato', value: `€${Math.round(c.realizedRevenue).toLocaleString('it-IT')}` },
-                          { label: 'Fatt. riscosso', value: `€${Math.round(c.collectedRevenue).toLocaleString('it-IT')}` },
+                          { label: 'Fatt. incassato', value: `€${Math.round(c.collectedRevenue).toLocaleString('it-IT')}` },
                         ].map(st => (
                           <div key={st.label} className="rounded-lg bg-muted p-2 text-center">
                             <p className="text-sm font-bold text-foreground">{st.value}</p>
