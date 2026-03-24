@@ -286,6 +286,95 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Client Summary Section */}
+        {clientSummary.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="h-4 w-4 text-accent" />
+              <h3 className="text-sm font-heading font-semibold text-foreground">Riepilogo per Cliente</h3>
+              <Badge variant="secondary" className="text-[10px]">{clientSummary.length} nominativi</Badge>
+            </div>
+            <div className="space-y-2">
+              {clientSummary.map(cs => {
+                const isExpanded = expandedClientName === cs.name;
+                return (
+                  <Card key={cs.name} className={`transition-all ${isExpanded ? 'ring-2 ring-primary/20' : ''}`}>
+                    <CardContent className="py-3 px-4">
+                      <div
+                        className="flex items-center justify-between cursor-pointer"
+                        onClick={() => setExpandedClientName(isExpanded ? null : cs.name)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold text-sm text-foreground">{cs.name}</span>
+                          <Badge variant="outline" className="text-[10px]">{cs.total} misurazioni</Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="hidden sm:flex items-center gap-2 text-[10px] text-muted-foreground">
+                            <span>📝 {cs.drafts}</span>
+                            <span>📤 {cs.sent}</span>
+                            <span>💰 {cs.quoted}</span>
+                            <span>✅ {cs.completed}</span>
+                          </div>
+                          {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="mt-3 pt-3 border-t border-border space-y-3">
+                          <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
+                            {[
+                              { label: 'Bozze', value: cs.drafts },
+                              { label: 'Inviate', value: cs.sent },
+                              { label: 'Preventivate', value: cs.quoted },
+                              { label: 'Completate', value: cs.completed },
+                              { label: 'Fatt. stimato', value: `€${Math.round(cs.estimatedRevenue).toLocaleString('it-IT')}` },
+                              { label: 'Fatt. realizzato', value: `€${Math.round(cs.realizedRevenue).toLocaleString('it-IT')}` },
+                              { label: 'Fatt. riscosso', value: `€${Math.round(cs.collectedRevenue).toLocaleString('it-IT')}` },
+                            ].map(st => (
+                              <div key={st.label} className="rounded-lg bg-muted p-2 text-center">
+                                <p className="text-xs font-bold text-foreground">{st.value}</p>
+                                <p className="text-[9px] text-muted-foreground">{st.label}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Individual measurements */}
+                          <div className="space-y-1.5">
+                            {cs.measurements.map(m => {
+                              const pi = productIcons[m.product_type] || { emoji: '📦', color: '#6b7280' };
+                              return (
+                                <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-2 bg-background">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pi.color }} />
+                                    <span className="text-xs font-medium text-foreground">{productLabels[m.product_type] || m.product_type}</span>
+                                    <Badge variant={statusLabels[m.status]?.variant || 'default'} className="text-[9px]">
+                                      {statusLabels[m.status]?.label || m.status}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground">{m.width_mm}×{m.height_mm}mm</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {m.estimated_price > 0 && <span className="text-[10px] font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
+                                    {m.payment_status === 'pagato' && <CreditCard className="h-3 w-3 text-green-500" title="Pagato" />}
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/misurazione/${m.id}`)}>
+                                      <Eye className="h-3 w-3" />
+                                    </Button>
+                                    <span className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleDateString('it-IT')}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Measurements list with filters */}
         <div>
           <h2 className="mb-4 text-xl font-bold font-heading text-foreground">Le tue misurazioni</h2>
