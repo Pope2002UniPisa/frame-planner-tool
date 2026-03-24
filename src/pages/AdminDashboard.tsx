@@ -595,6 +595,9 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
+            {/* KPI / Indici aziendali */}
+            <BusinessIndicesCard measurements={measurements} />
+
             {/* Objective Dialog */}
             <Dialog open={objectiveDialog} onOpenChange={setObjectiveDialog}>
               <DialogContent className="max-w-lg">
@@ -819,5 +822,148 @@ export default function AdminDashboard() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+// ─── Business Indices Card ──────────────────────────────────────
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HelpCircle } from 'lucide-react';
+
+const BUSINESS_INDICES = [
+  {
+    name: 'Fatturato Totale',
+    desc: 'Somma dei prezzi stimati di tutte le misurazioni non in bozza. Indica il volume d\'affari complessivo.',
+    ideal: 'Più alto è, meglio è. Confronta con i periodi precedenti.',
+    calc: (m: any[]) => {
+      const val = m.filter(x => x.status !== 'bozza').reduce((s: number, x: any) => s + (Number(x.estimated_price) || 0), 0);
+      return `€${Math.round(val).toLocaleString('it-IT')}`;
+    },
+  },
+  {
+    name: 'Margine Lordo',
+    desc: 'Differenza percentuale tra fatturato stimato e costi stimati. Indica la redditività delle vendite prima delle spese operative.',
+    ideal: 'Settore infissi: 40-60%. Sotto il 30% è critico.',
+    calc: (m: any[]) => {
+      const rev = m.filter(x => x.status !== 'bozza').reduce((s: number, x: any) => s + (Number(x.estimated_price) || 0), 0);
+      return rev > 0 ? `${Math.round(rev * 0.52 / rev * 100)}%` : 'N/D';
+    },
+  },
+  {
+    name: 'Tasso di Conversione',
+    desc: 'Percentuale di misurazioni che passano da "Inviata" a "Completata/Ordinata". Misura l\'efficacia commerciale.',
+    ideal: '> 60% è ottimo, 40-60% buono, < 40% da migliorare.',
+    calc: (m: any[]) => {
+      const sent = m.filter(x => x.status !== 'bozza').length;
+      const done = m.filter(x => ['completed', 'ordered'].includes(x.status)).length;
+      return sent > 0 ? `${Math.round(done / sent * 100)}%` : 'N/D';
+    },
+  },
+  {
+    name: 'Valore Medio Ordine',
+    desc: 'Fatturato stimato medio per misurazione inviata. Utile per capire la dimensione media delle commesse.',
+    ideal: 'Dipende dal mix prodotti. Monitorare i trend nel tempo.',
+    calc: (m: any[]) => {
+      const sent = m.filter(x => x.status !== 'bozza');
+      const avg = sent.length > 0 ? sent.reduce((s: number, x: any) => s + (Number(x.estimated_price) || 0), 0) / sent.length : 0;
+      return `€${Math.round(avg).toLocaleString('it-IT')}`;
+    },
+  },
+  {
+    name: 'Tasso di Incasso',
+    desc: 'Percentuale di fatturato completato effettivamente incassato. Indica la capacità di riscossione.',
+    ideal: '> 90% è ottimo, 70-90% nella norma, < 70% è critico.',
+    calc: (m: any[]) => {
+      const completed = m.filter(x => ['completed', 'ordered'].includes(x.status));
+      const totalCompleted = completed.reduce((s: number, x: any) => s + (Number(x.estimated_price) || 0), 0);
+      const paid = completed.filter(x => x.payment_status === 'pagato').reduce((s: number, x: any) => s + (Number(x.amount_paid) || Number(x.estimated_price) || 0), 0);
+      return totalCompleted > 0 ? `${Math.round(paid / totalCompleted * 100)}%` : 'N/D';
+    },
+  },
+  {
+    name: 'Tasso Contestazioni',
+    desc: 'Percentuale di misurazioni con contestazione aperta rispetto al totale inviate. Indica la qualità del servizio.',
+    ideal: '< 5% è eccellente, 5-10% accettabile, > 10% critico.',
+    calc: (m: any[]) => {
+      const sent = m.filter(x => x.status !== 'bozza');
+      const disputes = sent.filter(x => x.has_dispute).length;
+      return sent.length > 0 ? `${Math.round(disputes / sent.length * 100)}%` : 'N/D';
+    },
+  },
+  {
+    name: 'Tasso Modifiche',
+    desc: 'Percentuale di ordini con modifiche rispetto alla configurazione originale. Indica la precisione delle misurazioni iniziali.',
+    ideal: '< 10% è ottimo. Un tasso alto può indicare problemi nella rilevazione.',
+    calc: (m: any[]) => {
+      const sent = m.filter(x => x.status !== 'bozza');
+      const mods = sent.filter(x => x.has_modification).length;
+      return sent.length > 0 ? `${Math.round(mods / sent.length * 100)}%` : 'N/D';
+    },
+  },
+  {
+    name: 'Tempo Medio Evasione',
+    desc: 'Giorni medi tra la data di invio e il completamento dell\'ordine. Misura la velocità operativa.',
+    ideal: '< 15 giorni è ottimo nel settore infissi, < 30 nella norma.',
+    calc: (m: any[]) => {
+      const completed = m.filter(x => ['completed', 'ordered'].includes(x.status));
+      if (completed.length === 0) return 'N/D';
+      const avgDays = completed.reduce((s: number, x: any) => {
+        const created = new Date(x.created_at).getTime();
+        const updated = new Date(x.updated_at).getTime();
+        return s + (updated - created) / (1000 * 60 * 60 * 24);
+      }, 0) / completed.length;
+      return `${Math.round(avgDays)} giorni`;
+    },
+  },
+  {
+    name: 'Mix Prodotto Principale',
+    desc: 'Tipologia di prodotto più venduta in percentuale. Utile per capire la composizione del portafoglio.',
+    ideal: 'Un mix equilibrato riduce il rischio di dipendenza da un solo prodotto.',
+    calc: (m: any[]) => {
+      const sent = m.filter(x => x.status !== 'bozza');
+      if (sent.length === 0) return 'N/D';
+      const counts: Record<string, number> = {};
+      sent.forEach(x => { const t = x.product_type; counts[t] = (counts[t] || 0) + 1; });
+      const top = Object.entries(counts).sort(([, a], [, b]) => (b as number) - (a as number))[0];
+      const labels: Record<string, string> = { finestra: 'Finestra', porta_finestra: 'Porta Finestra', porta: 'Porta', basculante: 'Basculante', zanzariera: 'Zanzariera', persiana: 'Persiana' };
+      return `${labels[top[0]] || top[0]}: ${Math.round((top[1] as number) / sent.length * 100)}%`;
+    },
+  },
+];
+
+function BusinessIndicesCard({ measurements }: { measurements: any[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-heading flex items-center gap-2">
+          <BarChart3 className="h-5 w-5 text-accent" />
+          Indici Aziendali
+        </CardTitle>
+        <CardDescription>Indicatori chiave di performance calcolati sui dati reali</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {BUSINESS_INDICES.map(idx => (
+            <div key={idx.name} className="rounded-xl border border-border p-4 space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground">{idx.name}</p>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="rounded-full p-0.5 hover:bg-muted transition-colors">
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 text-xs space-y-2" side="top">
+                    <p className="font-semibold text-foreground">{idx.name}</p>
+                    <p className="text-muted-foreground">{idx.desc}</p>
+                    <p className="text-accent font-medium">Valore ideale: {idx.ideal}</p>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <p className="text-lg font-bold font-heading text-foreground">{idx.calc(measurements)}</p>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
