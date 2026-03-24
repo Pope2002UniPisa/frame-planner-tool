@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       measurements: {
         Row: {
+          accessories_config: Json | null
           client_address: string
           client_name: string
           color_external: string | null
@@ -54,6 +55,7 @@ export type Database = {
           width_mm: number
         }
         Insert: {
+          accessories_config?: Json | null
           client_address?: string
           client_name?: string
           color_external?: string | null
@@ -92,6 +94,7 @@ export type Database = {
           width_mm: number
         }
         Update: {
+          accessories_config?: Json | null
           client_address?: string
           client_name?: string
           color_external?: string | null
