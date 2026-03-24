@@ -355,7 +355,7 @@ export default function Dashboard() {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     {m.estimated_price > 0 && <span className="text-[10px] font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
-                                    {m.payment_status === 'pagato' && <CreditCard className="h-3 w-3 text-green-500" title="Pagato" />}
+                                    {m.payment_status === 'pagato' && <span className="text-[10px] text-green-600" role="img" aria-label="Pagato">💳</span>}
                                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/misurazione/${m.id}`)}>
                                       <Eye className="h-3 w-3" />
                                     </Button>
