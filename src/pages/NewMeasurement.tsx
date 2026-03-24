@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn, ZoomOut } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import AccessoryConfig, { type AccessoriesConfig } from '@/components/AccessoryConfig';
 
@@ -77,6 +77,7 @@ export default function NewMeasurement() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [accessoriesConfig, setAccessoriesConfig] = useState<AccessoriesConfig>({});
+  const [diagramZoom, setDiagramZoom] = useState(1);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -180,7 +181,10 @@ export default function NewMeasurement() {
     }
   };
 
-  const showDiagram = step >= 3 && step <= 7 && !!form.product_type;
+  // Show diagram for steps 3-6 (dimensions, config, finishes, glass) but NOT accessories (7)
+  const showDiagram = step >= 3 && step <= 6 && !!form.product_type;
+  // At step 5 (finishes), show two diagrams (internal + external)
+  const showDualDiagram = step === 5;
 
   const ColorSelectField = ({ label, value, field }: { label: string; value: string; field: string }) => (
     <div className="space-y-2">
@@ -204,6 +208,51 @@ export default function NewMeasurement() {
         </SelectContent>
       </Select>
     </div>
+  );
+
+  const DiagramWithZoom = ({ view }: { view?: 'internal' | 'external' }) => (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-heading">
+            {view === 'internal' ? 'Vista Interna' : view === 'external' ? 'Vista Esterna' : 'Anteprima'}
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDiagramZoom(z => Math.max(0.5, z - 0.25))}>
+              <ZoomOut className="h-3.5 w-3.5" />
+            </Button>
+            <span className="text-xs text-muted-foreground w-10 text-center">{Math.round(diagramZoom * 100)}%</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDiagramZoom(z => Math.min(2, z + 0.25))}>
+              <ZoomIn className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-auto" style={{ maxHeight: diagramZoom > 1 ? '500px' : undefined }}>
+          <div style={{ transform: `scale(${diagramZoom})`, transformOrigin: 'top center' }}>
+            <ProductDiagram
+              productType={form.product_type}
+              widthMm={form.width_mm}
+              heightMm={form.height_mm}
+              depthMm={form.depth_mm}
+              numPanels={form.num_panels}
+              panelType={form.panel_type}
+              openingDirection={form.opening_direction}
+              handleType={form.handle_type}
+              glassType={form.glass_type}
+              frameType={form.frame_type}
+              colorInternal={form.color_internal}
+              colorExternal={form.color_external}
+              internalSpaceMm={form.internal_space_mm}
+              externalSpaceMm={form.external_space_mm}
+              view={view}
+            />
+          </div>
+        </div>
+        <p className="text-xs text-center text-muted-foreground mt-2">Immagine a solo scopo illustrativo</p>
+      </CardContent>
+    </Card>
   );
 
   return (
@@ -237,465 +286,447 @@ export default function NewMeasurement() {
           </div>
         </div>
 
-        <div className={`${showDiagram ? 'grid grid-cols-1 lg:grid-cols-5 gap-6' : ''}`}>
-          {showDiagram && (
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-heading">Anteprima</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ProductDiagram
-                    productType={form.product_type}
-                    widthMm={form.width_mm}
-                    heightMm={form.height_mm}
-                    depthMm={form.depth_mm}
-                    numPanels={form.num_panels}
-                    panelType={form.panel_type}
-                    openingDirection={form.opening_direction}
-                    handleType={form.handle_type}
-                    glassType={form.glass_type}
-                    frameType={form.frame_type}
-                    colorInternal={form.color_internal}
-                    colorExternal={form.color_external}
-                    internalSpaceMm={form.internal_space_mm}
-                    externalSpaceMm={form.external_space_mm}
-                  />
-                  <p className="text-xs text-center text-muted-foreground mt-2">Immagine a solo scopo illustrativo</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          <div className={showDiagram ? 'lg:col-span-3' : ''}>
-            <Card className="animate-fade-in">
-              <CardContent className="py-6">
-                {/* Step 0: Product type */}
-                {step === 0 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Seleziona il prodotto</CardTitle>
-                    <CardDescription>Che tipo di prodotto devi misurare?</CardDescription>
-                    <RadioGroup value={form.product_type} onValueChange={v => update('product_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {[
-                        { value: 'finestra', label: '🪟 Finestra' },
-                        { value: 'porta_finestra', label: '🚪 Porta Finestra' },
-                        { value: 'basculante', label: '🏗️ Basculante' },
-                        { value: 'zanzariera', label: '🦟 Zanzariera' },
-                        { value: 'persiana', label: '🪵 Persiana' },
-                      ].map(opt => (
-                        <Label
-                          key={opt.value}
-                          htmlFor={opt.value}
-                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                            form.product_type === opt.value
-                              ? 'border-accent bg-accent/10'
-                              : 'border-border hover:border-muted-foreground/30'
-                          }`}
-                        >
-                          <RadioGroupItem value={opt.value} id={opt.value} />
-                          <span className="text-lg">{opt.label}</span>
-                        </Label>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                )}
-
-                {/* Step 1: Client info */}
-                {step === 1 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Dati cliente</CardTitle>
-                    <CardDescription>A chi è destinato il prodotto?</CardDescription>
-                    <div className="space-y-2">
-                      <Label>Nome / Riferimento Cliente</Label>
-                      <Input value={form.client_name} onChange={e => update('client_name', e.target.value)} placeholder="Mario Rossi" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Indirizzo installazione</Label>
-                      <Input value={form.client_address} onChange={e => update('client_address', e.target.value)} placeholder="Via Roma 1, Milano" />
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 2: Survey type */}
-                {step === 2 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Tipo di rilievo</CardTitle>
-                    <CardDescription>Come sono state prese le misure?</CardDescription>
-                    <RadioGroup value={form.survey_type} onValueChange={v => update('survey_type', v)} className="space-y-3">
-                      {[
-                        { value: 'foro_muro', label: 'Foro muro (grezzo)', desc: 'Misurazione del buco nel muro' },
-                        { value: 'luce_netta', label: 'Luce netta', desc: "Misurazione dell'apertura finita" },
-                        { value: 'controtelaio', label: 'Controtelaio', desc: 'Misurazione del controtelaio esistente' },
-                        { value: 'vecchio_infisso', label: 'Vecchio infisso', desc: "Misurazione dell'infisso da sostituire" },
-                      ].map(opt => (
-                        <Label
-                          key={opt.value}
-                          htmlFor={`survey-${opt.value}`}
-                          className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${
-                            form.survey_type === opt.value
-                              ? 'border-accent bg-accent/10'
-                              : 'border-border hover:border-muted-foreground/30'
-                          }`}
-                        >
-                          <RadioGroupItem value={opt.value} id={`survey-${opt.value}`} className="mt-0.5" />
-                          <div>
-                            <span className="font-medium text-foreground">{opt.label}</span>
-                            <p className="text-sm text-muted-foreground">{opt.desc}</p>
-                          </div>
-                        </Label>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                )}
-
-                {/* Step 3: Dimensions */}
-                {step === 3 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Misure (in mm)</CardTitle>
-                    <CardDescription>Inserisci le dimensioni rilevate</CardDescription>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <div className="space-y-2">
-                        <Label>Larghezza (mm) *</Label>
-                        <Input type="number" value={form.width_mm} onChange={e => update('width_mm', e.target.value)} placeholder="1200" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Altezza (mm) *</Label>
-                        <Input type="number" value={form.height_mm} onChange={e => update('height_mm', e.target.value)} placeholder="1400" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Profondità muro (mm)</Label>
-                        <Input type="number" value={form.depth_mm} onChange={e => update('depth_mm', e.target.value)} placeholder="300" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 pt-4">
-                      <Label className="text-base font-semibold">Controlli tecnici</Label>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v)} />
-                          <Label htmlFor="square">Squadrato</Label>
-                        </div>
-                        {!form.is_square && (
-                          <div className="ml-8 space-y-2">
-                            <Label>Fuori squadro (mm)</Label>
-                            <Input type="number" value={form.out_of_square_mm} onChange={e => update('out_of_square_mm', e.target.value)} placeholder="5" />
-                          </div>
-                        )}
-                        <div className="flex items-center gap-3">
-                          <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} />
-                          <Label htmlFor="plumb">A piombo</Label>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v)} />
-                          <Label htmlFor="level">Livellato</Label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 pt-4">
-                      <div className="space-y-2">
-                        <Label>Spazio interno (mm)</Label>
-                        <Input type="number" value={form.internal_space_mm} onChange={e => update('internal_space_mm', e.target.value)} placeholder="100" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Spazio esterno (mm)</Label>
-                        <Input type="number" value={form.external_space_mm} onChange={e => update('external_space_mm', e.target.value)} placeholder="50" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 4: Configuration */}
-                {step === 4 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Configurazione</CardTitle>
-                    <CardDescription>Definisci la configurazione dell'infisso</CardDescription>
-                    <div className="space-y-2">
-                      <Label>Numero ante</Label>
-                      <Select value={form.num_panels} onValueChange={v => update('num_panels', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 anta</SelectItem>
-                          <SelectItem value="2">2 ante</SelectItem>
-                          <SelectItem value="3">3 ante</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tipologia apertura</Label>
-                      <Select value={form.panel_type} onValueChange={v => update('panel_type', v)}>
-                        <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="battente">Battente</SelectItem>
-                          <SelectItem value="anta_ribalta">Anta-Ribalta</SelectItem>
-                          <SelectItem value="vasistas">Vasistas</SelectItem>
-                          <SelectItem value="scorrevole">Scorrevole</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Direzione apertura</Label>
-                      <RadioGroup value={form.opening_direction} onValueChange={v => update('opening_direction', v)} className="flex gap-4">
-                        <Label htmlFor="dir-dx" className="flex items-center gap-2 cursor-pointer">
-                          <RadioGroupItem value="destra" id="dir-dx" /> Destra
-                        </Label>
-                        <Label htmlFor="dir-sx" className="flex items-center gap-2 cursor-pointer">
-                          <RadioGroupItem value="sinistra" id="dir-sx" /> Sinistra
-                        </Label>
-                      </RadioGroup>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tipo telaio</Label>
-                      <Select value={form.frame_type} onValueChange={v => update('frame_type', v)}>
-                        <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="standard">Standard</SelectItem>
-                          <SelectItem value="ridotto">Ridotto</SelectItem>
-                          <SelectItem value="maggiorato">Maggiorato</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 5: Finishes */}
-                {step === 5 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Finiture</CardTitle>
-                    <CardDescription>Materiale, colori e maniglie</CardDescription>
-                    <div className="space-y-2">
-                      <Label>Materiale</Label>
-                      <RadioGroup value={form.material} onValueChange={v => update('material', v)} className="flex flex-wrap gap-3">
-                        {[
-                          { value: 'pvc', label: 'PVC' },
-                          { value: 'alluminio', label: 'Alluminio' },
-                          { value: 'legno', label: 'Legno' },
-                        ].map(opt => (
-                          <Label
-                            key={opt.value}
-                            htmlFor={`mat-${opt.value}`}
-                            className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 transition-all ${
-                              form.material === opt.value ? 'border-accent bg-accent/10' : 'border-border'
-                            }`}
-                          >
-                            <RadioGroupItem value={opt.value} id={`mat-${opt.value}`} />
-                            {opt.label}
-                          </Label>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <ColorSelectField label="Colore interno" value={form.color_internal} field="color_internal" />
-                      <ColorSelectField label="Colore esterno" value={form.color_external} field="color_external" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tipo maniglia</Label>
-                      <Select value={form.handle_type} onValueChange={v => update('handle_type', v)}>
-                        <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="standard">Standard</SelectItem>
-                          <SelectItem value="design">Design</SelectItem>
-                          <SelectItem value="con_chiave">Con chiave</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 6: Glass */}
-                {step === 6 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Vetro</CardTitle>
-                    <CardDescription>Seleziona la tipologia di vetro</CardDescription>
-                    <RadioGroup value={form.glass_type} onValueChange={v => update('glass_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {[
-                        { value: 'doppio', label: 'Doppio vetro' },
-                        { value: 'triplo', label: 'Triplo vetro' },
-                        { value: 'basso_emissivo', label: 'Basso emissivo' },
-                        { value: 'antisfondamento', label: 'Antisfondamento' },
-                        { value: 'satinato', label: 'Satinato' },
-                        { value: 'selettivo', label: 'Selettivo' },
-                      ].map(opt => (
-                        <Label
-                          key={opt.value}
-                          htmlFor={`glass-${opt.value}`}
-                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                            form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'
-                          }`}
-                        >
-                          <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
-                          {opt.label}
-                        </Label>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                )}
-
-                {/* Step 7: Accessories */}
-                {step === 7 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Accessori</CardTitle>
-                    <CardDescription>Seleziona gli accessori e configurali</CardDescription>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="has_mosquito_net" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_mosquito_net ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                          <Checkbox id="has_mosquito_net" checked={form.has_mosquito_net} onCheckedChange={v => update('has_mosquito_net', v)} />
-                          <span className="text-lg">🦟 Zanzariera</span>
-                        </Label>
-                        {form.has_mosquito_net && <AccessoryConfig type="mosquito_net" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
-                      </div>
-                      <div>
-                        <Label htmlFor="has_shutter" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_shutter ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                          <Checkbox id="has_shutter" checked={form.has_shutter} onCheckedChange={v => update('has_shutter', v)} />
-                          <span className="text-lg">🪟 Tapparella</span>
-                        </Label>
-                        {form.has_shutter && <AccessoryConfig type="shutter" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
-                      </div>
-                      <div>
-                        <Label htmlFor="has_box" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_box ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                          <Checkbox id="has_box" checked={form.has_box} onCheckedChange={v => update('has_box', v)} />
-                          <span className="text-lg">📦 Cassonetto</span>
-                        </Label>
-                        {form.has_box && <AccessoryConfig type="box" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
-                      </div>
-                      <div>
-                        <Label htmlFor="has_motorization" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_motorization ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                          <Checkbox id="has_motorization" checked={form.has_motorization} onCheckedChange={v => update('has_motorization', v)} />
-                          <span className="text-lg">⚡ Motorizzazione</span>
-                        </Label>
-                        {form.has_motorization && <AccessoryConfig type="motorization" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 8: Installation + Delivery */}
-                {step === 8 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Installazione</CardTitle>
-                    <CardDescription>Dettagli sulla posa in opera e tempi di consegna</CardDescription>
-                    <div className="space-y-2">
-                      <Label>Tipo fornitura</Label>
-                      <RadioGroup value={form.installation_type} onValueChange={v => update('installation_type', v)} className="space-y-3">
-                        <Label htmlFor="inst-fornitura" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.installation_type === 'solo_fornitura' ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                          <RadioGroupItem value="solo_fornitura" id="inst-fornitura" />
-                          Solo fornitura
-                        </Label>
-                        <Label htmlFor="inst-installazione" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.installation_type === 'con_installazione' ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                          <RadioGroupItem value="con_installazione" id="inst-installazione" />
-                          Con installazione
-                        </Label>
-                      </RadioGroup>
-                    </div>
-                    {form.installation_type === 'con_installazione' && (
-                      <>
-                        <div className="space-y-2">
-                          <Label>Tipo posa</Label>
-                          <RadioGroup value={form.laying_type} onValueChange={v => update('laying_type', v)} className="flex gap-4">
-                            <Label htmlFor="lay-std" className="flex items-center gap-2 cursor-pointer">
-                              <RadioGroupItem value="standard" id="lay-std" /> Standard
-                            </Label>
-                            <Label htmlFor="lay-cert" className="flex items-center gap-2 cursor-pointer">
-                              <RadioGroupItem value="certificata" id="lay-cert" /> Certificata
-                            </Label>
-                          </RadioGroup>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Checkbox id="remove-old" checked={form.remove_old} onCheckedChange={v => update('remove_old', v)} />
-                          <Label htmlFor="remove-old">Rimozione vecchio infisso</Label>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Delivery timing */}
-                    <div className="space-y-3 pt-4 border-t border-border">
-                      <div className="flex items-center gap-2">
-                        <Truck className="h-5 w-5 text-accent" />
-                        <Label className="text-base font-semibold">Tempi di consegna / installazione</Label>
-                      </div>
-                      <RadioGroup value={form.delivery_time} onValueChange={v => update('delivery_time', v)} className="space-y-3">
-                        {DELIVERY_OPTIONS.map(opt => (
-                          <Label
-                            key={opt.value}
-                            htmlFor={`del-${opt.value}`}
-                            className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${
-                              form.delivery_time === opt.value ? 'border-accent bg-accent/10' : 'border-border'
-                            }`}
-                          >
-                            <RadioGroupItem value={opt.value} id={`del-${opt.value}`} className="mt-0.5" />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-foreground">{opt.label}</span>
-                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                  opt.value === 'express' ? 'bg-destructive/10 text-destructive' :
-                                  opt.value === 'economy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                  'bg-muted text-muted-foreground'
-                                }`}>
-                                  {opt.surcharge}
-                                </span>
-                              </div>
-                              <p className="text-sm text-muted-foreground">{opt.desc}</p>
-                              {opt.standard_only && (
-                                <p className="text-xs text-accent mt-1 flex items-center gap-1">
-                                  <Clock className="h-3 w-3" /> Disponibile solo per misure e colori standard
-                                </p>
-                              )}
-                            </div>
-                          </Label>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 9: Notes & Photos */}
-                {step === 9 && (
-                  <div className="space-y-4">
-                    <CardTitle className="font-heading">Note e Foto</CardTitle>
-                    <CardDescription>Aggiungi note tecniche e foto del rilievo</CardDescription>
-                    <div className="space-y-2">
-                      <Label>Note tecniche</Label>
-                      <Textarea
-                        value={form.notes}
-                        onChange={e => update('notes', e.target.value)}
-                        placeholder="Eventuali problematiche, dettagli aggiuntivi, richieste particolari..."
-                        rows={4}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Foto del rilievo</Label>
-                      <div className="rounded-lg border-2 border-dashed border-border p-6 text-center">
-                        <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground mb-3">Carica foto esterna, interna, dettagli misure</p>
-                        <input type="file" accept="image/*" multiple onChange={handlePhotoChange} className="hidden" id="photo-upload" />
-                        <Button variant="outline" asChild>
-                          <label htmlFor="photo-upload" className="cursor-pointer">Seleziona foto</label>
-                        </Button>
-                      </div>
-                      {photoFiles.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {photoFiles.map((f, i) => (
-                            <div key={i} className="flex items-center gap-2 rounded-md bg-muted px-3 py-1 text-sm">
-                              📷 {f.name}
-                              <button onClick={() => setPhotoFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground">✕</button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
-                      <p className="text-sm text-foreground font-medium mb-1">💡 Devi caricare le foto da un altro dispositivo?</p>
-                      <p className="text-sm text-muted-foreground">
-                        Salva come bozza e potrai aggiungere le foto in seguito dal telefono o da un altro computer.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+        {/* Diagram ABOVE the form (stacked layout) */}
+        {showDiagram && !showDualDiagram && (
+          <div className="mb-6">
+            <DiagramWithZoom />
           </div>
-        </div>
+        )}
+
+        {/* Dual diagram for finishes step */}
+        {showDualDiagram && (
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <DiagramWithZoom view="external" />
+            <DiagramWithZoom view="internal" />
+          </div>
+        )}
+
+        <Card className="animate-fade-in">
+          <CardContent className="py-6">
+            {/* Step 0: Product type */}
+            {step === 0 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Seleziona il prodotto</CardTitle>
+                <CardDescription>Che tipo di prodotto devi misurare?</CardDescription>
+                <RadioGroup value={form.product_type} onValueChange={v => update('product_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {[
+                    { value: 'finestra', label: '🪟 Finestra' },
+                    { value: 'porta_finestra', label: '🚪 Porta Finestra' },
+                    { value: 'basculante', label: '🏗️ Basculante' },
+                    { value: 'zanzariera', label: '🦟 Zanzariera' },
+                    { value: 'persiana', label: '🪵 Persiana' },
+                  ].map(opt => (
+                    <Label
+                      key={opt.value}
+                      htmlFor={opt.value}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
+                        form.product_type === opt.value
+                          ? 'border-accent bg-accent/10'
+                          : 'border-border hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <RadioGroupItem value={opt.value} id={opt.value} />
+                      <span className="text-lg">{opt.label}</span>
+                    </Label>
+                  ))}
+                </RadioGroup>
+              </div>
+            )}
+
+            {/* Step 1: Client info */}
+            {step === 1 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Dati cliente</CardTitle>
+                <CardDescription>A chi è destinato il prodotto?</CardDescription>
+                <div className="space-y-2">
+                  <Label>Nome / Riferimento Cliente</Label>
+                  <Input value={form.client_name} onChange={e => update('client_name', e.target.value)} placeholder="Mario Rossi" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Indirizzo installazione</Label>
+                  <Input value={form.client_address} onChange={e => update('client_address', e.target.value)} placeholder="Via Roma 1, Milano" />
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Survey type */}
+            {step === 2 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Tipo di rilievo</CardTitle>
+                <CardDescription>Come sono state prese le misure?</CardDescription>
+                <RadioGroup value={form.survey_type} onValueChange={v => update('survey_type', v)} className="space-y-3">
+                  {[
+                    { value: 'foro_muro', label: 'Foro muro (grezzo)', desc: 'Misurazione del buco nel muro' },
+                    { value: 'luce_netta', label: 'Luce netta', desc: "Misurazione dell'apertura finita" },
+                    { value: 'controtelaio', label: 'Controtelaio', desc: 'Misurazione del controtelaio esistente' },
+                    { value: 'vecchio_infisso', label: 'Vecchio infisso', desc: "Misurazione dell'infisso da sostituire" },
+                  ].map(opt => (
+                    <Label
+                      key={opt.value}
+                      htmlFor={`survey-${opt.value}`}
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${
+                        form.survey_type === opt.value
+                          ? 'border-accent bg-accent/10'
+                          : 'border-border hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <RadioGroupItem value={opt.value} id={`survey-${opt.value}`} className="mt-0.5" />
+                      <div>
+                        <span className="font-medium text-foreground">{opt.label}</span>
+                        <p className="text-sm text-muted-foreground">{opt.desc}</p>
+                      </div>
+                    </Label>
+                  ))}
+                </RadioGroup>
+              </div>
+            )}
+
+            {/* Step 3: Dimensions */}
+            {step === 3 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Misure (in mm)</CardTitle>
+                <CardDescription>Inserisci le dimensioni rilevate</CardDescription>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Larghezza (mm) *</Label>
+                    <Input type="number" value={form.width_mm} onChange={e => update('width_mm', e.target.value)} placeholder="1200" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Altezza (mm) *</Label>
+                    <Input type="number" value={form.height_mm} onChange={e => update('height_mm', e.target.value)} placeholder="1400" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Profondità muro (mm)</Label>
+                    <Input type="number" value={form.depth_mm} onChange={e => update('depth_mm', e.target.value)} placeholder="300" />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-4">
+                  <Label className="text-base font-semibold">Controlli tecnici</Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v)} />
+                      <Label htmlFor="square">Squadrato</Label>
+                    </div>
+                    {!form.is_square && (
+                      <div className="ml-8 space-y-2">
+                        <Label>Fuori squadro (mm)</Label>
+                        <Input type="number" value={form.out_of_square_mm} onChange={e => update('out_of_square_mm', e.target.value)} placeholder="5" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} />
+                      <Label htmlFor="plumb">A piombo</Label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v)} />
+                      <Label htmlFor="level">Livellato</Label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                  <div className="space-y-2">
+                    <Label>Spazio interno (mm)</Label>
+                    <Input type="number" value={form.internal_space_mm} onChange={e => update('internal_space_mm', e.target.value)} placeholder="100" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Spazio esterno (mm)</Label>
+                    <Input type="number" value={form.external_space_mm} onChange={e => update('external_space_mm', e.target.value)} placeholder="50" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Configuration */}
+            {step === 4 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Configurazione</CardTitle>
+                <CardDescription>Definisci la configurazione dell'infisso</CardDescription>
+                <div className="space-y-2">
+                  <Label>Numero ante</Label>
+                  <Select value={form.num_panels} onValueChange={v => update('num_panels', v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 anta</SelectItem>
+                      <SelectItem value="2">2 ante</SelectItem>
+                      <SelectItem value="3">3 ante</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipologia apertura</Label>
+                  <Select value={form.panel_type} onValueChange={v => update('panel_type', v)}>
+                    <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="battente">Battente</SelectItem>
+                      <SelectItem value="anta_ribalta">Anta-Ribalta</SelectItem>
+                      <SelectItem value="vasistas">Vasistas</SelectItem>
+                      <SelectItem value="scorrevole">Scorrevole</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Direzione apertura</Label>
+                  <RadioGroup value={form.opening_direction} onValueChange={v => update('opening_direction', v)} className="flex gap-4">
+                    <Label htmlFor="dir-dx" className="flex items-center gap-2 cursor-pointer">
+                      <RadioGroupItem value="destra" id="dir-dx" /> Destra
+                    </Label>
+                    <Label htmlFor="dir-sx" className="flex items-center gap-2 cursor-pointer">
+                      <RadioGroupItem value="sinistra" id="dir-sx" /> Sinistra
+                    </Label>
+                  </RadioGroup>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo telaio</Label>
+                  <Select value={form.frame_type} onValueChange={v => update('frame_type', v)}>
+                    <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="ridotto">Ridotto</SelectItem>
+                      <SelectItem value="maggiorato">Maggiorato</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Finishes */}
+            {step === 5 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Finiture</CardTitle>
+                <CardDescription>Materiale, colori e maniglie</CardDescription>
+                <div className="space-y-2">
+                  <Label>Materiale</Label>
+                  <RadioGroup value={form.material} onValueChange={v => update('material', v)} className="flex flex-wrap gap-3">
+                    {[
+                      { value: 'pvc', label: 'PVC' },
+                      { value: 'alluminio', label: 'Alluminio' },
+                      { value: 'legno', label: 'Legno' },
+                    ].map(opt => (
+                      <Label
+                        key={opt.value}
+                        htmlFor={`mat-${opt.value}`}
+                        className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 transition-all ${
+                          form.material === opt.value ? 'border-accent bg-accent/10' : 'border-border'
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} id={`mat-${opt.value}`} />
+                        {opt.label}
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <ColorSelectField label="Colore interno" value={form.color_internal} field="color_internal" />
+                  <ColorSelectField label="Colore esterno" value={form.color_external} field="color_external" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo maniglia</Label>
+                  <Select value={form.handle_type} onValueChange={v => update('handle_type', v)}>
+                    <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="design">Design</SelectItem>
+                      <SelectItem value="con_chiave">Con chiave</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Glass */}
+            {step === 6 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Vetro</CardTitle>
+                <CardDescription>Seleziona la tipologia di vetro</CardDescription>
+                <RadioGroup value={form.glass_type} onValueChange={v => update('glass_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {[
+                    { value: 'doppio', label: 'Doppio vetro' },
+                    { value: 'triplo', label: 'Triplo vetro' },
+                    { value: 'basso_emissivo', label: 'Basso emissivo' },
+                    { value: 'antisfondamento', label: 'Antisfondamento' },
+                    { value: 'satinato', label: 'Satinato' },
+                    { value: 'selettivo', label: 'Selettivo' },
+                  ].map(opt => (
+                    <Label
+                      key={opt.value}
+                      htmlFor={`glass-${opt.value}`}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
+                        form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'
+                      }`}
+                    >
+                      <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
+                      {opt.label}
+                    </Label>
+                  ))}
+                </RadioGroup>
+              </div>
+            )}
+
+            {/* Step 7: Accessories - NO window diagram, only accessory diagrams */}
+            {step === 7 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Accessori</CardTitle>
+                <CardDescription>Seleziona gli accessori e configurali</CardDescription>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="has_mosquito_net" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_mosquito_net ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                      <Checkbox id="has_mosquito_net" checked={form.has_mosquito_net} onCheckedChange={v => update('has_mosquito_net', v)} />
+                      <span className="text-lg">🦟 Zanzariera</span>
+                    </Label>
+                    {form.has_mosquito_net && <AccessoryConfig type="mosquito_net" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                  </div>
+                  <div>
+                    <Label htmlFor="has_shutter" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_shutter ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                      <Checkbox id="has_shutter" checked={form.has_shutter} onCheckedChange={v => update('has_shutter', v)} />
+                      <span className="text-lg">🪟 Tapparella</span>
+                    </Label>
+                    {form.has_shutter && <AccessoryConfig type="shutter" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                  </div>
+                  <div>
+                    <Label htmlFor="has_box" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_box ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                      <Checkbox id="has_box" checked={form.has_box} onCheckedChange={v => update('has_box', v)} />
+                      <span className="text-lg">📦 Cassonetto</span>
+                    </Label>
+                    {form.has_box && <AccessoryConfig type="box" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                  </div>
+                  <div>
+                    <Label htmlFor="has_motorization" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_motorization ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                      <Checkbox id="has_motorization" checked={form.has_motorization} onCheckedChange={v => update('has_motorization', v)} />
+                      <span className="text-lg">⚡ Motorizzazione</span>
+                    </Label>
+                    {form.has_motorization && <AccessoryConfig type="motorization" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 8: Installation + Delivery */}
+            {step === 8 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Installazione</CardTitle>
+                <CardDescription>Dettagli sulla posa in opera e tempi di consegna</CardDescription>
+                <div className="space-y-2">
+                  <Label>Tipo fornitura</Label>
+                  <RadioGroup value={form.installation_type} onValueChange={v => update('installation_type', v)} className="space-y-3">
+                    <Label htmlFor="inst-fornitura" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.installation_type === 'solo_fornitura' ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                      <RadioGroupItem value="solo_fornitura" id="inst-fornitura" />
+                      Solo fornitura
+                    </Label>
+                    <Label htmlFor="inst-installazione" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.installation_type === 'con_installazione' ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                      <RadioGroupItem value="con_installazione" id="inst-installazione" />
+                      Con installazione
+                    </Label>
+                  </RadioGroup>
+                </div>
+                {form.installation_type === 'con_installazione' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Tipo posa</Label>
+                      <RadioGroup value={form.laying_type} onValueChange={v => update('laying_type', v)} className="flex gap-4">
+                        <Label htmlFor="lay-std" className="flex items-center gap-2 cursor-pointer">
+                          <RadioGroupItem value="standard" id="lay-std" /> Standard
+                        </Label>
+                        <Label htmlFor="lay-cert" className="flex items-center gap-2 cursor-pointer">
+                          <RadioGroupItem value="certificata" id="lay-cert" /> Certificata
+                        </Label>
+                      </RadioGroup>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Checkbox id="remove-old" checked={form.remove_old} onCheckedChange={v => update('remove_old', v)} />
+                      <Label htmlFor="remove-old">Rimozione vecchio infisso</Label>
+                    </div>
+                  </>
+                )}
+
+                {/* Delivery timing */}
+                <div className="space-y-3 pt-4 border-t border-border">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-accent" />
+                    <Label className="text-base font-semibold">Tempi di consegna / installazione</Label>
+                  </div>
+                  <RadioGroup value={form.delivery_time} onValueChange={v => update('delivery_time', v)} className="space-y-3">
+                    {DELIVERY_OPTIONS.map(opt => (
+                      <Label
+                        key={opt.value}
+                        htmlFor={`del-${opt.value}`}
+                        className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${
+                          form.delivery_time === opt.value ? 'border-accent bg-accent/10' : 'border-border'
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} id={`del-${opt.value}`} className="mt-0.5" />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-foreground">{opt.label}</span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              opt.value === 'express' ? 'bg-destructive/10 text-destructive' :
+                              opt.value === 'economy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              {opt.surcharge}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{opt.desc}</p>
+                          {opt.standard_only && (
+                            <p className="text-xs text-accent mt-1 flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> Disponibile solo per misure e colori standard
+                            </p>
+                          )}
+                        </div>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </div>
+            )}
+
+            {/* Step 9: Notes & Photos */}
+            {step === 9 && (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Note e Foto</CardTitle>
+                <CardDescription>Aggiungi note tecniche e foto del rilievo</CardDescription>
+                <div className="space-y-2">
+                  <Label>Note tecniche</Label>
+                  <Textarea
+                    value={form.notes}
+                    onChange={e => update('notes', e.target.value)}
+                    placeholder="Eventuali problematiche, dettagli aggiuntivi, richieste particolari..."
+                    rows={4}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Foto del rilievo</Label>
+                  <div className="rounded-lg border-2 border-dashed border-border p-6 text-center">
+                    <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-3">Carica foto esterna, interna, dettagli misure</p>
+                    <input type="file" accept="image/*" multiple onChange={handlePhotoChange} className="hidden" id="photo-upload" />
+                    <Button variant="outline" asChild>
+                      <label htmlFor="photo-upload" className="cursor-pointer">Seleziona foto</label>
+                    </Button>
+                  </div>
+                  {photoFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {photoFiles.map((f, i) => (
+                        <div key={i} className="flex items-center gap-2 rounded-md bg-muted px-3 py-1 text-sm">
+                          📷 {f.name}
+                          <button onClick={() => setPhotoFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
+                  <p className="text-sm text-foreground font-medium mb-1">💡 Devi caricare le foto da un altro dispositivo?</p>
+                  <p className="text-sm text-muted-foreground">
+                    Salva come bozza e potrai aggiungere le foto in seguito dal telefono o da un altro computer.
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Navigation */}
         <div className="mt-6 flex flex-wrap justify-between gap-3">

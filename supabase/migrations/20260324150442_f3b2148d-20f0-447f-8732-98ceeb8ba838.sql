@@ -1,0 +1,2 @@
+ALTER TABLE public.measurements DROP CONSTRAINT measurements_status_check;
+ALTER TABLE public.measurements ADD CONSTRAINT measurements_status_check CHECK (status = ANY (ARRAY['bozza'::text, 'ricevuto'::text, 'submitted'::text, 'in_review'::text, 'quoted'::text, 'ordered'::text, 'completed'::text]));

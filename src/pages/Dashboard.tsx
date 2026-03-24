@@ -5,9 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, LogOut, Ruler, Clock, CheckCircle, FileText, Package } from 'lucide-react';
+import { Plus, LogOut, Ruler, Clock, CheckCircle, FileText, Package, Send, Edit3 } from 'lucide-react';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  bozza: { label: 'Bozza', variant: 'outline' },
+  ricevuto: { label: 'Inviata', variant: 'default' },
   submitted: { label: 'Inviata', variant: 'default' },
   in_review: { label: 'In revisione', variant: 'secondary' },
   quoted: { label: 'Preventivata', variant: 'outline' },
@@ -49,7 +51,8 @@ export default function Dashboard() {
 
   const stats = {
     total: measurements.length,
-    pending: measurements.filter(m => m.status === 'submitted' || m.status === 'in_review').length,
+    drafts: measurements.filter(m => m.status === 'bozza').length,
+    sent: measurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted' || m.status === 'in_review').length,
     quoted: measurements.filter(m => m.status === 'quoted').length,
     completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
   };
@@ -84,9 +87,10 @@ export default function Dashboard() {
 
       <main className="container py-8">
         {/* Stats */}
-        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
           <StatCard icon={FileText} label="Totale" value={stats.total} />
-          <StatCard icon={Clock} label="In attesa" value={stats.pending} />
+          <StatCard icon={Edit3} label="Bozze" value={stats.drafts} />
+          <StatCard icon={Send} label="Inviate" value={stats.sent} />
           <StatCard icon={Package} label="Preventivate" value={stats.quoted} />
           <StatCard icon={CheckCircle} label="Completate" value={stats.completed} />
         </div>
