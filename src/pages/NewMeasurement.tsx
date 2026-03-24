@@ -11,8 +11,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save } from 'lucide-react';
-import ProductDiagram from '@/components/ProductDiagram';
+import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck } from 'lucide-react';
+import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import AccessoryConfig, { type AccessoriesConfig } from '@/components/AccessoryConfig';
 
 const STEPS = [
@@ -26,6 +26,12 @@ const STEPS = [
   { id: 'accessories', label: 'Accessori' },
   { id: 'installation', label: 'Installazione' },
   { id: 'notes', label: 'Note & Foto' },
+];
+
+const DELIVERY_OPTIONS = [
+  { value: 'express', label: '🚀 Express (2-3 settimane)', desc: 'Consegna rapida per misure e colori standard', surcharge: '+25%', standard_only: true },
+  { value: 'standard', label: '📦 Standard (4-6 settimane)', desc: 'Tempi normali di produzione', surcharge: 'Prezzo base', standard_only: false },
+  { value: 'economy', label: '📅 Programmata (8-10 settimane)', desc: 'Consegna programmata a lungo termine', surcharge: '-10%', standard_only: false },
 ];
 
 const initialForm = {
@@ -58,6 +64,7 @@ const initialForm = {
   installation_type: '',
   laying_type: '',
   remove_old: false,
+  delivery_time: '',
   notes: '',
 };
 
@@ -84,6 +91,13 @@ export default function NewMeasurement() {
       case 3: return !!form.width_mm && !!form.height_mm;
       default: return true;
     }
+  };
+
+  const getDraftName = () => {
+    const parts = [];
+    if (form.client_address) parts.push(form.client_address);
+    if (form.client_name) parts.push(form.client_name);
+    return parts.length > 0 ? `${parts.join('; ')} - Bozza Salvata` : 'Bozza Salvata';
   };
 
   const buildInsertData = (status: string, photo_urls: string[] = []) => ({
@@ -128,7 +142,7 @@ export default function NewMeasurement() {
     try {
       const { error } = await supabase.from('measurements').insert(buildInsertData('bozza'));
       if (error) throw error;
-      toast.success('Bozza salvata! Puoi aggiungere le foto in seguito.');
+      toast.success(getDraftName(), { description: 'Puoi aggiungere le foto in seguito.' });
       navigate('/dashboard');
     } catch (err: any) {
       toast.error(err.message || 'Errore durante il salvataggio');
@@ -166,8 +180,31 @@ export default function NewMeasurement() {
     }
   };
 
-  // Show diagram on dimension/config/glass steps when product is selected
-  const showDiagram = step >= 3 && step <= 6 && !!form.product_type;
+  const showDiagram = step >= 3 && step <= 7 && !!form.product_type;
+
+  const ColorSelectField = ({ label, value, field }: { label: string; value: string; field: string }) => (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Select value={value} onValueChange={v => update(field, v)}>
+        <SelectTrigger>
+          <div className="flex items-center gap-2">
+            {value && <div className="w-4 h-4 rounded-full border border-border" style={{ backgroundColor: COLOR_OPTIONS.find(c => c.value === value)?.hex }} />}
+            <SelectValue placeholder="Seleziona colore..." />
+          </div>
+        </SelectTrigger>
+        <SelectContent>
+          {COLOR_OPTIONS.map(c => (
+            <SelectItem key={c.value} value={c.value}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full border border-border" style={{ backgroundColor: c.hex }} />
+                {c.label}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -201,7 +238,6 @@ export default function NewMeasurement() {
         </div>
 
         <div className={`${showDiagram ? 'grid grid-cols-1 lg:grid-cols-5 gap-6' : ''}`}>
-          {/* Diagram sidebar */}
           {showDiagram && (
             <div className="lg:col-span-2">
               <Card>
@@ -219,6 +255,11 @@ export default function NewMeasurement() {
                     openingDirection={form.opening_direction}
                     handleType={form.handle_type}
                     glassType={form.glass_type}
+                    frameType={form.frame_type}
+                    colorInternal={form.color_internal}
+                    colorExternal={form.color_external}
+                    internalSpaceMm={form.internal_space_mm}
+                    externalSpaceMm={form.external_space_mm}
                   />
                   <p className="text-xs text-center text-muted-foreground mt-2">Immagine a solo scopo illustrativo</p>
                 </CardContent>
@@ -444,14 +485,8 @@ export default function NewMeasurement() {
                       </RadioGroup>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Colore interno</Label>
-                        <Input value={form.color_internal} onChange={e => update('color_internal', e.target.value)} placeholder="Bianco RAL 9010" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Colore esterno</Label>
-                        <Input value={form.color_external} onChange={e => update('color_external', e.target.value)} placeholder="Grigio antracite" />
-                      </div>
+                      <ColorSelectField label="Colore interno" value={form.color_internal} field="color_internal" />
+                      <ColorSelectField label="Colore esterno" value={form.color_external} field="color_external" />
                     </div>
                     <div className="space-y-2">
                       <Label>Tipo maniglia</Label>
@@ -496,96 +531,57 @@ export default function NewMeasurement() {
                   </div>
                 )}
 
-                {/* Step 7: Accessories with sub-config */}
+                {/* Step 7: Accessories */}
                 {step === 7 && (
                   <div className="space-y-4">
                     <CardTitle className="font-heading">Accessori</CardTitle>
                     <CardDescription>Seleziona gli accessori e configurali</CardDescription>
                     <div className="space-y-3">
-                      {/* Mosquito net */}
                       <div>
-                        <Label
-                          htmlFor="has_mosquito_net"
-                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                            form.has_mosquito_net ? 'border-accent bg-accent/10' : 'border-border'
-                          }`}
-                        >
+                        <Label htmlFor="has_mosquito_net" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_mosquito_net ? 'border-accent bg-accent/10' : 'border-border'}`}>
                           <Checkbox id="has_mosquito_net" checked={form.has_mosquito_net} onCheckedChange={v => update('has_mosquito_net', v)} />
                           <span className="text-lg">🦟 Zanzariera</span>
                         </Label>
-                        {form.has_mosquito_net && (
-                          <AccessoryConfig type="mosquito_net" config={accessoriesConfig} onChange={setAccessoriesConfig} />
-                        )}
+                        {form.has_mosquito_net && <AccessoryConfig type="mosquito_net" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
                       </div>
-
-                      {/* Shutter */}
                       <div>
-                        <Label
-                          htmlFor="has_shutter"
-                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                            form.has_shutter ? 'border-accent bg-accent/10' : 'border-border'
-                          }`}
-                        >
+                        <Label htmlFor="has_shutter" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_shutter ? 'border-accent bg-accent/10' : 'border-border'}`}>
                           <Checkbox id="has_shutter" checked={form.has_shutter} onCheckedChange={v => update('has_shutter', v)} />
                           <span className="text-lg">🪟 Tapparella</span>
                         </Label>
-                        {form.has_shutter && (
-                          <AccessoryConfig type="shutter" config={accessoriesConfig} onChange={setAccessoriesConfig} />
-                        )}
+                        {form.has_shutter && <AccessoryConfig type="shutter" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
                       </div>
-
-                      {/* Box */}
                       <div>
-                        <Label
-                          htmlFor="has_box"
-                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                            form.has_box ? 'border-accent bg-accent/10' : 'border-border'
-                          }`}
-                        >
+                        <Label htmlFor="has_box" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_box ? 'border-accent bg-accent/10' : 'border-border'}`}>
                           <Checkbox id="has_box" checked={form.has_box} onCheckedChange={v => update('has_box', v)} />
                           <span className="text-lg">📦 Cassonetto</span>
                         </Label>
-                        {form.has_box && (
-                          <AccessoryConfig type="box" config={accessoriesConfig} onChange={setAccessoriesConfig} />
-                        )}
+                        {form.has_box && <AccessoryConfig type="box" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
                       </div>
-
-                      {/* Motorization */}
                       <div>
-                        <Label
-                          htmlFor="has_motorization"
-                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                            form.has_motorization ? 'border-accent bg-accent/10' : 'border-border'
-                          }`}
-                        >
+                        <Label htmlFor="has_motorization" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_motorization ? 'border-accent bg-accent/10' : 'border-border'}`}>
                           <Checkbox id="has_motorization" checked={form.has_motorization} onCheckedChange={v => update('has_motorization', v)} />
                           <span className="text-lg">⚡ Motorizzazione</span>
                         </Label>
-                        {form.has_motorization && (
-                          <AccessoryConfig type="motorization" config={accessoriesConfig} onChange={setAccessoriesConfig} />
-                        )}
+                        {form.has_motorization && <AccessoryConfig type="motorization" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Step 8: Installation */}
+                {/* Step 8: Installation + Delivery */}
                 {step === 8 && (
                   <div className="space-y-4">
                     <CardTitle className="font-heading">Installazione</CardTitle>
-                    <CardDescription>Dettagli sulla posa in opera</CardDescription>
+                    <CardDescription>Dettagli sulla posa in opera e tempi di consegna</CardDescription>
                     <div className="space-y-2">
                       <Label>Tipo fornitura</Label>
                       <RadioGroup value={form.installation_type} onValueChange={v => update('installation_type', v)} className="space-y-3">
-                        <Label htmlFor="inst-fornitura" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                          form.installation_type === 'solo_fornitura' ? 'border-accent bg-accent/10' : 'border-border'
-                        }`}>
+                        <Label htmlFor="inst-fornitura" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.installation_type === 'solo_fornitura' ? 'border-accent bg-accent/10' : 'border-border'}`}>
                           <RadioGroupItem value="solo_fornitura" id="inst-fornitura" />
                           Solo fornitura
                         </Label>
-                        <Label htmlFor="inst-installazione" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                          form.installation_type === 'con_installazione' ? 'border-accent bg-accent/10' : 'border-border'
-                        }`}>
+                        <Label htmlFor="inst-installazione" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.installation_type === 'con_installazione' ? 'border-accent bg-accent/10' : 'border-border'}`}>
                           <RadioGroupItem value="con_installazione" id="inst-installazione" />
                           Con installazione
                         </Label>
@@ -610,6 +606,45 @@ export default function NewMeasurement() {
                         </div>
                       </>
                     )}
+
+                    {/* Delivery timing */}
+                    <div className="space-y-3 pt-4 border-t border-border">
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-5 w-5 text-accent" />
+                        <Label className="text-base font-semibold">Tempi di consegna / installazione</Label>
+                      </div>
+                      <RadioGroup value={form.delivery_time} onValueChange={v => update('delivery_time', v)} className="space-y-3">
+                        {DELIVERY_OPTIONS.map(opt => (
+                          <Label
+                            key={opt.value}
+                            htmlFor={`del-${opt.value}`}
+                            className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${
+                              form.delivery_time === opt.value ? 'border-accent bg-accent/10' : 'border-border'
+                            }`}
+                          >
+                            <RadioGroupItem value={opt.value} id={`del-${opt.value}`} className="mt-0.5" />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-foreground">{opt.label}</span>
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                  opt.value === 'express' ? 'bg-destructive/10 text-destructive' :
+                                  opt.value === 'economy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                  'bg-muted text-muted-foreground'
+                                }`}>
+                                  {opt.surcharge}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{opt.desc}</p>
+                              {opt.standard_only && (
+                                <p className="text-xs text-accent mt-1 flex items-center gap-1">
+                                  <Clock className="h-3 w-3" /> Disponibile solo per misure e colori standard
+                                </p>
+                              )}
+                            </div>
+                          </Label>
+                        ))}
+                      </RadioGroup>
+                    </div>
                   </div>
                 )}
 
@@ -632,14 +667,7 @@ export default function NewMeasurement() {
                       <div className="rounded-lg border-2 border-dashed border-border p-6 text-center">
                         <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground mb-3">Carica foto esterna, interna, dettagli misure</p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handlePhotoChange}
-                          className="hidden"
-                          id="photo-upload"
-                        />
+                        <input type="file" accept="image/*" multiple onChange={handlePhotoChange} className="hidden" id="photo-upload" />
                         <Button variant="outline" asChild>
                           <label htmlFor="photo-upload" className="cursor-pointer">Seleziona foto</label>
                         </Button>
@@ -656,7 +684,6 @@ export default function NewMeasurement() {
                       )}
                     </div>
 
-                    {/* Save as draft info */}
                     <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
                       <p className="text-sm text-foreground font-medium mb-1">💡 Devi caricare le foto da un altro dispositivo?</p>
                       <p className="text-sm text-muted-foreground">
