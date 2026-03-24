@@ -649,7 +649,7 @@ export default function NewMeasurement() {
                     <Truck className="h-5 w-5 text-accent" />
                     <Label className="text-base font-semibold">Tempi di consegna / installazione</Label>
                   </div>
-                  <RadioGroup value={form.delivery_time} onValueChange={v => update('delivery_time', v)} className="space-y-3">
+                  <RadioGroup value={form.delivery_time} onValueChange={v => { update('delivery_time', v); update('delivery_date', ''); }} className="space-y-3">
                     {DELIVERY_OPTIONS.map(opt => (
                       <Label
                         key={opt.value}
@@ -664,7 +664,7 @@ export default function NewMeasurement() {
                             <span className="font-medium text-foreground">{opt.label}</span>
                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                               opt.value === 'express' ? 'bg-destructive/10 text-destructive' :
-                              opt.value === 'economy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              opt.value === 'economy' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
                               'bg-muted text-muted-foreground'
                             }`}>
                               {opt.surcharge}
@@ -680,6 +680,45 @@ export default function NewMeasurement() {
                       </Label>
                     ))}
                   </RadioGroup>
+
+                  {/* Calendar date picker based on delivery type */}
+                  {form.delivery_time && (
+                    <div className="space-y-2 mt-3 p-3 rounded-lg border border-border bg-muted/30">
+                      <Label className="text-sm font-medium">
+                        📅 Seleziona data di consegna desiderata
+                      </Label>
+                      <Input
+                        type="date"
+                        value={form.delivery_date || ''}
+                        onChange={e => update('delivery_date', e.target.value)}
+                        min={(() => {
+                          const d = new Date();
+                          if (form.delivery_time === 'express') {
+                            d.setDate(d.getDate() + 14);
+                          } else if (form.delivery_time === 'standard') {
+                            d.setDate(d.getDate() + 28);
+                          } else {
+                            d.setDate(d.getDate() + 56);
+                          }
+                          return d.toISOString().split('T')[0];
+                        })()}
+                        max={(() => {
+                          const d = new Date();
+                          if (form.delivery_time === 'express') {
+                            d.setDate(d.getDate() + 21);
+                          } else if (form.delivery_time === 'standard') {
+                            d.setDate(d.getDate() + 42);
+                          }
+                          return form.delivery_time === 'economy' ? '' : d.toISOString().split('T')[0];
+                        })()}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {form.delivery_time === 'express' && 'Seleziona una data entro 2-3 settimane da oggi'}
+                        {form.delivery_time === 'standard' && 'Seleziona una data tra 4-6 settimane da oggi'}
+                        {form.delivery_time === 'economy' && 'Seleziona una data a partire da 8 settimane da oggi'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
