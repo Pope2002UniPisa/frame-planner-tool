@@ -216,7 +216,128 @@ export default function ProductDiagram({
     );
   }
 
-  // Default: finestra / porta_finestra
+  // Porta finestra - solid wood door by default, optional glass insert
+  if (productType === 'porta_finestra') {
+    const hasGlass = !!glassType && glassType !== 'cieca';
+    const doorGlassLabel = (() => {
+      const map: Record<string, string> = {
+        trasparente: 'Vetro trasparente',
+        satinato: 'Vetro satinato',
+        a_quadri: 'Vetro a quadri',
+        stondato: 'Vetro stondato',
+        doppio: 'Doppio vetro',
+        triplo: 'Triplo vetro',
+      };
+      return map[glassType] || '';
+    })();
+
+    return (
+      <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full max-w-sm mx-auto">
+        {topFace(offsetX, offsetY, drawW, dxOff, dyOff, frontColor)}
+        {rightFace(offsetX + drawW, offsetY, drawH, dxOff, dyOff, sideColor)}
+
+        {/* Door frame */}
+        <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={frontColor} stroke="hsl(var(--foreground))" strokeWidth="2.5" />
+        <rect x={offsetX + frameThickness} y={offsetY + frameThickness} width={drawW - frameThickness * 2} height={drawH - frameThickness * 2} fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
+
+        {/* Door panels */}
+        {Array.from({ length: panels }).map((_, i) => {
+          const px = offsetX + frameThickness + i * ((drawW - frameThickness * 2) / panels);
+          const pw = (drawW - frameThickness * 2) / panels;
+          const panelInset = 6;
+
+          return (
+            <g key={i}>
+              <rect x={px} y={offsetY + frameThickness} width={pw} height={drawH - frameThickness * 2} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="1" />
+
+              {hasGlass ? (
+                <>
+                  {/* Upper glass section (top 40%) */}
+                  <rect x={px + panelInset} y={offsetY + frameThickness + panelInset} width={pw - panelInset * 2} height={(drawH - frameThickness * 2) * 0.4 - panelInset} fill={GLASS_COLOR} stroke={GLASS_STROKE} strokeWidth="0.8" />
+                  {/* Glass pattern for a_quadri */}
+                  {glassType === 'a_quadri' && Array.from({ length: 3 }).map((_, qi) => (
+                    <g key={qi}>
+                      <line x1={px + panelInset + (qi + 1) * ((pw - panelInset * 2) / 4)} y1={offsetY + frameThickness + panelInset} x2={px + panelInset + (qi + 1) * ((pw - panelInset * 2) / 4)} y2={offsetY + frameThickness + (drawH - frameThickness * 2) * 0.4} stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" />
+                    </g>
+                  ))}
+                  {glassType === 'a_quadri' && Array.from({ length: 2 }).map((_, qi) => (
+                    <line key={`h${qi}`} x1={px + panelInset} y1={offsetY + frameThickness + panelInset + (qi + 1) * (((drawH - frameThickness * 2) * 0.4 - panelInset) / 3)} x2={px + pw - panelInset} y2={offsetY + frameThickness + panelInset + (qi + 1) * (((drawH - frameThickness * 2) * 0.4 - panelInset) / 3)} stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" />
+                  ))}
+                  {/* Satinato overlay */}
+                  {glassType === 'satinato' && (
+                    <rect x={px + panelInset} y={offsetY + frameThickness + panelInset} width={pw - panelInset * 2} height={(drawH - frameThickness * 2) * 0.4 - panelInset} fill="rgba(255,255,255,0.4)" />
+                  )}
+                  {/* Stondato: rounded top corners */}
+                  {glassType === 'stondato' && (
+                    <path d={`M${px + panelInset},${offsetY + frameThickness + panelInset + 20} Q${px + pw / 2},${offsetY + frameThickness + panelInset - 5} ${px + pw - panelInset},${offsetY + frameThickness + panelInset + 20}`} fill="none" stroke={GLASS_STROKE} strokeWidth="1.5" />
+                  )}
+                  {doorGlassLabel && (
+                    <text x={px + pw / 2} y={offsetY + frameThickness + (drawH - frameThickness * 2) * 0.4 + 12} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">{doorGlassLabel}</text>
+                  )}
+                  {/* Lower solid wood panel (bottom 60%) */}
+                  <rect x={px + panelInset} y={offsetY + frameThickness + (drawH - frameThickness * 2) * 0.42} width={pw - panelInset * 2} height={(drawH - frameThickness * 2) * 0.58 - panelInset} fill={frontColor} stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" />
+                  {/* Wood grain lines */}
+                  {Array.from({ length: 4 }).map((_, gi) => (
+                    <line key={gi} x1={px + panelInset + 4} y1={offsetY + frameThickness + (drawH - frameThickness * 2) * 0.45 + gi * ((drawH - frameThickness * 2) * 0.5 / 5)} x2={px + pw - panelInset - 4} y2={offsetY + frameThickness + (drawH - frameThickness * 2) * 0.45 + gi * ((drawH - frameThickness * 2) * 0.5 / 5)} stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.2" />
+                  ))}
+                </>
+              ) : (
+                <>
+                  {/* Solid door - wood panels */}
+                  <rect x={px + panelInset} y={offsetY + frameThickness + panelInset} width={pw - panelInset * 2} height={(drawH - frameThickness * 2) * 0.35 - panelInset} fill={frontColor} stroke="hsl(var(--muted-foreground))" strokeWidth="0.8" />
+                  <rect x={px + panelInset} y={offsetY + frameThickness + (drawH - frameThickness * 2) * 0.38} width={pw - panelInset * 2} height={(drawH - frameThickness * 2) * 0.58 - panelInset} fill={frontColor} stroke="hsl(var(--muted-foreground))" strokeWidth="0.8" />
+                  {/* Wood grain lines */}
+                  {Array.from({ length: 6 }).map((_, gi) => (
+                    <line key={gi} x1={px + panelInset + 4} y1={offsetY + frameThickness + panelInset + 8 + gi * ((drawH - frameThickness * 2 - 20) / 7)} x2={px + pw - panelInset - 4} y2={offsetY + frameThickness + panelInset + 8 + gi * ((drawH - frameThickness * 2 - 20) / 7)} stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.15" />
+                  ))}
+                  <text x={px + pw / 2} y={offsetY + drawH - frameThickness - 8} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">Porta cieca</text>
+                </>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Handle */}
+        {panels >= 2
+          ? drawHandle(offsetX + drawW / 2 - 2, handleY)
+          : drawHandle(openingDirection === 'sinistra' ? offsetX + frameThickness + 10 : offsetX + drawW - frameThickness - 14, handleY)
+        }
+
+        {/* Dimensions */}
+        <DimensionH x={offsetX} y={offsetY - dyOff - 28} width={drawW} label={`${w}`} />
+        <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
+        <DepthDimLabel x={offsetX + drawW + 8} y={offsetY - 8} dx={dxOff} dy={dyOff} label={`${d}`} />
+
+        {/* Frame type label */}
+        <text x={offsetX + drawW / 2} y={offsetY + drawH + 20} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+          Telaio {frameType === 'ridotto' ? 'ridotto' : frameType === 'maggiorato' ? 'maggiorato' : 'standard'}
+        </text>
+
+        {view && (
+          <text x={8} y={16} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
+            {view === 'internal' ? '🏠 Vista Interna' : '🌳 Vista Esterna'}
+          </text>
+        )}
+        {view && (
+          <text x={offsetX + drawW + dxOff + 18} y={offsetY + drawH / 2} fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace" textAnchor="start">
+            {view === 'internal' ? `Int: ${COLOR_OPTIONS.find(c => c.value === colorInternal)?.label || ''}` : `Est: ${COLOR_OPTIONS.find(c => c.value === colorExternal)?.label || ''}`}
+          </text>
+        )}
+
+        {/* Handle height dimension */}
+        <line x1={offsetX + drawW + dxOff + 35} y1={handleY} x2={offsetX + drawW + dxOff + 35} y2={offsetY + drawH} stroke="hsl(var(--muted-foreground))" strokeWidth="0.6" />
+        <line x1={offsetX + drawW + dxOff + 32} y1={handleY} x2={offsetX + drawW + dxOff + 38} y2={handleY} stroke="hsl(var(--muted-foreground))" strokeWidth="0.6" />
+        <line x1={offsetX + drawW + dxOff + 32} y1={offsetY + drawH} x2={offsetX + drawW + dxOff + 38} y2={offsetY + drawH} stroke="hsl(var(--muted-foreground))" strokeWidth="0.6" />
+        <text x={offsetX + drawW + dxOff + 44} y={(handleY + offsetY + drawH) / 2} fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="monospace" dominantBaseline="middle">
+          {Math.round((h * (drawH - (handleY - offsetY)) / drawH))}
+        </text>
+
+        {spaceLabels()}
+      </svg>
+    );
+  }
+
+  // Default: finestra
   return (
     <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full max-w-sm mx-auto">
       {/* 3D top face */}
