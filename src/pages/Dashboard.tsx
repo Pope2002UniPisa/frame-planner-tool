@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Image, Camera, Shield } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Image, Camera, Shield, ChevronDown, ChevronUp, Users, CreditCard } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 const WORKFLOW_STEPS = [
@@ -87,6 +88,7 @@ export default function Dashboard() {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [expandedClientName, setExpandedClientName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -113,6 +115,28 @@ export default function Dashboard() {
     quoted: measurements.filter(m => m.status === 'quoted').length,
     completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
   }), [measurements]);
+
+  // Client summary grouped by client_name
+  const clientSummary = useMemo(() => {
+    const map: Record<string, { name: string; total: number; drafts: number; sent: number; quoted: number; completed: number; estimatedRevenue: number; realizedRevenue: number; collectedRevenue: number; measurements: any[] }> = {};
+    measurements.forEach(m => {
+      const name = (m.client_name || 'Senza nome').trim();
+      if (!map[name]) map[name] = { name, total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0, estimatedRevenue: 0, realizedRevenue: 0, collectedRevenue: 0, measurements: [] };
+      const c = map[name];
+      c.total++;
+      c.measurements.push(m);
+      c.estimatedRevenue += Number(m.estimated_price) || 0;
+      if (m.status === 'bozza') c.drafts++;
+      else if (['ricevuto', 'submitted', 'in_review'].includes(m.status)) c.sent++;
+      else if (m.status === 'quoted') c.quoted++;
+      else if (['completed', 'ordered'].includes(m.status)) {
+        c.completed++;
+        c.realizedRevenue += Number(m.estimated_price) || 0;
+        if (m.payment_status === 'pagato') c.collectedRevenue += Number(m.amount_paid) || Number(m.estimated_price) || 0;
+      }
+    });
+    return Object.values(map).sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  }, [measurements]);
 
   const filteredMeasurements = useMemo(() => {
     return measurements.filter(m => {
@@ -261,6 +285,95 @@ export default function Dashboard() {
             </Link>
           </CardContent>
         </Card>
+
+        {/* Client Summary Section */}
+        {clientSummary.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="h-4 w-4 text-accent" />
+              <h3 className="text-sm font-heading font-semibold text-foreground">Riepilogo per Cliente</h3>
+              <Badge variant="secondary" className="text-[10px]">{clientSummary.length} nominativi</Badge>
+            </div>
+            <div className="space-y-2">
+              {clientSummary.map(cs => {
+                const isExpanded = expandedClientName === cs.name;
+                return (
+                  <Card key={cs.name} className={`transition-all ${isExpanded ? 'ring-2 ring-primary/20' : ''}`}>
+                    <CardContent className="py-3 px-4">
+                      <div
+                        className="flex items-center justify-between cursor-pointer"
+                        onClick={() => setExpandedClientName(isExpanded ? null : cs.name)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold text-sm text-foreground">{cs.name}</span>
+                          <Badge variant="outline" className="text-[10px]">{cs.total} misurazioni</Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="hidden sm:flex items-center gap-2 text-[10px] text-muted-foreground">
+                            <span>📝 {cs.drafts}</span>
+                            <span>📤 {cs.sent}</span>
+                            <span>💰 {cs.quoted}</span>
+                            <span>✅ {cs.completed}</span>
+                          </div>
+                          {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="mt-3 pt-3 border-t border-border space-y-3">
+                          <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
+                            {[
+                              { label: 'Bozze', value: cs.drafts },
+                              { label: 'Inviate', value: cs.sent },
+                              { label: 'Preventivate', value: cs.quoted },
+                              { label: 'Completate', value: cs.completed },
+                              { label: 'Fatt. stimato', value: `€${Math.round(cs.estimatedRevenue).toLocaleString('it-IT')}` },
+                              { label: 'Fatt. realizzato', value: `€${Math.round(cs.realizedRevenue).toLocaleString('it-IT')}` },
+                              { label: 'Fatt. riscosso', value: `€${Math.round(cs.collectedRevenue).toLocaleString('it-IT')}` },
+                            ].map(st => (
+                              <div key={st.label} className="rounded-lg bg-muted p-2 text-center">
+                                <p className="text-xs font-bold text-foreground">{st.value}</p>
+                                <p className="text-[9px] text-muted-foreground">{st.label}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Individual measurements */}
+                          <div className="space-y-1.5">
+                            {cs.measurements.map(m => {
+                              const pi = productIcons[m.product_type] || { emoji: '📦', color: '#6b7280' };
+                              return (
+                                <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-2 bg-background">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pi.color }} />
+                                    <span className="text-xs font-medium text-foreground">{productLabels[m.product_type] || m.product_type}</span>
+                                    <Badge variant={statusLabels[m.status]?.variant || 'default'} className="text-[9px]">
+                                      {statusLabels[m.status]?.label || m.status}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground">{m.width_mm}×{m.height_mm}mm</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {m.estimated_price > 0 && <span className="text-[10px] font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
+                                    {m.payment_status === 'pagato' && <span className="text-[10px] text-green-600" role="img" aria-label="Pagato">💳</span>}
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/misurazione/${m.id}`)}>
+                                      <Eye className="h-3 w-3" />
+                                    </Button>
+                                    <span className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleDateString('it-IT')}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Measurements list with filters */}
         <div>
