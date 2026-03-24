@@ -14,33 +14,23 @@ import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, Responsive
 import { toast } from 'sonner';
 
 const productLabels: Record<string, string> = {
-  finestra: 'Finestra',
-  porta_finestra: 'Porta Finestra',
-  porta: 'Porta',
-  basculante: 'Basculante',
-  zanzariera: 'Zanzariera',
-  persiana: 'Persiana',
+  finestra: 'Finestra', porta_finestra: 'Porta Finestra', porta: 'Porta',
+  basculante: 'Basculante', zanzariera: 'Zanzariera', persiana: 'Persiana',
 };
 
 const LINE_COLORS: Record<string, string> = {
-  Finestra: '#f97316',
-  'Porta Finestra': '#3b82f6',
-  Porta: '#a855f7',
-  Basculante: '#6366f1',
-  Zanzariera: '#10b981',
-  Persiana: '#f59e0b',
+  Finestra: '#f97316', 'Porta Finestra': '#3b82f6', Porta: '#a855f7',
+  Basculante: '#6366f1', Zanzariera: '#10b981', Persiana: '#f59e0b',
 };
 
-// Sample suppliers for now
 const SUPPLIERS = [
-  { id: 'ferrerolegno', name: 'FerreroLegno SPA', logo: '🏭', category: 'Porte e finestre in legno', catalogs: ['Catalogo Porte 2026', 'Listino Prezzi Q1'] },
-  { id: 'aluk', name: 'AluK Group', logo: '🏗️', category: 'Sistemi in alluminio', catalogs: ['Catalogo Alluminio 2026', 'Soluzioni Scorrevoli'] },
-  { id: 'finstral', name: 'Finstral SPA', logo: '🪟', category: 'Finestre e porte in PVC', catalogs: ['Catalogo PVC 2026', 'Innovazioni Termiche'] },
-  { id: 'somfy', name: 'Somfy Italia', logo: '⚡', category: 'Motorizzazioni e domotica', catalogs: ['Catalogo Motori 2026'] },
+  { id: 'ferrerolegno', name: 'FerreroLegno SPA', category: 'Porte e finestre in legno', catalogs: ['Catalogo Porte 2026', 'Listino Prezzi Q1'] },
+  { id: 'aluk', name: 'AluK Group', category: 'Sistemi in alluminio', catalogs: ['Catalogo Alluminio 2026', 'Soluzioni Scorrevoli'] },
+  { id: 'finstral', name: 'Finstral SPA', category: 'Finestre e porte in PVC', catalogs: ['Catalogo PVC 2026', 'Innovazioni Termiche'] },
+  { id: 'somfy', name: 'Somfy Italia', category: 'Motorizzazioni e domotica', catalogs: ['Catalogo Motori 2026'] },
 ];
 
-// Sample org roles
-const ORG_ROLES = [
+const DEFAULT_ORG_ROLES = [
   { role: 'Titolare / Responsabile', name: '', phone: '', email: '' },
   { role: 'Venditore / Commerciale', name: '', phone: '', email: '' },
   { role: 'Addetto Scarico / Magazzino', name: '', phone: '', email: '' },
@@ -55,11 +45,12 @@ export default function Profile() {
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ company_name: '', phone: '', email: '', client_code: '' });
-  const [orgContacts, setOrgContacts] = useState(ORG_ROLES);
+  const [orgContacts, setOrgContacts] = useState(DEFAULT_ORG_ROLES);
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
-  const [logoFile, setLogoFile] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState(false);
   const [supplierLogos, setSupplierLogos] = useState<Record<string, string>>({});
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -71,6 +62,10 @@ export default function Profile() {
       if (pData) {
         setProfile(pData);
         setForm({ company_name: pData.company_name || '', phone: pData.phone || '', email: pData.email || '', client_code: pData.client_code || '' });
+        if (pData.logo_url) setLogoUrl(pData.logo_url);
+        if (pData.supplier_logos && typeof pData.supplier_logos === 'object') {
+          setSupplierLogos(pData.supplier_logos as Record<string, string>);
+        }
       }
       setMeasurements(mData || []);
       setLoadingData(false);
@@ -111,10 +106,8 @@ export default function Profile() {
     return Array.from(s);
   }, [measurements]);
 
-  // Supplier-filtered stats
   const supplierStats = useMemo(() => {
     if (!selectedSupplier) return null;
-    // For now, show all measurements - in future filter by supplier field
     return {
       total: measurements.length,
       drafts: measurements.filter(m => m.status === 'bozza').length,
@@ -142,10 +135,41 @@ export default function Profile() {
     }
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const url = URL.createObjectURL(e.target.files[0]);
-      setLogoFile(url);
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0] || !user || !profile) return;
+    setUploadingLogo(true);
+    try {
+      const file = e.target.files[0];
+      const path = `company/${user.id}/${Date.now()}_${file.name}`;
+      const { error: upErr } = await supabase.storage.from('logos').upload(path, file);
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
+      const { error: dbErr } = await supabase.from('profiles').update({ logo_url: publicUrl }).eq('id', profile.id);
+      if (dbErr) throw dbErr;
+      setLogoUrl(publicUrl);
+      toast.success('Logo caricato!');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleSupplierLogoUpload = async (supplierId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0] || !user || !profile) return;
+    try {
+      const file = e.target.files[0];
+      const path = `suppliers/${user.id}/${supplierId}_${Date.now()}_${file.name}`;
+      const { error: upErr } = await supabase.storage.from('logos').upload(path, file);
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
+      const newLogos = { ...supplierLogos, [supplierId]: publicUrl };
+      const { error: dbErr } = await supabase.from('profiles').update({ supplier_logos: newLogos }).eq('id', profile.id);
+      if (dbErr) throw dbErr;
+      setSupplierLogos(newLogos);
+      toast.success('Logo fornitore caricato!');
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
@@ -163,13 +187,10 @@ export default function Profile() {
       </header>
 
       <main className="container max-w-6xl py-8">
-        {/* Logo Preview Dialog */}
         <Dialog open={logoPreview} onOpenChange={setLogoPreview}>
           <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="font-heading">Logo aziendale</DialogTitle>
-            </DialogHeader>
-            {logoFile && <img src={logoFile} alt="Logo aziendale" className="w-full rounded-lg" />}
+            <DialogHeader><DialogTitle className="font-heading">Logo aziendale</DialogTitle></DialogHeader>
+            {logoUrl && <img src={logoUrl} alt="Logo aziendale" className="w-full rounded-lg" />}
           </DialogContent>
         </Dialog>
 
@@ -186,13 +207,8 @@ export default function Profile() {
             <Card>
               <CardHeader>
                 <CardTitle className="font-heading flex items-center gap-3">
-                  {logoFile ? (
-                    <img
-                      src={logoFile}
-                      alt="Logo"
-                      className="h-12 w-12 rounded-lg object-cover border border-border cursor-pointer hover:ring-2 hover:ring-accent transition-all"
-                      onClick={() => setLogoPreview(true)}
-                    />
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Logo" className="h-12 w-12 rounded-lg object-cover border border-border cursor-pointer hover:ring-2 hover:ring-accent transition-all" onClick={() => setLogoPreview(true)} />
                   ) : (
                     <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
                       <Building2 className="h-6 w-6 text-muted-foreground" />
@@ -202,9 +218,9 @@ export default function Profile() {
                     <span>Dati Personali</span>
                     <div className="mt-1">
                       <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" id="logo-upload" />
-                      <Button variant="ghost" size="sm" asChild className="text-xs h-7">
+                      <Button variant="ghost" size="sm" asChild className="text-xs h-7" disabled={uploadingLogo}>
                         <label htmlFor="logo-upload" className="cursor-pointer gap-1">
-                          <Upload className="h-3 w-3" /> Carica logo
+                          <Upload className="h-3 w-3" /> {uploadingLogo ? 'Caricamento...' : 'Carica logo'}
                         </label>
                       </Button>
                     </div>
@@ -217,22 +233,10 @@ export default function Profile() {
                 ) : (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Ragione sociale</Label>
-                        <Input value={form.company_name} onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Email</Label>
-                        <Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Telefono</Label>
-                        <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Codice cliente</Label>
-                        <Input value={form.client_code} disabled className="bg-muted" />
-                      </div>
+                      <div className="space-y-2"><Label>Ragione sociale</Label><Input value={form.company_name} onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Email</Label><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Telefono</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Codice cliente</Label><Input value={form.client_code} disabled className="bg-muted" /></div>
                     </div>
                     <Button onClick={handleSave} disabled={saving} className="gap-2">
                       <Save className="h-4 w-4" /> {saving ? 'Salvataggio...' : 'Salva modifiche'}
@@ -264,16 +268,10 @@ export default function Profile() {
                 </Card>
               ))}
             </div>
-
             {measurements.length > 0 && (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-heading flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                      Stato misurazioni
-                    </CardTitle>
-                  </CardHeader>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm font-heading flex items-center gap-2"><BarChart3 className="h-4 w-4 text-muted-foreground" /> Stato misurazioni</CardTitle></CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={220}>
                       <PieChart>
@@ -285,21 +283,14 @@ export default function Profile() {
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
-
                 <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-heading flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                      Andamento per tipologia
-                    </CardTitle>
-                  </CardHeader>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm font-heading flex items-center gap-2"><BarChart3 className="h-4 w-4 text-muted-foreground" /> Andamento per tipologia</CardTitle></CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={220}>
                       <LineChart data={monthlyProductData}>
                         <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                        <Tooltip />
-                        <Legend />
+                        <Tooltip /><Legend />
                         {productTypes.map(pt => (
                           <Line key={pt} type="monotone" dataKey={pt} stroke={LINE_COLORS[pt] || '#8884d8'} strokeWidth={2} dot={{ r: 3 }} />
                         ))}
@@ -315,81 +306,51 @@ export default function Profile() {
           <TabsContent value="suppliers" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="font-heading flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-accent" />
-                  Aziende di riferimento
-                </CardTitle>
+                <CardTitle className="font-heading flex items-center gap-2"><Building2 className="h-5 w-5 text-accent" /> Aziende di riferimento</CardTitle>
                 <CardDescription>Accedi ai dati e ai cataloghi dei nostri fornitori partner</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {SUPPLIERS.map(s => (
-                    <div
-                      key={s.id}
-                      onClick={() => setSelectedSupplier(selectedSupplier === s.id ? null : s.id)}
-                      className={`rounded-xl border-2 p-5 cursor-pointer transition-all hover:shadow-card-hover ${
-                        selectedSupplier === s.id ? 'border-accent bg-accent/5' : 'border-border'
-                      }`}
-                    >
+                    <div key={s.id} onClick={() => setSelectedSupplier(selectedSupplier === s.id ? null : s.id)}
+                      className={`rounded-xl border-2 p-5 cursor-pointer transition-all hover:shadow-card-hover ${selectedSupplier === s.id ? 'border-accent bg-accent/5' : 'border-border'}`}>
                       <div className="flex items-center gap-3 mb-2">
                         {supplierLogos[s.id] ? (
                           <img src={supplierLogos[s.id]} alt={s.name} className="h-10 w-10 rounded-lg object-contain border border-border" />
                         ) : (
-                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                            <Building2 className="h-5 w-5 text-muted-foreground" />
-                          </div>
+                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center"><Building2 className="h-5 w-5 text-muted-foreground" /></div>
                         )}
                         <div className="flex-1">
                           <p className="font-semibold text-foreground">{s.name}</p>
                           <p className="text-xs text-muted-foreground">{s.category}</p>
                         </div>
                         <div onClick={e => e.stopPropagation()}>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            id={`supplier-logo-${s.id}`}
-                            onChange={e => {
-                              if (e.target.files?.[0]) {
-                                setSupplierLogos(prev => ({ ...prev, [s.id]: URL.createObjectURL(e.target.files![0]) }));
-                              }
-                            }}
-                          />
+                          <input type="file" accept="image/*" className="hidden" id={`supplier-logo-${s.id}`}
+                            onChange={e => handleSupplierLogoUpload(s.id, e)} />
                           <Button variant="ghost" size="sm" asChild className="text-[10px] h-6 px-2">
-                            <label htmlFor={`supplier-logo-${s.id}`} className="cursor-pointer gap-1">
-                              <Upload className="h-2.5 w-2.5" /> Logo
-                            </label>
+                            <label htmlFor={`supplier-logo-${s.id}`} className="cursor-pointer gap-1"><Upload className="h-2.5 w-2.5" /> Logo</label>
                           </Button>
                         </div>
                       </div>
                       {selectedSupplier === s.id && (
                         <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2">
-                          {/* Stats for this supplier */}
                           {supplierStats && (
                             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                              <div className="rounded-lg bg-muted p-3 text-center">
-                                <p className="text-lg font-bold font-heading text-foreground">{supplierStats.drafts}</p>
-                                <p className="text-[10px] text-muted-foreground">Bozze</p>
-                              </div>
-                              <div className="rounded-lg bg-muted p-3 text-center">
-                                <p className="text-lg font-bold font-heading text-foreground">{supplierStats.sent}</p>
-                                <p className="text-[10px] text-muted-foreground">Inviate</p>
-                              </div>
-                              <div className="rounded-lg bg-muted p-3 text-center">
-                                <p className="text-lg font-bold font-heading text-foreground">{supplierStats.quoted}</p>
-                                <p className="text-[10px] text-muted-foreground">Preventivate</p>
-                              </div>
-                              <div className="rounded-lg bg-muted p-3 text-center">
-                                <p className="text-lg font-bold font-heading text-foreground">{supplierStats.completed}</p>
-                                <p className="text-[10px] text-muted-foreground">Completate</p>
-                              </div>
+                              {[
+                                { label: 'Bozze', value: supplierStats.drafts },
+                                { label: 'Inviate', value: supplierStats.sent },
+                                { label: 'Preventivate', value: supplierStats.quoted },
+                                { label: 'Completate', value: supplierStats.completed },
+                              ].map(st => (
+                                <div key={st.label} className="rounded-lg bg-muted p-3 text-center">
+                                  <p className="text-lg font-bold font-heading text-foreground">{st.value}</p>
+                                  <p className="text-[10px] text-muted-foreground">{st.label}</p>
+                                </div>
+                              ))}
                             </div>
                           )}
-                          {/* Catalogs */}
                           <div>
-                            <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-1.5">
-                              <BookOpen className="h-3.5 w-3.5" /> Cataloghi disponibili
-                            </p>
+                            <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Cataloghi disponibili</p>
                             <div className="space-y-2">
                               {s.catalogs.map(cat => (
                                 <div key={cat} className="flex items-center justify-between rounded-lg border border-border p-3">
@@ -412,10 +373,7 @@ export default function Profile() {
           <TabsContent value="team" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="font-heading flex items-center gap-2">
-                  <Users className="h-5 w-5 text-accent" />
-                  Organigramma aziendale
-                </CardTitle>
+                <CardTitle className="font-heading flex items-center gap-2"><Users className="h-5 w-5 text-accent" /> Organigramma aziendale</CardTitle>
                 <CardDescription>Ruoli e contatti del tuo team</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -425,39 +383,18 @@ export default function Profile() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Nome e Cognome</Label>
-                        <Input
-                          placeholder="Mario Rossi"
-                          value={contact.name}
-                          onChange={e => {
-                            const copy = [...orgContacts];
-                            copy[idx] = { ...copy[idx], name: e.target.value };
-                            setOrgContacts(copy);
-                          }}
-                        />
+                        <Input placeholder="Mario Rossi" value={contact.name}
+                          onChange={e => { const c = [...orgContacts]; c[idx] = { ...c[idx], name: e.target.value }; setOrgContacts(c); }} />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> Telefono</Label>
-                        <Input
-                          placeholder="+39 ..."
-                          value={contact.phone}
-                          onChange={e => {
-                            const copy = [...orgContacts];
-                            copy[idx] = { ...copy[idx], phone: e.target.value };
-                            setOrgContacts(copy);
-                          }}
-                        />
+                        <Input placeholder="+39 ..." value={contact.phone}
+                          onChange={e => { const c = [...orgContacts]; c[idx] = { ...c[idx], phone: e.target.value }; setOrgContacts(c); }} />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" /> Email</Label>
-                        <Input
-                          placeholder="email@azienda.it"
-                          value={contact.email}
-                          onChange={e => {
-                            const copy = [...orgContacts];
-                            copy[idx] = { ...copy[idx], email: e.target.value };
-                            setOrgContacts(copy);
-                          }}
-                        />
+                        <Input placeholder="email@azienda.it" value={contact.email}
+                          onChange={e => { const c = [...orgContacts]; c[idx] = { ...c[idx], email: e.target.value }; setOrgContacts(c); }} />
                       </div>
                     </div>
                   </div>
