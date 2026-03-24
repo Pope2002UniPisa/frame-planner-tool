@@ -453,12 +453,12 @@ export default function EditMeasurement() {
               <div className="space-y-4">
                 <CardTitle className="font-heading">Accessori</CardTitle>
                 <div className="space-y-3">
-                  {[
-                    { key: 'has_mosquito_net', label: '🦟 Zanzariera', type: 'mosquito_net' },
-                    { key: 'has_shutter', label: '🪟 Tapparella', type: 'shutter' },
-                    { key: 'has_box', label: '📦 Cassonetto', type: 'box' },
-                    { key: 'has_motorization', label: '⚡ Motorizzazione', type: 'motorization' },
-                  ].map(acc => (
+                  {([
+                    { key: 'has_mosquito_net', label: '🦟 Zanzariera', type: 'mosquito_net' as const },
+                    { key: 'has_shutter', label: '🪟 Tapparella', type: 'shutter' as const },
+                    { key: 'has_box', label: '📦 Cassonetto', type: 'box' as const },
+                    { key: 'has_motorization', label: '⚡ Motorizzazione', type: 'motorization' as const },
+                  ]).map(acc => (
                     <div key={acc.key}>
                       <Label htmlFor={acc.key} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form[acc.key] ? 'border-accent bg-accent/10' : 'border-border'}`}>
                         <Checkbox id={acc.key} checked={form[acc.key]} onCheckedChange={v => update(acc.key, v)} />
