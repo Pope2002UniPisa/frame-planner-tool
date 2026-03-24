@@ -11,6 +11,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Image, Camera, Shield } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 
+const WORKFLOW_STEPS = [
+  { key: 'bozza', label: 'Bozza', icon: '📝' },
+  { key: 'ricevuto', label: 'Inviata', icon: '📤' },
+  { key: 'in_review', label: 'In revisione', icon: '🔍' },
+  { key: 'quoted', label: 'Preventivata', icon: '💰' },
+  { key: 'ordered', label: 'Ordinata', icon: '📦' },
+  { key: 'completed', label: 'Completata', icon: '✅' },
+];
+
+const getWorkflowIndex = (status: string): number => {
+  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, in_review: 2, quoted: 3, ordered: 4, completed: 5 };
+  return map[status] ?? 0;
+};
+
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   bozza: { label: 'Bozza', variant: 'outline' },
   ricevuto: { label: 'Inviata', variant: 'default' },
