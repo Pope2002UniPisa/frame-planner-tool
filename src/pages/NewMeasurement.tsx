@@ -11,9 +11,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn, ZoomOut } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn, ZoomOut, Copy, Plus, Trash2 } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import AccessoryConfig, { type AccessoriesConfig } from '@/components/AccessoryConfig';
+import { Switch } from '@/components/ui/switch';
 
 const STEPS = [
   { id: 'product', label: 'Prodotto' },
@@ -33,6 +34,27 @@ const DELIVERY_OPTIONS = [
   { value: 'standard', label: '📦 Standard (4-6 settimane)', desc: 'Tempi normali di produzione', surcharge: 'Prezzo base', standard_only: false, maxWeeks: 6 },
   { value: 'economy', label: '📅 Programmata (8+ settimane)', desc: 'Consegna programmata a lungo termine', surcharge: '+10%', standard_only: false, minWeeks: 8 },
 ];
+
+interface ProductItem {
+  width_mm: string;
+  height_mm: string;
+  depth_mm: string;
+  is_square: boolean;
+  out_of_square_mm: string;
+  is_plumb: boolean;
+  is_level: boolean;
+  internal_space_mm: string;
+  external_space_mm: string;
+  notes: string;
+}
+
+const emptyItem: ProductItem = {
+  width_mm: '', height_mm: '', depth_mm: '',
+  is_square: true, out_of_square_mm: '',
+  is_plumb: true, is_level: true,
+  internal_space_mm: '', external_space_mm: '',
+  notes: '',
+};
 
 const initialForm = {
   product_type: '',
@@ -78,22 +100,55 @@ export default function NewMeasurement() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [accessoriesConfig, setAccessoriesConfig] = useState<AccessoriesConfig>({});
-  // Independent zoom for each view
   const [diagramZoom, setDiagramZoom] = useState(100);
   const [zoomExternal, setZoomExternal] = useState(100);
   const [zoomInternal, setZoomInternal] = useState(100);
+
+  // Multi-product state
+  const [isMultiProduct, setIsMultiProduct] = useState(false);
+  const [multiItems, setMultiItems] = useState<ProductItem[]>([{ ...emptyItem }]);
+  const [activeItemIndex, setActiveItemIndex] = useState(0);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
 
   const update = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
 
+  const updateItem = (index: number, key: keyof ProductItem, value: any) => {
+    setMultiItems(prev => prev.map((item, i) => i === index ? { ...item, [key]: value } : item));
+  };
+
+  const addItem = () => {
+    setMultiItems(prev => [...prev, { ...emptyItem }]);
+    setActiveItemIndex(multiItems.length);
+  };
+
+  const removeItem = (index: number) => {
+    if (multiItems.length <= 1) return;
+    setMultiItems(prev => prev.filter((_, i) => i !== index));
+    if (activeItemIndex >= multiItems.length - 1) setActiveItemIndex(Math.max(0, multiItems.length - 2));
+  };
+
+  const duplicateItem = (index: number) => {
+    setMultiItems(prev => [...prev.slice(0, index + 1), { ...prev[index] }, ...prev.slice(index + 1)]);
+    setActiveItemIndex(index + 1);
+  };
+
+  // For single product, use form; for multi, use activeItem
+  const activeItem = isMultiProduct ? multiItems[activeItemIndex] : null;
+  const currentWidth = isMultiProduct ? (activeItem?.width_mm || '') : form.width_mm;
+  const currentHeight = isMultiProduct ? (activeItem?.height_mm || '') : form.height_mm;
+
   const canGoNext = (): boolean => {
     switch (step) {
       case 0: return !!form.product_type;
       case 1: return !!form.client_name;
       case 2: return !!form.survey_type;
-      case 3: return !!form.width_mm && !!form.height_mm;
+      case 3:
+        if (isMultiProduct) {
+          return multiItems.every(item => !!item.width_mm && !!item.height_mm);
+        }
+        return !!form.width_mm && !!form.height_mm;
       default: return true;
     }
   };
@@ -102,17 +157,18 @@ export default function NewMeasurement() {
     const parts = [];
     if (form.client_address) parts.push(form.client_address);
     if (form.client_name) parts.push(form.client_name);
-    return parts.length > 0 ? `${parts.join('; ')} - Bozza Salvata` : 'Bozza Salvata';
+    const suffix = isMultiProduct ? ` (${multiItems.length} prodotti)` : '';
+    return parts.length > 0 ? `${parts.join('; ')} - Bozza Salvata${suffix}` : `Bozza Salvata${suffix}`;
   };
 
-  const getEstimatedPrice = () => {
+  const getEstimatedPrice = (widthStr?: string, heightStr?: string) => {
     const basePrices: Record<string, [number, number]> = {
       finestra: [280, 650], porta_finestra: [450, 950], porta: [350, 1200],
       basculante: [400, 900], zanzariera: [80, 250], persiana: [200, 500],
     };
     const [min, max] = basePrices[form.product_type] || [200, 600];
-    const width = parseInt(form.width_mm) || 1000;
-    const height = parseInt(form.height_mm) || 1000;
+    const width = parseInt(widthStr || form.width_mm) || 1000;
+    const height = parseInt(heightStr || form.height_mm) || 1000;
     const sizeFactor = (width * height) / 1000000;
     const materialMult = form.material === 'alluminio' ? 1.3 : form.material === 'legno' ? 1.5 : 1;
     const glassMult = form.glass_type === 'triplo_vetro' ? 1.25 : form.glass_type === 'sicurezza' ? 1.35 : 1;
@@ -120,21 +176,21 @@ export default function NewMeasurement() {
     return Math.round(base * materialMult * glassMult * 100) / 100;
   };
 
-  const buildInsertData = (status: string, photo_urls: string[] = []) => ({
+  const buildInsertData = (status: string, photo_urls: string[] = [], itemOverrides?: Partial<ProductItem>, groupId?: string, itemIndex?: number, totalItems?: number) => ({
     user_id: user.id,
     product_type: form.product_type,
     client_name: form.client_name,
     client_address: form.client_address,
     survey_type: form.survey_type || 'foro_muro',
-    width_mm: parseInt(form.width_mm) || 0,
-    height_mm: parseInt(form.height_mm) || 0,
-    depth_mm: form.depth_mm ? parseInt(form.depth_mm) : null,
-    is_square: form.is_square,
-    out_of_square_mm: form.out_of_square_mm ? parseInt(form.out_of_square_mm) : null,
-    is_plumb: form.is_plumb,
-    is_level: form.is_level,
-    internal_space_mm: form.internal_space_mm ? parseInt(form.internal_space_mm) : null,
-    external_space_mm: form.external_space_mm ? parseInt(form.external_space_mm) : null,
+    width_mm: parseInt(itemOverrides?.width_mm || form.width_mm) || 0,
+    height_mm: parseInt(itemOverrides?.height_mm || form.height_mm) || 0,
+    depth_mm: (itemOverrides?.depth_mm || form.depth_mm) ? parseInt(itemOverrides?.depth_mm || form.depth_mm) : null,
+    is_square: itemOverrides?.is_square ?? form.is_square,
+    out_of_square_mm: (itemOverrides?.out_of_square_mm || form.out_of_square_mm) ? parseInt(itemOverrides?.out_of_square_mm || form.out_of_square_mm) : null,
+    is_plumb: itemOverrides?.is_plumb ?? form.is_plumb,
+    is_level: itemOverrides?.is_level ?? form.is_level,
+    internal_space_mm: (itemOverrides?.internal_space_mm || form.internal_space_mm) ? parseInt(itemOverrides?.internal_space_mm || form.internal_space_mm) : null,
+    external_space_mm: (itemOverrides?.external_space_mm || form.external_space_mm) ? parseInt(itemOverrides?.external_space_mm || form.external_space_mm) : null,
     num_panels: parseInt(form.num_panels),
     panel_type: form.panel_type || null,
     opening_direction: form.opening_direction || null,
@@ -151,14 +207,16 @@ export default function NewMeasurement() {
     installation_type: form.installation_type || null,
     laying_type: form.laying_type || null,
     remove_old: form.remove_old,
-    notes: form.notes || null,
+    notes: (itemOverrides?.notes ? `${itemOverrides.notes}\n` : '') + (form.notes || ''),
     photo_urls: photo_urls.length > 0 ? photo_urls : null,
     status,
     accessories_config: accessoriesConfig as any,
-    estimated_price: status !== 'bozza' ? getEstimatedPrice() : null,
+    estimated_price: status !== 'bozza' ? getEstimatedPrice(itemOverrides?.width_mm, itemOverrides?.height_mm) : null,
+    order_group_id: groupId || null,
+    order_item_index: itemIndex ?? null,
+    order_total_items: totalItems ?? null,
   } as any);
 
-  // Create separate measurement records for each selected accessory
   const createAccessoryRecords = async (status: string) => {
     const accessoryMap = [
       { flag: form.has_mosquito_net, type: 'zanzariera', config: { mosquito_type: accessoriesConfig.mosquito_type, mosquito_color: accessoriesConfig.mosquito_color } },
@@ -184,9 +242,19 @@ export default function NewMeasurement() {
   const handleSaveDraft = async () => {
     setSavingDraft(true);
     try {
-      const { error } = await supabase.from('measurements').insert(buildInsertData('bozza'));
-      if (error) throw error;
-      await createAccessoryRecords('bozza');
+      if (isMultiProduct) {
+        const groupId = crypto.randomUUID();
+        for (let i = 0; i < multiItems.length; i++) {
+          const { error } = await supabase.from('measurements').insert(
+            buildInsertData('bozza', [], multiItems[i], groupId, i + 1, multiItems.length)
+          );
+          if (error) throw error;
+        }
+      } else {
+        const { error } = await supabase.from('measurements').insert(buildInsertData('bozza'));
+        if (error) throw error;
+        await createAccessoryRecords('bozza');
+      }
       toast.success(getDraftName(), { description: 'Puoi aggiungere le foto in seguito.' });
       navigate('/dashboard');
     } catch (err: any) {
@@ -208,9 +276,20 @@ export default function NewMeasurement() {
           photo_urls.push(publicUrl);
         }
       }
-      const { error } = await supabase.from('measurements').insert(buildInsertData('ricevuto', photo_urls));
-      if (error) throw error;
-      await createAccessoryRecords('ricevuto');
+
+      if (isMultiProduct) {
+        const groupId = crypto.randomUUID();
+        for (let i = 0; i < multiItems.length; i++) {
+          const { error } = await supabase.from('measurements').insert(
+            buildInsertData('ricevuto', photo_urls, multiItems[i], groupId, i + 1, multiItems.length)
+          );
+          if (error) throw error;
+        }
+      } else {
+        const { error } = await supabase.from('measurements').insert(buildInsertData('ricevuto', photo_urls));
+        if (error) throw error;
+        await createAccessoryRecords('ricevuto');
+      }
       toast.success('Misurazione inviata con successo!');
       navigate('/dashboard');
     } catch (err: any) {
@@ -226,7 +305,6 @@ export default function NewMeasurement() {
     }
   };
 
-  // Show diagram for steps 3-6 but NOT accessories (7)
   const showDiagram = step >= 3 && step <= 6 && !!form.product_type;
   const showDualDiagram = step === 5;
 
@@ -277,9 +355,9 @@ export default function NewMeasurement() {
           <div style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
             <ProductDiagram
               productType={form.product_type}
-              widthMm={form.width_mm}
-              heightMm={form.height_mm}
-              depthMm={form.depth_mm}
+              widthMm={currentWidth}
+              heightMm={currentHeight}
+              depthMm={isMultiProduct ? (activeItem?.depth_mm || '') : form.depth_mm}
               numPanels={form.num_panels}
               panelType={form.panel_type}
               openingDirection={form.opening_direction}
@@ -288,8 +366,8 @@ export default function NewMeasurement() {
               frameType={form.frame_type}
               colorInternal={form.color_internal}
               colorExternal={form.color_external}
-              internalSpaceMm={form.internal_space_mm}
-              externalSpaceMm={form.external_space_mm}
+              internalSpaceMm={isMultiProduct ? (activeItem?.internal_space_mm || '') : form.internal_space_mm}
+              externalSpaceMm={isMultiProduct ? (activeItem?.external_space_mm || '') : form.external_space_mm}
               view={view}
             />
           </div>
@@ -297,6 +375,128 @@ export default function NewMeasurement() {
         <p className="text-xs text-center text-muted-foreground mt-2">Immagine a solo scopo illustrativo</p>
       </CardContent>
     </Card>
+  );
+
+  // Render multi-product dimensions for step 3
+  const renderMultiDimensions = () => (
+    <div className="space-y-4">
+      <CardTitle className="font-heading">Misure per {multiItems.length} prodotti</CardTitle>
+      <CardDescription>
+        Configurazione condivisa: stesso colore, telaio, materiale e accessori per tutti i prodotti.
+        Le misure possono variare per ogni singolo prodotto.
+      </CardDescription>
+
+      {/* Item tabs */}
+      <div className="flex flex-wrap gap-2 pb-2 border-b border-border">
+        {multiItems.map((_, i) => (
+          <Button
+            key={i}
+            variant={activeItemIndex === i ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveItemIndex(i)}
+            className="gap-1.5"
+          >
+            #{i + 1}
+            {multiItems[i].width_mm && multiItems[i].height_mm && (
+              <span className="text-xs opacity-70">({multiItems[i].width_mm}×{multiItems[i].height_mm})</span>
+            )}
+          </Button>
+        ))}
+        <Button variant="ghost" size="sm" onClick={addItem} className="gap-1">
+          <Plus className="h-3.5 w-3.5" /> Aggiungi
+        </Button>
+      </div>
+
+      {/* Active item form */}
+      <div className="rounded-lg border border-border p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold text-foreground">Prodotto #{activeItemIndex + 1}</h4>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateItem(activeItemIndex)} title="Duplica">
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+            {multiItems.length > 1 && (
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(activeItemIndex)} title="Rimuovi">
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Larghezza (mm) *</Label>
+            <Input type="number" value={multiItems[activeItemIndex].width_mm} onChange={e => updateItem(activeItemIndex, 'width_mm', e.target.value)} placeholder="1200" />
+          </div>
+          <div className="space-y-2">
+            <Label>Altezza (mm) *</Label>
+            <Input type="number" value={multiItems[activeItemIndex].height_mm} onChange={e => updateItem(activeItemIndex, 'height_mm', e.target.value)} placeholder="1400" />
+          </div>
+          <div className="space-y-2">
+            <Label>Profondità muro (mm)</Label>
+            <Input type="number" value={multiItems[activeItemIndex].depth_mm} onChange={e => updateItem(activeItemIndex, 'depth_mm', e.target.value)} placeholder="300" />
+          </div>
+        </div>
+
+        <div className="space-y-3 pt-2">
+          <Label className="text-base font-semibold">Controlli tecnici</Label>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Checkbox id={`square-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_square} onCheckedChange={v => updateItem(activeItemIndex, 'is_square', v)} />
+              <Label htmlFor={`square-${activeItemIndex}`}>Squadrato</Label>
+            </div>
+            {!multiItems[activeItemIndex].is_square && (
+              <div className="ml-8 space-y-2">
+                <Label>Fuori squadro (mm)</Label>
+                <Input type="number" value={multiItems[activeItemIndex].out_of_square_mm} onChange={e => updateItem(activeItemIndex, 'out_of_square_mm', e.target.value)} placeholder="5" />
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <Checkbox id={`plumb-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_plumb} onCheckedChange={v => updateItem(activeItemIndex, 'is_plumb', v)} />
+              <Label htmlFor={`plumb-${activeItemIndex}`}>A piombo</Label>
+            </div>
+            <div className="flex items-center gap-3">
+              <Checkbox id={`level-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_level} onCheckedChange={v => updateItem(activeItemIndex, 'is_level', v)} />
+              <Label htmlFor={`level-${activeItemIndex}`}>Livellato</Label>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 pt-2">
+          <div className="space-y-2">
+            <Label>Spazio interno (mm)</Label>
+            <Input type="number" value={multiItems[activeItemIndex].internal_space_mm} onChange={e => updateItem(activeItemIndex, 'internal_space_mm', e.target.value)} placeholder="100" />
+          </div>
+          <div className="space-y-2">
+            <Label>Spazio esterno (mm)</Label>
+            <Input type="number" value={multiItems[activeItemIndex].external_space_mm} onChange={e => updateItem(activeItemIndex, 'external_space_mm', e.target.value)} placeholder="50" />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Note specifiche per questo prodotto</Label>
+          <Input value={multiItems[activeItemIndex].notes} onChange={e => updateItem(activeItemIndex, 'notes', e.target.value)} placeholder="Es. finestra bagno piano 1..." />
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="rounded-lg bg-muted/30 border border-border p-3">
+        <p className="text-sm font-medium text-foreground mb-2">Riepilogo prodotti ({multiItems.length})</p>
+        <div className="space-y-1">
+          {multiItems.map((item, i) => (
+            <div key={i} className={`flex items-center gap-2 text-xs ${i === activeItemIndex ? 'text-accent font-medium' : 'text-muted-foreground'}`}>
+              <span>#{i + 1}</span>
+              {item.width_mm && item.height_mm ? (
+                <span>{item.width_mm}×{item.height_mm} mm</span>
+              ) : (
+                <span className="italic">Misure da inserire</span>
+              )}
+              {item.notes && <span className="truncate max-w-[200px]">— {item.notes}</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 
   return (
@@ -308,7 +508,9 @@ export default function NewMeasurement() {
           </Button>
           <div className="flex items-center gap-2">
             <Ruler className="h-5 w-5 text-accent" />
-            <h1 className="text-lg font-bold font-heading text-foreground">Nuova Misurazione</h1>
+            <h1 className="text-lg font-bold font-heading text-foreground">
+              Nuova Misurazione{isMultiProduct ? ` (${multiItems.length} prodotti)` : ''}
+            </h1>
           </div>
         </div>
       </header>
@@ -337,7 +539,7 @@ export default function NewMeasurement() {
           </div>
         )}
 
-        {/* Dual diagram for finishes step - independent zoom */}
+        {/* Dual diagram for finishes step */}
         {showDualDiagram && (
           <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <DiagramWithZoom view="external" zoom={zoomExternal} setZoom={setZoomExternal} />
@@ -375,6 +577,57 @@ export default function NewMeasurement() {
                     </Label>
                   ))}
                 </RadioGroup>
+
+                {/* Multi-product toggle */}
+                {form.product_type && (
+                  <div className="mt-6 rounded-lg border-2 border-dashed border-accent/40 bg-accent/5 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground text-sm">📦 Ordine multi-prodotto</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Ad es. 5 finestre: stesso colore, telaio, materiale per tutti. Solo le misure variano per ogni prodotto.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={isMultiProduct}
+                        onCheckedChange={(checked) => {
+                          setIsMultiProduct(checked);
+                          if (checked && multiItems.length === 1 && !multiItems[0].width_mm) {
+                            // Keep single item
+                          } else if (!checked) {
+                            setMultiItems([{ ...emptyItem }]);
+                            setActiveItemIndex(0);
+                          }
+                        }}
+                      />
+                    </div>
+                    {isMultiProduct && (
+                      <div className="pt-2 border-t border-border">
+                        <Label className="text-xs">Quanti prodotti? (puoi aggiungerne altri dopo)</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="number"
+                            min={2}
+                            max={20}
+                            className="w-20"
+                            value={multiItems.length}
+                            onChange={e => {
+                              const count = Math.max(1, Math.min(20, parseInt(e.target.value) || 1));
+                              setMultiItems(prev => {
+                                if (count > prev.length) {
+                                  return [...prev, ...Array(count - prev.length).fill(null).map(() => ({ ...emptyItem }))];
+                                }
+                                return prev.slice(0, count);
+                              });
+                              if (activeItemIndex >= count) setActiveItemIndex(0);
+                            }}
+                          />
+                          <span className="text-sm text-muted-foreground">prodotti</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -428,66 +681,72 @@ export default function NewMeasurement() {
 
             {/* Step 3: Dimensions */}
             {step === 3 && (
-              <div className="space-y-4">
-                <CardTitle className="font-heading">Misure (in mm)</CardTitle>
-                <CardDescription>Inserisci le dimensioni rilevate</CardDescription>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label>Larghezza (mm) *</Label>
-                    <Input type="number" value={form.width_mm} onChange={e => update('width_mm', e.target.value)} placeholder="1200" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Altezza (mm) *</Label>
-                    <Input type="number" value={form.height_mm} onChange={e => update('height_mm', e.target.value)} placeholder="1400" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Profondità muro (mm)</Label>
-                    <Input type="number" value={form.depth_mm} onChange={e => update('depth_mm', e.target.value)} placeholder="300" />
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-4">
-                  <Label className="text-base font-semibold">Controlli tecnici</Label>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v)} />
-                      <Label htmlFor="square">Squadrato</Label>
+              isMultiProduct ? renderMultiDimensions() : (
+                <div className="space-y-4">
+                  <CardTitle className="font-heading">Misure (in mm)</CardTitle>
+                  <CardDescription>Inserisci le dimensioni rilevate</CardDescription>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label>Larghezza (mm) *</Label>
+                      <Input type="number" value={form.width_mm} onChange={e => update('width_mm', e.target.value)} placeholder="1200" />
                     </div>
-                    {!form.is_square && (
-                      <div className="ml-8 space-y-2">
-                        <Label>Fuori squadro (mm)</Label>
-                        <Input type="number" value={form.out_of_square_mm} onChange={e => update('out_of_square_mm', e.target.value)} placeholder="5" />
+                    <div className="space-y-2">
+                      <Label>Altezza (mm) *</Label>
+                      <Input type="number" value={form.height_mm} onChange={e => update('height_mm', e.target.value)} placeholder="1400" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Profondità muro (mm)</Label>
+                      <Input type="number" value={form.depth_mm} onChange={e => update('depth_mm', e.target.value)} placeholder="300" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-4">
+                    <Label className="text-base font-semibold">Controlli tecnici</Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v)} />
+                        <Label htmlFor="square">Squadrato</Label>
                       </div>
-                    )}
-                    <div className="flex items-center gap-3">
-                      <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} />
-                      <Label htmlFor="plumb">A piombo</Label>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v)} />
-                      <Label htmlFor="level">Livellato</Label>
+                      {!form.is_square && (
+                        <div className="ml-8 space-y-2">
+                          <Label>Fuori squadro (mm)</Label>
+                          <Input type="number" value={form.out_of_square_mm} onChange={e => update('out_of_square_mm', e.target.value)} placeholder="5" />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} />
+                        <Label htmlFor="plumb">A piombo</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v)} />
+                        <Label htmlFor="level">Livellato</Label>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4">
-                  <div className="space-y-2">
-                    <Label>Spazio interno (mm)</Label>
-                    <Input type="number" value={form.internal_space_mm} onChange={e => update('internal_space_mm', e.target.value)} placeholder="100" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Spazio esterno (mm)</Label>
-                    <Input type="number" value={form.external_space_mm} onChange={e => update('external_space_mm', e.target.value)} placeholder="50" />
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>Spazio interno (mm)</Label>
+                      <Input type="number" value={form.internal_space_mm} onChange={e => update('internal_space_mm', e.target.value)} placeholder="100" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Spazio esterno (mm)</Label>
+                      <Input type="number" value={form.external_space_mm} onChange={e => update('external_space_mm', e.target.value)} placeholder="50" />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )
             )}
 
             {/* Step 4: Configuration */}
             {step === 4 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Configurazione</CardTitle>
-                <CardDescription>Definisci la configurazione dell'infisso</CardDescription>
+                <CardDescription>
+                  {isMultiProduct
+                    ? `Configurazione condivisa per tutti i ${multiItems.length} prodotti`
+                    : "Definisci la configurazione dell'infisso"}
+                </CardDescription>
                 <div className="space-y-2">
                   <Label>Numero ante</Label>
                   <Select value={form.num_panels} onValueChange={v => update('num_panels', v)}>
@@ -533,6 +792,15 @@ export default function NewMeasurement() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {isMultiProduct && (
+                  <div className="rounded-lg bg-accent/5 border border-accent/20 p-3 mt-2">
+                    <p className="text-xs text-accent flex items-center gap-1.5">
+                      <Copy className="h-3.5 w-3.5" />
+                      Questa configurazione verrà applicata a tutti i {multiItems.length} prodotti dell'ordine
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -540,7 +808,11 @@ export default function NewMeasurement() {
             {step === 5 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Finiture</CardTitle>
-                <CardDescription>Materiale, colori e maniglie</CardDescription>
+                <CardDescription>
+                  {isMultiProduct
+                    ? `Finiture condivise per tutti i ${multiItems.length} prodotti`
+                    : 'Materiale, colori e maniglie'}
+                </CardDescription>
                 <div className="space-y-2">
                   <Label>Materiale</Label>
                   <RadioGroup value={form.material} onValueChange={v => update('material', v)} className="flex flex-wrap gap-3">
@@ -577,6 +849,15 @@ export default function NewMeasurement() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {isMultiProduct && (
+                  <div className="rounded-lg bg-accent/5 border border-accent/20 p-3 mt-2">
+                    <p className="text-xs text-accent flex items-center gap-1.5">
+                      <Copy className="h-3.5 w-3.5" />
+                      Queste finiture verranno applicate a tutti i {multiItems.length} prodotti dell'ordine
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -742,7 +1023,6 @@ export default function NewMeasurement() {
                     ))}
                   </RadioGroup>
 
-                  {/* Calendar date picker based on delivery type */}
                   {form.delivery_time && (
                     <div className="space-y-2 mt-3 p-3 rounded-lg border border-border bg-muted/30">
                       <Label className="text-sm font-medium">
@@ -754,22 +1034,15 @@ export default function NewMeasurement() {
                         onChange={e => update('delivery_date', e.target.value)}
                         min={(() => {
                           const d = new Date();
-                          if (form.delivery_time === 'express') {
-                            d.setDate(d.getDate() + 14);
-                          } else if (form.delivery_time === 'standard') {
-                            d.setDate(d.getDate() + 28);
-                          } else {
-                            d.setDate(d.getDate() + 56);
-                          }
+                          if (form.delivery_time === 'express') d.setDate(d.getDate() + 14);
+                          else if (form.delivery_time === 'standard') d.setDate(d.getDate() + 28);
+                          else d.setDate(d.getDate() + 56);
                           return d.toISOString().split('T')[0];
                         })()}
                         max={(() => {
                           const d = new Date();
-                          if (form.delivery_time === 'express') {
-                            d.setDate(d.getDate() + 21);
-                          } else if (form.delivery_time === 'standard') {
-                            d.setDate(d.getDate() + 42);
-                          }
+                          if (form.delivery_time === 'express') d.setDate(d.getDate() + 21);
+                          else if (form.delivery_time === 'standard') d.setDate(d.getDate() + 42);
                           return form.delivery_time === 'economy' ? '' : d.toISOString().split('T')[0];
                         })()}
                       />
@@ -789,8 +1062,24 @@ export default function NewMeasurement() {
               <div className="space-y-4">
                 <CardTitle className="font-heading">Note e Foto</CardTitle>
                 <CardDescription>Aggiungi note tecniche e foto del rilievo</CardDescription>
+
+                {isMultiProduct && (
+                  <div className="rounded-lg bg-accent/5 border border-accent/20 p-4 space-y-2">
+                    <p className="text-sm font-semibold text-foreground">📦 Riepilogo ordine multi-prodotto ({multiItems.length} pezzi)</p>
+                    <div className="space-y-1">
+                      {multiItems.map((item, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">#{i + 1}</span>
+                          <span>{item.width_mm}×{item.height_mm} mm</span>
+                          {item.notes && <span className="truncate max-w-[200px]">— {item.notes}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label>Note tecniche</Label>
+                  <Label>Note tecniche generali</Label>
                   <Textarea
                     value={form.notes}
                     onChange={e => update('notes', e.target.value)}
@@ -850,7 +1139,7 @@ export default function NewMeasurement() {
             ) : (
               <Button onClick={handleSubmit} disabled={submitting || savingDraft} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
                 <Check className="h-4 w-4" />
-                {submitting ? 'Invio in corso...' : 'Invia Misurazione'}
+                {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Misurazioni` : 'Misurazione'}`}
               </Button>
             )}
           </div>
