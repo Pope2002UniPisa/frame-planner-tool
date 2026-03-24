@@ -59,9 +59,12 @@ interface PortfolioItem {
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
+  const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [portfolioImages, setPortfolioImages] = useState<PortfolioItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -74,12 +77,16 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [{ data: mData }, { data: pData }] = await Promise.all([
+      const [{ data: mData }, { data: pData }, { data: nData }, { data: pfData }] = await Promise.all([
         supabase.from('measurements').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('*').eq('user_id', user.id).single(),
+        supabase.from('news').select('*').order('created_at', { ascending: false }),
+        supabase.from('portfolio_images').select('*').order('sort_order', { ascending: true }),
       ]);
       setMeasurements(mData || []);
       setProfile(pData);
+      setNewsItems(nData || []);
+      setPortfolioImages(pfData || []);
       setLoadingData(false);
     };
     fetchData();
