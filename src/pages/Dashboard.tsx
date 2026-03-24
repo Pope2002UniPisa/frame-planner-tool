@@ -321,19 +321,27 @@ export default function Dashboard() {
               {filteredMeasurements.map(m => {
                 const pi = productIcons[m.product_type] || { emoji: '📦', color: '#6b7280' };
                 const photos: string[] = m.photo_urls || [];
+                const isGrouped = !!(m as any).order_group_id;
+                const itemIndex = (m as any).order_item_index;
+                const totalItems = (m as any).order_total_items;
                 return (
-                  <Card key={m.id} className="transition-shadow hover:shadow-card-hover">
+                  <Card key={m.id} className={`transition-shadow hover:shadow-card-hover ${isGrouped ? 'border-l-4' : ''}`} style={isGrouped ? { borderLeftColor: pi.color } : undefined}>
                     <CardContent className="flex items-center gap-4 py-4">
                       <div className="hidden sm:flex items-center justify-center rounded-lg p-3" style={{ backgroundColor: `${pi.color}15` }}>
                         <span className="text-xl">{pi.emoji}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pi.color }} />
                           <span className="font-semibold text-foreground">{productLabels[m.product_type] || m.product_type}</span>
                           <Badge variant={statusLabels[m.status]?.variant || 'default'}>
                             {statusLabels[m.status]?.label || m.status}
                           </Badge>
+                          {isGrouped && (
+                            <Badge variant="outline" className="text-[10px] gap-1">
+                              📦 {itemIndex}/{totalItems}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {m.width_mm}×{m.height_mm} mm • {m.client_name || 'Senza nome'}
@@ -342,7 +350,6 @@ export default function Dashboard() {
                         {(m as any).estimated_price > 0 && (
                           <p className="text-xs font-medium text-accent mt-0.5">Prezzo stimato: €{Number((m as any).estimated_price).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
                         )}
-                        {/* Photo thumbnails */}
                         {photos.length > 0 && (
                           <div className="flex gap-1.5 mt-2">
                             {photos.slice(0, 4).map((url: string, i: number) => (
