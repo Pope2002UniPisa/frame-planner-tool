@@ -77,7 +77,10 @@ export default function NewMeasurement() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [accessoriesConfig, setAccessoriesConfig] = useState<AccessoriesConfig>({});
-  const [diagramZoom, setDiagramZoom] = useState(1);
+  // Independent zoom for each view
+  const [diagramZoom, setDiagramZoom] = useState(100);
+  const [zoomExternal, setZoomExternal] = useState(100);
+  const [zoomInternal, setZoomInternal] = useState(100);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -181,9 +184,8 @@ export default function NewMeasurement() {
     }
   };
 
-  // Show diagram for steps 3-6 (dimensions, config, finishes, glass) but NOT accessories (7)
+  // Show diagram for steps 3-6 but NOT accessories (7)
   const showDiagram = step >= 3 && step <= 6 && !!form.product_type;
-  // At step 5 (finishes), show two diagrams (internal + external)
   const showDualDiagram = step === 5;
 
   const ColorSelectField = ({ label, value, field }: { label: string; value: string; field: string }) => (
@@ -210,7 +212,7 @@ export default function NewMeasurement() {
     </div>
   );
 
-  const DiagramWithZoom = ({ view }: { view?: 'internal' | 'external' }) => (
+  const DiagramWithZoom = ({ view, zoom, setZoom }: { view?: 'internal' | 'external'; zoom: number; setZoom: (fn: (prev: number) => number) => void }) => (
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
@@ -218,19 +220,19 @@ export default function NewMeasurement() {
             {view === 'internal' ? 'Vista Interna' : view === 'external' ? 'Vista Esterna' : 'Anteprima'}
           </CardTitle>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDiagramZoom(z => Math.max(0.5, z - 0.25))}>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.max(50, z - 10))}>
               <ZoomOut className="h-3.5 w-3.5" />
             </Button>
-            <span className="text-xs text-muted-foreground w-10 text-center">{Math.round(diagramZoom * 100)}%</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDiagramZoom(z => Math.min(2, z + 0.25))}>
+            <span className="text-xs text-muted-foreground w-10 text-center">{zoom}%</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.min(200, z + 10))}>
               <ZoomIn className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-auto" style={{ maxHeight: diagramZoom > 1 ? '500px' : undefined }}>
-          <div style={{ transform: `scale(${diagramZoom})`, transformOrigin: 'top center' }}>
+        <div className="overflow-auto" style={{ maxHeight: zoom > 100 ? '500px' : undefined }}>
+          <div style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
             <ProductDiagram
               productType={form.product_type}
               widthMm={form.width_mm}
@@ -286,18 +288,18 @@ export default function NewMeasurement() {
           </div>
         </div>
 
-        {/* Diagram ABOVE the form (stacked layout) */}
+        {/* Single diagram ABOVE the form */}
         {showDiagram && !showDualDiagram && (
           <div className="mb-6">
-            <DiagramWithZoom />
+            <DiagramWithZoom zoom={diagramZoom} setZoom={setDiagramZoom} />
           </div>
         )}
 
-        {/* Dual diagram for finishes step */}
+        {/* Dual diagram for finishes step - independent zoom */}
         {showDualDiagram && (
           <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <DiagramWithZoom view="external" />
-            <DiagramWithZoom view="internal" />
+            <DiagramWithZoom view="external" zoom={zoomExternal} setZoom={setZoomExternal} />
+            <DiagramWithZoom view="internal" zoom={zoomInternal} setZoom={setZoomInternal} />
           </div>
         )}
 
@@ -564,7 +566,7 @@ export default function NewMeasurement() {
               </div>
             )}
 
-            {/* Step 7: Accessories - NO window diagram, only accessory diagrams */}
+            {/* Step 7: Accessories */}
             {step === 7 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Accessori</CardTitle>
