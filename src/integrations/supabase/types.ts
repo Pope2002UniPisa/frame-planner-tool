@@ -1,0 +1,333 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
+  public: {
+    Tables: {
+      measurements: {
+        Row: {
+          client_address: string
+          client_name: string
+          color_external: string | null
+          color_internal: string | null
+          created_at: string
+          depth_mm: number | null
+          external_space_mm: number | null
+          frame_type: string | null
+          glass_type: string | null
+          handle_type: string | null
+          has_box: boolean | null
+          has_mosquito_net: boolean | null
+          has_motorization: boolean | null
+          has_shutter: boolean | null
+          height_mm: number
+          id: string
+          installation_type: string | null
+          internal_space_mm: number | null
+          is_level: boolean | null
+          is_plumb: boolean | null
+          is_square: boolean | null
+          laying_type: string | null
+          material: string | null
+          notes: string | null
+          num_panels: number | null
+          opening_direction: string | null
+          out_of_square_mm: number | null
+          panel_type: string | null
+          photo_urls: string[] | null
+          product_type: string
+          remove_old: boolean | null
+          status: string
+          survey_type: string
+          updated_at: string
+          user_id: string
+          width_mm: number
+        }
+        Insert: {
+          client_address?: string
+          client_name?: string
+          color_external?: string | null
+          color_internal?: string | null
+          created_at?: string
+          depth_mm?: number | null
+          external_space_mm?: number | null
+          frame_type?: string | null
+          glass_type?: string | null
+          handle_type?: string | null
+          has_box?: boolean | null
+          has_mosquito_net?: boolean | null
+          has_motorization?: boolean | null
+          has_shutter?: boolean | null
+          height_mm: number
+          id?: string
+          installation_type?: string | null
+          internal_space_mm?: number | null
+          is_level?: boolean | null
+          is_plumb?: boolean | null
+          is_square?: boolean | null
+          laying_type?: string | null
+          material?: string | null
+          notes?: string | null
+          num_panels?: number | null
+          opening_direction?: string | null
+          out_of_square_mm?: number | null
+          panel_type?: string | null
+          photo_urls?: string[] | null
+          product_type: string
+          remove_old?: boolean | null
+          status?: string
+          survey_type: string
+          updated_at?: string
+          user_id: string
+          width_mm: number
+        }
+        Update: {
+          client_address?: string
+          client_name?: string
+          color_external?: string | null
+          color_internal?: string | null
+          created_at?: string
+          depth_mm?: number | null
+          external_space_mm?: number | null
+          frame_type?: string | null
+          glass_type?: string | null
+          handle_type?: string | null
+          has_box?: boolean | null
+          has_mosquito_net?: boolean | null
+          has_motorization?: boolean | null
+          has_shutter?: boolean | null
+          height_mm?: number
+          id?: string
+          installation_type?: string | null
+          internal_space_mm?: number | null
+          is_level?: boolean | null
+          is_plumb?: boolean | null
+          is_square?: boolean | null
+          laying_type?: string | null
+          material?: string | null
+          notes?: string | null
+          num_panels?: number | null
+          opening_direction?: string | null
+          out_of_square_mm?: number | null
+          panel_type?: string | null
+          photo_urls?: string[] | null
+          product_type?: string
+          remove_old?: boolean | null
+          status?: string
+          survey_type?: string
+          updated_at?: string
+          user_id?: string
+          width_mm?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          approved: boolean
+          client_code: string
+          company_name: string
+          created_at: string
+          email: string
+          id: string
+          phone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved?: boolean
+          client_code?: string
+          company_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved?: boolean
+          client_code?: string
+          company_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+    }
+    Enums: {
+      app_role: "admin" | "dealer" | "user"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      app_role: ["admin", "dealer", "user"],
+    },
+  },
+} as const
