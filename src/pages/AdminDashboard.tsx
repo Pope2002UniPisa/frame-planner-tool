@@ -306,16 +306,15 @@ export default function AdminDashboard() {
 
           {/* OVERVIEW */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
               {[
-                { icon: FileText, label: 'Misurazioni', value: stats.totalMeasurements },
                 { icon: Edit3, label: 'Bozze totali', value: stats.drafts },
                 { icon: Send, label: 'Inviate', value: stats.sent },
                 { icon: Package, label: 'Preventivate', value: stats.quoted },
                 { icon: CheckCircle, label: 'Completate', value: stats.completed },
                 { icon: TrendingUp, label: 'Fatt. stimato', value: `€${Math.round(stats.totalRevenue).toLocaleString('it-IT')}` },
                 { icon: TrendingUp, label: 'Fatt. realizzato', value: `€${Math.round(stats.realizedRevenue).toLocaleString('it-IT')}` },
-                { icon: TrendingUp, label: 'Fatt. riscosso', value: `€${Math.round(stats.collectedRevenue).toLocaleString('it-IT')}` },
+                { icon: TrendingUp, label: 'Fatt. incassato', value: `€${Math.round(stats.collectedRevenue).toLocaleString('it-IT')}` },
               ].map(s => (
                 <Card key={s.label}>
                   <CardContent className="flex items-center gap-3 py-4">
