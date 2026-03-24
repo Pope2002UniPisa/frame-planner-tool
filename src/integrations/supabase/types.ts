@@ -272,48 +272,6 @@ export type Database = {
         }
         Relationships: []
       }
-      sales_objectives: {
-        Row: {
-          brand: string | null
-          created_at: string
-          id: string
-          month: number | null
-          period: string
-          product_type: string | null
-          target_amount: number | null
-          target_count: number | null
-          updated_at: string
-          user_id: string
-          year: number
-        }
-        Insert: {
-          brand?: string | null
-          created_at?: string
-          id?: string
-          month?: number | null
-          period?: string
-          product_type?: string | null
-          target_amount?: number | null
-          target_count?: number | null
-          updated_at?: string
-          user_id: string
-          year?: number
-        }
-        Update: {
-          brand?: string | null
-          created_at?: string
-          id?: string
-          month?: number | null
-          period?: string
-          product_type?: string | null
-          target_amount?: number | null
-          target_count?: number | null
-          updated_at?: string
-          user_id?: string
-          year?: number
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           id: string
