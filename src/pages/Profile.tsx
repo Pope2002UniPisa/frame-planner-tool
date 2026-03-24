@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { toast } from 'sonner';
@@ -57,6 +58,8 @@ export default function Profile() {
   const [orgContacts, setOrgContacts] = useState(ORG_ROLES);
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState(false);
+  const [supplierLogos, setSupplierLogos] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -160,6 +163,16 @@ export default function Profile() {
       </header>
 
       <main className="container max-w-6xl py-8">
+        {/* Logo Preview Dialog */}
+        <Dialog open={logoPreview} onOpenChange={setLogoPreview}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-heading">Logo aziendale</DialogTitle>
+            </DialogHeader>
+            {logoFile && <img src={logoFile} alt="Logo aziendale" className="w-full rounded-lg" />}
+          </DialogContent>
+        </Dialog>
+
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="gap-1.5"><User className="h-3.5 w-3.5" /> Profilo</TabsTrigger>
@@ -174,7 +187,12 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="font-heading flex items-center gap-3">
                   {logoFile ? (
-                    <img src={logoFile} alt="Logo" className="h-12 w-12 rounded-lg object-cover border border-border" />
+                    <img
+                      src={logoFile}
+                      alt="Logo"
+                      className="h-12 w-12 rounded-lg object-cover border border-border cursor-pointer hover:ring-2 hover:ring-accent transition-all"
+                      onClick={() => setLogoPreview(true)}
+                    />
                   ) : (
                     <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
                       <Building2 className="h-6 w-6 text-muted-foreground" />
@@ -314,10 +332,34 @@ export default function Profile() {
                       }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="text-2xl">{s.logo}</span>
-                        <div>
+                        {supplierLogos[s.id] ? (
+                          <img src={supplierLogos[s.id]} alt={s.name} className="h-10 w-10 rounded-lg object-contain border border-border" />
+                        ) : (
+                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1">
                           <p className="font-semibold text-foreground">{s.name}</p>
                           <p className="text-xs text-muted-foreground">{s.category}</p>
+                        </div>
+                        <div onClick={e => e.stopPropagation()}>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            id={`supplier-logo-${s.id}`}
+                            onChange={e => {
+                              if (e.target.files?.[0]) {
+                                setSupplierLogos(prev => ({ ...prev, [s.id]: URL.createObjectURL(e.target.files![0]) }));
+                              }
+                            }}
+                          />
+                          <Button variant="ghost" size="sm" asChild className="text-[10px] h-6 px-2">
+                            <label htmlFor={`supplier-logo-${s.id}`} className="cursor-pointer gap-1">
+                              <Upload className="h-2.5 w-2.5" /> Logo
+                            </label>
+                          </Button>
                         </div>
                       </div>
                       {selectedSupplier === s.id && (
