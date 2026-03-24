@@ -382,6 +382,30 @@ export default function Dashboard() {
                             )}
                           </div>
                         )}
+                        {/* Workflow tracker */}
+                        {m.status !== 'bozza' && (
+                          <div className="flex items-center gap-0.5 mt-2">
+                            {WORKFLOW_STEPS.slice(1).map((ws, idx) => {
+                              const currentIdx = getWorkflowIndex(m.status);
+                              const stepIdx = idx + 1;
+                              const isActive = stepIdx <= currentIdx;
+                              const isCurrent = stepIdx === currentIdx;
+                              return (
+                                <div key={ws.key} className="flex items-center gap-0.5">
+                                  <div className={`flex items-center justify-center w-5 h-5 rounded-full text-[8px] ${
+                                    isCurrent ? 'bg-accent text-accent-foreground ring-2 ring-accent/30' :
+                                    isActive ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground'
+                                  }`} title={ws.label}>
+                                    {ws.icon}
+                                  </div>
+                                  {idx < WORKFLOW_STEPS.length - 2 && (
+                                    <div className={`w-3 h-0.5 ${isActive ? 'bg-accent/40' : 'bg-muted'}`} />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         {m.status === 'bozza' && (
