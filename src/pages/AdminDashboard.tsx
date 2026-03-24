@@ -51,6 +51,7 @@ export default function AdminDashboard() {
   // Portfolio form
   const [portfolioDialog, setPortfolioDialog] = useState(false);
   const [portfolioForm, setPortfolioForm] = useState({ title: '', description: '', image_url: '', sort_order: 0 });
+  const [clientFilter, setClientFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   useEffect(() => {
     if (!user || !isAdmin) return;
