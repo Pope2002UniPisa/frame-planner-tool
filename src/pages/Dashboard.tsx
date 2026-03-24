@@ -159,7 +159,7 @@ export default function Dashboard() {
             <h3 className="text-sm font-heading font-semibold text-foreground">Novità e Promozioni</h3>
           </div>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {NEWS_ITEMS.map(n => (
+            {newsItems.map(n => (
               <div
                 key={n.id}
                 onClick={() => setSelectedNews(n)}
@@ -168,12 +168,15 @@ export default function Dashboard() {
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{n.tag}</Badge>
                   {n.link && <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />}
-                  {n.socialLink && <Instagram className="h-2.5 w-2.5 text-muted-foreground" />}
+                  {n.social_link && <Instagram className="h-2.5 w-2.5 text-muted-foreground" />}
                 </div>
                 <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{n.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.date).toLocaleDateString('it-IT')}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.created_at).toLocaleDateString('it-IT')}</p>
               </div>
             ))}
+            {newsItems.length === 0 && (
+              <p className="col-span-4 text-xs text-muted-foreground text-center py-4">Nessuna novità al momento.</p>
+            )}
           </div>
         </div>
 
@@ -185,8 +188,9 @@ export default function Dashboard() {
             </DialogHeader>
             <div className="space-y-3">
               <Badge variant="secondary">{selectedNews?.tag}</Badge>
+              {selectedNews?.image_url && <img src={selectedNews.image_url} alt="" className="w-full rounded-lg" />}
               <p className="text-sm text-foreground leading-relaxed">{selectedNews?.summary}</p>
-              <p className="text-xs text-muted-foreground">{selectedNews && new Date(selectedNews.date).toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p className="text-xs text-muted-foreground">{selectedNews && new Date(selectedNews.created_at).toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               <div className="flex gap-2">
                 {selectedNews?.link && (
                   <Button variant="outline" size="sm" className="gap-1.5" asChild>
@@ -195,9 +199,9 @@ export default function Dashboard() {
                     </a>
                   </Button>
                 )}
-                {selectedNews?.socialLink && (
+                {selectedNews?.social_link && (
                   <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                    <a href={selectedNews.socialLink} target="_blank" rel="noopener noreferrer">
+                    <a href={selectedNews.social_link} target="_blank" rel="noopener noreferrer">
                       <Instagram className="h-3.5 w-3.5" /> Vedi post social
                     </a>
                   </Button>
