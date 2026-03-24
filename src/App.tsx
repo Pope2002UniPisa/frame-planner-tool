@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NewMeasurement from "./pages/NewMeasurement";
+import MeasurementView from "./pages/MeasurementView";
+import MeasurementPrint from "./pages/MeasurementPrint";
+import EditMeasurement from "./pages/EditMeasurement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +27,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/nuova-misurazione" element={<NewMeasurement />} />
+            <Route path="/misurazione/:id" element={<MeasurementView />} />
+            <Route path="/misurazione/:id/stampa" element={<MeasurementPrint />} />
+            <Route path="/misurazione/:id/modifica" element={<EditMeasurement />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
