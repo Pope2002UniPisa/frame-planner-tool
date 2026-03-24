@@ -50,13 +50,12 @@ interface NewsItem {
   social_link?: string;
 }
 
-// Sample portfolio images
-const PORTFOLIO_IMAGES = [
-  { id: 1, src: '/images/portfolio-1.jpeg', title: 'Cantiere San Vincenzo', desc: 'Finestre Nurith x Dienne' },
-  { id: 2, src: '/images/portfolio-1.jpeg', title: 'Installazione Villa Toscana', desc: 'Porte e finestre in legno' },
-  { id: 3, src: '/images/portfolio-1.jpeg', title: 'Ristrutturazione Milano', desc: 'Infissi in alluminio' },
-  { id: 4, src: '/images/portfolio-1.jpeg', title: 'Progetto residenziale Roma', desc: 'Basculanti e persiane' },
-];
+interface PortfolioItem {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+}
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
