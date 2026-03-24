@@ -40,22 +40,15 @@ const productIcons: Record<string, { emoji: string; color: string }> = {
 };
 
 interface NewsItem {
-  id: number;
-  date: string;
+  id: string;
+  created_at: string;
   title: string;
   tag: string;
   summary: string;
-  image?: string;
+  image_url?: string;
   link?: string;
-  socialLink?: string;
+  social_link?: string;
 }
-
-const NEWS_ITEMS: NewsItem[] = [
-  { id: 1, date: '2026-03-20', title: 'Sconto in fattura 50% – Prorogato fino a giugno 2026', tag: 'Agevolazione', summary: 'Il governo ha prorogato lo sconto in fattura al 50% per la sostituzione degli infissi fino a giugno 2026.', link: '#' },
-  { id: 2, date: '2026-03-15', title: 'Nuovo modello Finestra EcoPlus', tag: 'Nuovo prodotto', summary: 'La nuova finestra EcoPlus garantisce un isolamento termico del 40% superiore.', socialLink: 'https://instagram.com' },
-  { id: 3, date: '2026-03-10', title: 'Conto Termico 2.0: incentivi disponibili', tag: 'Agevolazione', summary: 'Guida completa per accedere agli incentivi del Conto Termico 2.0.', link: '#' },
-  { id: 4, date: '2026-03-05', title: 'Tapparelle motorizzate -15%', tag: 'Promozione', summary: 'Promozione su tapparelle motorizzate Somfy fino al 30 aprile.', socialLink: 'https://facebook.com' },
-];
 
 // Sample portfolio images
 const PORTFOLIO_IMAGES = [
