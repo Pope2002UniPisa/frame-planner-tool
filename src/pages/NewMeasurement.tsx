@@ -155,7 +155,8 @@ export default function NewMeasurement() {
     photo_urls: photo_urls.length > 0 ? photo_urls : null,
     status,
     accessories_config: accessoriesConfig as any,
-  });
+    estimated_price: status !== 'bozza' ? getEstimatedPrice() : null,
+  } as any);
 
   // Create separate measurement records for each selected accessory
   const createAccessoryRecords = async (status: string) => {
