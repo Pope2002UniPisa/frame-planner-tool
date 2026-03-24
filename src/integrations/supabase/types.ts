@@ -49,6 +49,9 @@ export type Database = {
           notes: string | null
           num_panels: number | null
           opening_direction: string | null
+          order_group_id: string | null
+          order_item_index: number | null
+          order_total_items: number | null
           out_of_square_mm: number | null
           panel_type: string | null
           payment_status: string | null
@@ -95,6 +98,9 @@ export type Database = {
           notes?: string | null
           num_panels?: number | null
           opening_direction?: string | null
+          order_group_id?: string | null
+          order_item_index?: number | null
+          order_total_items?: number | null
           out_of_square_mm?: number | null
           panel_type?: string | null
           payment_status?: string | null
@@ -141,6 +147,9 @@ export type Database = {
           notes?: string | null
           num_panels?: number | null
           opening_direction?: string | null
+          order_group_id?: string | null
+          order_item_index?: number | null
+          order_total_items?: number | null
           out_of_square_mm?: number | null
           panel_type?: string | null
           payment_status?: string | null
