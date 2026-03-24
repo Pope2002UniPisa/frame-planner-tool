@@ -141,6 +141,17 @@ export default function Dashboard() {
     return Object.values(map).sort((a, b) => a.name.localeCompare(b.name, 'it'));
   }, [measurements]);
 
+  const filteredClientSummary = useMemo(() => {
+    return clientSummary.filter(cs => {
+      if (clientSearchText && !cs.name.toLowerCase().includes(clientSearchText.toLowerCase())) return false;
+      if (clientFilterStatus === 'with_drafts' && cs.drafts === 0) return false;
+      if (clientFilterStatus === 'with_sent' && cs.sent === 0) return false;
+      if (clientFilterStatus === 'with_completed' && cs.completed === 0) return false;
+      if (clientFilterStatus === 'with_disputes' && !cs.measurements.some((m: any) => m.has_dispute)) return false;
+      return true;
+    });
+  }, [clientSummary, clientSearchText, clientFilterStatus]);
+
   const filteredMeasurements = useMemo(() => {
     return measurements.filter(m => {
       if (filterStatus !== 'all') {
