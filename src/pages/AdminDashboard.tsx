@@ -357,7 +357,7 @@ export default function AdminDashboard() {
               <CardHeader><CardTitle className="text-sm font-heading">Ultime misurazioni ricevute</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {measurements.slice(0, 10).map(m => {
+                  {measurements.filter(m => m.status !== 'bozza').slice(0, 10).map(m => {
                     const profile = profiles.find(p => p.user_id === m.user_id);
                     return (
                       <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-3">
