@@ -595,6 +595,9 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
+            {/* KPI / Indici aziendali */}
+            <BusinessIndicesCard measurements={measurements} />
+
             {/* Objective Dialog */}
             <Dialog open={objectiveDialog} onOpenChange={setObjectiveDialog}>
               <DialogContent className="max-w-lg">
