@@ -125,12 +125,15 @@ export default function AdminDashboard() {
   }, [measurements]);
 
   // Client stats with objectives
+  const [expandedClient, setExpandedClient] = useState<string | null>(null);
+
   const clientStats = useMemo(() => {
     const map: Record<string, any> = {};
     profiles.forEach(p => {
       map[p.user_id] = {
         user_id: p.user_id, name: p.company_name || p.email, email: p.email, approved: p.approved,
         total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0, revenue: 0,
+        realizedRevenue: 0, collectedRevenue: 0,
         byProduct: {} as Record<string, number>,
       };
     });
@@ -143,9 +146,15 @@ export default function AdminDashboard() {
       if (m.status === 'bozza') map[m.user_id].drafts++;
       else if (['ricevuto', 'submitted', 'in_review'].includes(m.status)) map[m.user_id].sent++;
       else if (m.status === 'quoted') map[m.user_id].quoted++;
-      else if (['completed', 'ordered'].includes(m.status)) map[m.user_id].completed++;
+      else if (['completed', 'ordered'].includes(m.status)) {
+        map[m.user_id].completed++;
+        map[m.user_id].realizedRevenue += Number(m.estimated_price) || 0;
+        if (m.payment_status === 'pagato') {
+          map[m.user_id].collectedRevenue += Number(m.amount_paid) || Number(m.estimated_price) || 0;
+        }
+      }
     });
-    return Object.values(map).sort((a: any, b: any) => b.total - a.total);
+    return Object.values(map).sort((a: any, b: any) => (a.name || '').localeCompare(b.name || '', 'it'));
   }, [profiles, measurements]);
 
   const filteredClients = useMemo(() => {
