@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen } from 'lucide-react';
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro } from 'lucide-react';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 
 const productLabels: Record<string, string> = {
