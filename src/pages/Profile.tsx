@@ -348,6 +348,17 @@ export default function Profile() {
 
           {/* TAB: Statistics */}
           <TabsContent value="stats" className="space-y-6">
+            {/* Export buttons */}
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
+                <Download className="h-4 w-4" /> Scarica Excel/CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportPDF} className="gap-2">
+                <FileText className="h-4 w-4" /> Scarica PDF
+              </Button>
+            </div>
+
+            {/* Measurement counts */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
               {[
                 { icon: FileText, label: 'Totale', value: stats.total },
@@ -367,6 +378,8 @@ export default function Profile() {
                 </Card>
               ))}
             </div>
+
+            {/* Charts: Status + Product trend */}
             {measurements.length > 0 && (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Card>
@@ -399,6 +412,124 @@ export default function Profile() {
                 </Card>
               </div>
             )}
+
+            {/* Financial summary */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-heading flex items-center gap-2"><Euro className="h-4 w-4 text-accent" /> Situazione finanziaria</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-6">
+                  {[
+                    { label: 'Totale stimato', value: `€${stats.totalEstimated.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`, icon: Euro, color: 'text-foreground' },
+                    { label: 'Pagato', value: `€${stats.totalPaid.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`, icon: CreditCard, color: 'text-green-600' },
+                    { label: 'Da pagare', value: `€${Math.max(0, stats.remaining).toLocaleString('it-IT', { minimumFractionDigits: 2 })}`, icon: CreditCard, color: 'text-red-500' },
+                    { label: '% saldato', value: stats.totalEstimated > 0 ? `${Math.round((stats.totalPaid / stats.totalEstimated) * 100)}%` : '—', icon: CheckCircle, color: 'text-accent' },
+                  ].map(item => (
+                    <div key={item.label} className="rounded-xl border border-border p-4 text-center">
+                      <item.icon className={`h-5 w-5 mx-auto mb-2 ${item.color}`} />
+                      <p className={`text-xl font-bold font-heading ${item.color}`}>{item.value}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{item.label}</p>
+                    </div>
+                  ))}
+                </div>
+                {paymentChartData.length > 0 && (
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie data={paymentChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label={({ name, value }) => `${name}: €${value.toLocaleString('it-IT')}`}>
+                        {paymentChartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(v: number) => `€${v.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Price by product type */}
+            {productPriceData.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-heading flex items-center gap-2"><BarChart3 className="h-4 w-4 text-accent" /> Spesa per tipologia prodotto</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={productPriceData}>
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(v: number) => `€${v.toLocaleString('it-IT')}`} />
+                      <Legend />
+                      <Bar dataKey="totale" name="Totale €" fill="#f97316" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="media" name="Media €" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Disputes & Modifications */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-heading flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-red-500" /> Contestazioni</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {stats.disputes === 0 ? (
+                    <div className="text-center py-6">
+                      <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Nessuna contestazione aperta</p>
+                      <p className="text-xs text-muted-foreground mt-1">Ottimo lavoro! Tutti gli ordini procedono senza problemi.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 rounded-lg bg-red-50 dark:bg-red-950/20 p-4">
+                        <AlertTriangle className="h-6 w-6 text-red-500" />
+                        <div>
+                          <p className="text-2xl font-bold text-red-600">{stats.disputes}</p>
+                          <p className="text-xs text-muted-foreground">Contestazioni attive</p>
+                        </div>
+                      </div>
+                      {measurements.filter(m => (m as any).has_dispute).map(m => (
+                        <div key={m.id} className="rounded-lg border border-red-200 p-3">
+                          <p className="text-sm font-medium text-foreground">{m.client_name} — {productLabels[m.product_type] || m.product_type}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{(m as any).dispute_notes || 'Dettagli in fase di revisione'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-heading flex items-center gap-2"><RefreshCw className="h-4 w-4 text-amber-500" /> Modifiche ordini</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {stats.modifications === 0 ? (
+                    <div className="text-center py-6">
+                      <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Nessuna modifica richiesta</p>
+                      <p className="text-xs text-muted-foreground mt-1">Gli ordini procedono come previsto.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 p-4">
+                        <RefreshCw className="h-6 w-6 text-amber-500" />
+                        <div>
+                          <p className="text-2xl font-bold text-amber-600">{stats.modifications}</p>
+                          <p className="text-xs text-muted-foreground">Modifiche richieste</p>
+                        </div>
+                      </div>
+                      {measurements.filter(m => (m as any).has_modification).map(m => (
+                        <div key={m.id} className="rounded-lg border border-amber-200 p-3">
+                          <p className="text-sm font-medium text-foreground">{m.client_name} — {productLabels[m.product_type] || m.product_type}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{(m as any).modification_notes || 'In fase di valutazione'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* TAB: Suppliers */}
