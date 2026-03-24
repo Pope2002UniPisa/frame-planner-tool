@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Image, Camera } from 'lucide-react';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Image, Camera, Shield } from 'lucide-react';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   bozza: { label: 'Bozza', variant: 'outline' },
@@ -39,36 +40,31 @@ const productIcons: Record<string, { emoji: string; color: string }> = {
 };
 
 interface NewsItem {
-  id: number;
-  date: string;
+  id: string;
+  created_at: string;
   title: string;
   tag: string;
   summary: string;
-  image?: string;
+  image_url?: string;
   link?: string;
-  socialLink?: string;
+  social_link?: string;
 }
 
-const NEWS_ITEMS: NewsItem[] = [
-  { id: 1, date: '2026-03-20', title: 'Sconto in fattura 50% – Prorogato fino a giugno 2026', tag: 'Agevolazione', summary: 'Il governo ha prorogato lo sconto in fattura al 50% per la sostituzione degli infissi fino a giugno 2026.', link: '#' },
-  { id: 2, date: '2026-03-15', title: 'Nuovo modello Finestra EcoPlus', tag: 'Nuovo prodotto', summary: 'La nuova finestra EcoPlus garantisce un isolamento termico del 40% superiore.', socialLink: 'https://instagram.com' },
-  { id: 3, date: '2026-03-10', title: 'Conto Termico 2.0: incentivi disponibili', tag: 'Agevolazione', summary: 'Guida completa per accedere agli incentivi del Conto Termico 2.0.', link: '#' },
-  { id: 4, date: '2026-03-05', title: 'Tapparelle motorizzate -15%', tag: 'Promozione', summary: 'Promozione su tapparelle motorizzate Somfy fino al 30 aprile.', socialLink: 'https://facebook.com' },
-];
-
-// Sample portfolio images
-const PORTFOLIO_IMAGES = [
-  { id: 1, src: '/images/portfolio-1.jpeg', title: 'Cantiere San Vincenzo', desc: 'Finestre Nurith x Dienne' },
-  { id: 2, src: '/images/portfolio-1.jpeg', title: 'Installazione Villa Toscana', desc: 'Porte e finestre in legno' },
-  { id: 3, src: '/images/portfolio-1.jpeg', title: 'Ristrutturazione Milano', desc: 'Infissi in alluminio' },
-  { id: 4, src: '/images/portfolio-1.jpeg', title: 'Progetto residenziale Roma', desc: 'Basculanti e persiane' },
-];
+interface PortfolioItem {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+}
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
+  const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [portfolioImages, setPortfolioImages] = useState<PortfolioItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -81,12 +77,16 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [{ data: mData }, { data: pData }] = await Promise.all([
+      const [{ data: mData }, { data: pData }, { data: nData }, { data: pfData }] = await Promise.all([
         supabase.from('measurements').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('*').eq('user_id', user.id).single(),
+        supabase.from('news').select('*').order('created_at', { ascending: false }),
+        supabase.from('portfolio_images').select('*').order('sort_order', { ascending: true }),
       ]);
       setMeasurements(mData || []);
       setProfile(pData);
+      setNewsItems(nData || []);
+      setPortfolioImages(pfData || []);
       setLoadingData(false);
     };
     fetchData();
@@ -136,6 +136,11 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Button variant="outline" size="icon" onClick={() => navigate('/admin')} title="Admin">
+                <Shield className="h-4 w-4" />
+              </Button>
+            )}
             <Button variant="outline" size="icon" onClick={() => navigate('/profilo')} title="Profilo">
               <User className="h-4 w-4" />
             </Button>
@@ -154,7 +159,7 @@ export default function Dashboard() {
             <h3 className="text-sm font-heading font-semibold text-foreground">Novità e Promozioni</h3>
           </div>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {NEWS_ITEMS.map(n => (
+            {newsItems.map(n => (
               <div
                 key={n.id}
                 onClick={() => setSelectedNews(n)}
@@ -163,12 +168,15 @@ export default function Dashboard() {
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{n.tag}</Badge>
                   {n.link && <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />}
-                  {n.socialLink && <Instagram className="h-2.5 w-2.5 text-muted-foreground" />}
+                  {n.social_link && <Instagram className="h-2.5 w-2.5 text-muted-foreground" />}
                 </div>
                 <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{n.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.date).toLocaleDateString('it-IT')}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.created_at).toLocaleDateString('it-IT')}</p>
               </div>
             ))}
+            {newsItems.length === 0 && (
+              <p className="col-span-4 text-xs text-muted-foreground text-center py-4">Nessuna novità al momento.</p>
+            )}
           </div>
         </div>
 
@@ -180,8 +188,9 @@ export default function Dashboard() {
             </DialogHeader>
             <div className="space-y-3">
               <Badge variant="secondary">{selectedNews?.tag}</Badge>
+              {selectedNews?.image_url && <img src={selectedNews.image_url} alt="" className="w-full rounded-lg" />}
               <p className="text-sm text-foreground leading-relaxed">{selectedNews?.summary}</p>
-              <p className="text-xs text-muted-foreground">{selectedNews && new Date(selectedNews.date).toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p className="text-xs text-muted-foreground">{selectedNews && new Date(selectedNews.created_at).toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               <div className="flex gap-2">
                 {selectedNews?.link && (
                   <Button variant="outline" size="sm" className="gap-1.5" asChild>
@@ -190,9 +199,9 @@ export default function Dashboard() {
                     </a>
                   </Button>
                 )}
-                {selectedNews?.socialLink && (
+                {selectedNews?.social_link && (
                   <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                    <a href={selectedNews.socialLink} target="_blank" rel="noopener noreferrer">
+                    <a href={selectedNews.social_link} target="_blank" rel="noopener noreferrer">
                       <Instagram className="h-3.5 w-3.5" /> Vedi post social
                     </a>
                   </Button>
@@ -381,21 +390,24 @@ export default function Dashboard() {
             <h2 className="text-lg font-bold font-heading text-foreground">I nostri lavori</h2>
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {PORTFOLIO_IMAGES.map(img => (
+            {portfolioImages.map(img => (
               <div
                 key={img.id}
                 className="group rounded-xl overflow-hidden border border-border cursor-pointer hover:shadow-card-hover transition-all"
-                onClick={() => setSelectedPhoto(img.src)}
+                onClick={() => setSelectedPhoto(img.image_url)}
               >
                 <div className="aspect-square overflow-hidden">
-                  <img src={img.src} alt={img.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <img src={img.image_url} alt={img.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 </div>
                 <div className="p-3">
                   <p className="text-xs font-semibold text-foreground line-clamp-1">{img.title}</p>
-                  <p className="text-[10px] text-muted-foreground">{img.desc}</p>
+                  <p className="text-[10px] text-muted-foreground">{img.description}</p>
                 </div>
               </div>
             ))}
+            {portfolioImages.length === 0 && (
+              <p className="col-span-4 text-xs text-muted-foreground text-center py-4">Nessuna immagine nel portfolio.</p>
+            )}
           </div>
         </div>
       </main>

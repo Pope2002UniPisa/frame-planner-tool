@@ -134,6 +134,72 @@ export type Database = {
         }
         Relationships: []
       }
+      news: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          link: string | null
+          published: boolean
+          social_link: string | null
+          summary: string
+          tag: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          published?: boolean
+          social_link?: string | null
+          summary?: string
+          tag?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          published?: boolean
+          social_link?: string | null
+          summary?: string
+          tag?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      portfolio_images: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          image_url: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          image_url: string
+          sort_order?: number
+          title?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           approved: boolean
@@ -142,7 +208,9 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          logo_url: string | null
           phone: string
+          supplier_logos: Json | null
           updated_at: string
           user_id: string
         }
@@ -153,7 +221,9 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          logo_url?: string | null
           phone?: string
+          supplier_logos?: Json | null
           updated_at?: string
           user_id: string
         }
@@ -164,7 +234,9 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          logo_url?: string | null
           phone?: string
+          supplier_logos?: Json | null
           updated_at?: string
           user_id?: string
         }
