@@ -390,21 +390,24 @@ export default function Dashboard() {
             <h2 className="text-lg font-bold font-heading text-foreground">I nostri lavori</h2>
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {PORTFOLIO_IMAGES.map(img => (
+            {portfolioImages.map(img => (
               <div
                 key={img.id}
                 className="group rounded-xl overflow-hidden border border-border cursor-pointer hover:shadow-card-hover transition-all"
-                onClick={() => setSelectedPhoto(img.src)}
+                onClick={() => setSelectedPhoto(img.image_url)}
               >
                 <div className="aspect-square overflow-hidden">
-                  <img src={img.src} alt={img.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <img src={img.image_url} alt={img.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 </div>
                 <div className="p-3">
                   <p className="text-xs font-semibold text-foreground line-clamp-1">{img.title}</p>
-                  <p className="text-[10px] text-muted-foreground">{img.desc}</p>
+                  <p className="text-[10px] text-muted-foreground">{img.description}</p>
                 </div>
               </div>
             ))}
+            {portfolioImages.length === 0 && (
+              <p className="col-span-4 text-xs text-muted-foreground text-center py-4">Nessuna immagine nel portfolio.</p>
+            )}
           </div>
         </div>
       </main>
