@@ -163,6 +163,16 @@ export default function Profile() {
       </header>
 
       <main className="container max-w-6xl py-8">
+        {/* Logo Preview Dialog */}
+        <Dialog open={logoPreview} onOpenChange={setLogoPreview}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-heading">Logo aziendale</DialogTitle>
+            </DialogHeader>
+            {logoFile && <img src={logoFile} alt="Logo aziendale" className="w-full rounded-lg" />}
+          </DialogContent>
+        </Dialog>
+
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="gap-1.5"><User className="h-3.5 w-3.5" /> Profilo</TabsTrigger>
