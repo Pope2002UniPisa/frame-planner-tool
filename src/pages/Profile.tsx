@@ -332,10 +332,34 @@ export default function Profile() {
                       }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="text-2xl">{s.logo}</span>
-                        <div>
+                        {supplierLogos[s.id] ? (
+                          <img src={supplierLogos[s.id]} alt={s.name} className="h-10 w-10 rounded-lg object-contain border border-border" />
+                        ) : (
+                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1">
                           <p className="font-semibold text-foreground">{s.name}</p>
                           <p className="text-xs text-muted-foreground">{s.category}</p>
+                        </div>
+                        <div onClick={e => e.stopPropagation()}>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            id={`supplier-logo-${s.id}`}
+                            onChange={e => {
+                              if (e.target.files?.[0]) {
+                                setSupplierLogos(prev => ({ ...prev, [s.id]: URL.createObjectURL(e.target.files![0]) }));
+                              }
+                            }}
+                          />
+                          <Button variant="ghost" size="sm" asChild className="text-[10px] h-6 px-2">
+                            <label htmlFor={`supplier-logo-${s.id}`} className="cursor-pointer gap-1">
+                              <Upload className="h-2.5 w-2.5" /> Logo
+                            </label>
+                          </Button>
                         </div>
                       </div>
                       {selectedSupplier === s.id && (
