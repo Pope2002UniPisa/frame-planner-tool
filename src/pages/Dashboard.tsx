@@ -11,6 +11,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Image, Camera, Shield } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 
+const WORKFLOW_STEPS = [
+  { key: 'bozza', label: 'Bozza', icon: '📝' },
+  { key: 'ricevuto', label: 'Inviata', icon: '📤' },
+  { key: 'in_review', label: 'In revisione', icon: '🔍' },
+  { key: 'quoted', label: 'Preventivata', icon: '💰' },
+  { key: 'ordered', label: 'Ordinata', icon: '📦' },
+  { key: 'completed', label: 'Completata', icon: '✅' },
+];
+
+const getWorkflowIndex = (status: string): number => {
+  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, in_review: 2, quoted: 3, ordered: 4, completed: 5 };
+  return map[status] ?? 0;
+};
+
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   bozza: { label: 'Bozza', variant: 'outline' },
   ricevuto: { label: 'Inviata', variant: 'default' },
@@ -366,6 +380,30 @@ export default function Dashboard() {
                                 +{photos.length - 4}
                               </div>
                             )}
+                          </div>
+                        )}
+                        {/* Workflow tracker */}
+                        {m.status !== 'bozza' && (
+                          <div className="flex items-center gap-0.5 mt-2">
+                            {WORKFLOW_STEPS.slice(1).map((ws, idx) => {
+                              const currentIdx = getWorkflowIndex(m.status);
+                              const stepIdx = idx + 1;
+                              const isActive = stepIdx <= currentIdx;
+                              const isCurrent = stepIdx === currentIdx;
+                              return (
+                                <div key={ws.key} className="flex items-center gap-0.5">
+                                  <div className={`flex items-center justify-center w-5 h-5 rounded-full text-[8px] ${
+                                    isCurrent ? 'bg-accent text-accent-foreground ring-2 ring-accent/30' :
+                                    isActive ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground'
+                                  }`} title={ws.label}>
+                                    {ws.icon}
+                                  </div>
+                                  {idx < WORKFLOW_STEPS.length - 2 && (
+                                    <div className={`w-3 h-0.5 ${isActive ? 'bg-accent/40' : 'bg-muted'}`} />
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

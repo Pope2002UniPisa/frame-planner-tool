@@ -290,6 +290,34 @@ export default function NewMeasurement() {
         if (error) throw error;
         await createAccessoryRecords('ricevuto');
       }
+
+      // Send email notification
+      try {
+        await supabase.functions.invoke('notify-measurement', {
+          body: {
+            clientName: form.client_name,
+            clientAddress: form.client_address,
+            productType: form.product_type,
+            dimensions: isMultiProduct
+              ? `${multiItems.length} prodotti`
+              : `${form.width_mm}×${form.height_mm} mm`,
+            estimatedPrice: getEstimatedPrice(),
+            measurement: {
+              material: form.material,
+              color_internal: form.color_internal,
+              color_external: form.color_external,
+              glass_type: form.glass_type,
+              frame_type: form.frame_type,
+              handle_type: form.handle_type,
+              installation_type: form.installation_type,
+              notes: form.notes,
+            },
+          },
+        });
+      } catch (e) {
+        console.log('Email notification skipped:', e);
+      }
+
       toast.success('Misurazione inviata con successo!');
       navigate('/dashboard');
     } catch (err: any) {
