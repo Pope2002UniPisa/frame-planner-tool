@@ -108,9 +108,9 @@ export default function AdminDashboard() {
 
   // Client stats
   const clientStats = useMemo(() => {
-    const map: Record<string, { name: string; email: string; total: number; drafts: number; sent: number; quoted: number; completed: number }> = {};
+    const map: Record<string, { user_id: string; name: string; email: string; approved: boolean; total: number; drafts: number; sent: number; quoted: number; completed: number }> = {};
     profiles.forEach(p => {
-      map[p.user_id] = { name: p.company_name || p.email, email: p.email, total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0 };
+      map[p.user_id] = { user_id: p.user_id, name: p.company_name || p.email, email: p.email, approved: p.approved, total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0 };
     });
     measurements.forEach(m => {
       if (!map[m.user_id]) return;
@@ -122,6 +122,22 @@ export default function AdminDashboard() {
     });
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [profiles, measurements]);
+
+  const filteredClients = useMemo(() => {
+    if (clientFilter === 'all') return clientStats;
+    if (clientFilter === 'approved') return clientStats.filter(c => c.approved);
+    if (clientFilter === 'pending') return clientStats.filter(c => !c.approved);
+    return clientStats;
+  }, [clientStats, clientFilter]);
+
+  const pendingCount = useMemo(() => profiles.filter(p => !p.approved).length, [profiles]);
+
+  const handleApproveProfile = async (userId: string, approve: boolean) => {
+    const { error } = await supabase.from('profiles').update({ approved: approve }).eq('user_id', userId);
+    if (error) { toast.error(error.message); return; }
+    setProfiles(prev => prev.map(p => p.user_id === userId ? { ...p, approved: approve } : p));
+    toast.success(approve ? 'Profilo approvato!' : 'Profilo rifiutato');
+  };
 
   // News CRUD
   const handleSaveNews = async () => {
