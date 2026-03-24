@@ -177,7 +177,12 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="font-heading flex items-center gap-3">
                   {logoFile ? (
-                    <img src={logoFile} alt="Logo" className="h-12 w-12 rounded-lg object-cover border border-border" />
+                    <img
+                      src={logoFile}
+                      alt="Logo"
+                      className="h-12 w-12 rounded-lg object-cover border border-border cursor-pointer hover:ring-2 hover:ring-accent transition-all"
+                      onClick={() => setLogoPreview(true)}
+                    />
                   ) : (
                     <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
                       <Building2 className="h-6 w-6 text-muted-foreground" />
