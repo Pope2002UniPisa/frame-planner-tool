@@ -116,6 +116,28 @@ export default function Dashboard() {
     completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
   }), [measurements]);
 
+  // Client summary grouped by client_name
+  const clientSummary = useMemo(() => {
+    const map: Record<string, { name: string; total: number; drafts: number; sent: number; quoted: number; completed: number; estimatedRevenue: number; realizedRevenue: number; collectedRevenue: number; measurements: any[] }> = {};
+    measurements.forEach(m => {
+      const name = (m.client_name || 'Senza nome').trim();
+      if (!map[name]) map[name] = { name, total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0, estimatedRevenue: 0, realizedRevenue: 0, collectedRevenue: 0, measurements: [] };
+      const c = map[name];
+      c.total++;
+      c.measurements.push(m);
+      c.estimatedRevenue += Number(m.estimated_price) || 0;
+      if (m.status === 'bozza') c.drafts++;
+      else if (['ricevuto', 'submitted', 'in_review'].includes(m.status)) c.sent++;
+      else if (m.status === 'quoted') c.quoted++;
+      else if (['completed', 'ordered'].includes(m.status)) {
+        c.completed++;
+        c.realizedRevenue += Number(m.estimated_price) || 0;
+        if (m.payment_status === 'pagato') c.collectedRevenue += Number(m.amount_paid) || Number(m.estimated_price) || 0;
+      }
+    });
+    return Object.values(map).sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  }, [measurements]);
+
   const filteredMeasurements = useMemo(() => {
     return measurements.filter(m => {
       if (filterStatus !== 'all') {
