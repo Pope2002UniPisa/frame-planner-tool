@@ -17,17 +17,22 @@ export type Database = {
       measurements: {
         Row: {
           accessories_config: Json | null
+          amount_paid: number | null
           client_address: string
           client_name: string
           color_external: string | null
           color_internal: string | null
           created_at: string
           depth_mm: number | null
+          dispute_notes: string | null
+          estimated_price: number | null
           external_space_mm: number | null
           frame_type: string | null
           glass_type: string | null
           handle_type: string | null
           has_box: boolean | null
+          has_dispute: boolean | null
+          has_modification: boolean | null
           has_mosquito_net: boolean | null
           has_motorization: boolean | null
           has_shutter: boolean | null
@@ -40,11 +45,13 @@ export type Database = {
           is_square: boolean | null
           laying_type: string | null
           material: string | null
+          modification_notes: string | null
           notes: string | null
           num_panels: number | null
           opening_direction: string | null
           out_of_square_mm: number | null
           panel_type: string | null
+          payment_status: string | null
           photo_urls: string[] | null
           product_type: string
           remove_old: boolean | null
@@ -56,17 +63,22 @@ export type Database = {
         }
         Insert: {
           accessories_config?: Json | null
+          amount_paid?: number | null
           client_address?: string
           client_name?: string
           color_external?: string | null
           color_internal?: string | null
           created_at?: string
           depth_mm?: number | null
+          dispute_notes?: string | null
+          estimated_price?: number | null
           external_space_mm?: number | null
           frame_type?: string | null
           glass_type?: string | null
           handle_type?: string | null
           has_box?: boolean | null
+          has_dispute?: boolean | null
+          has_modification?: boolean | null
           has_mosquito_net?: boolean | null
           has_motorization?: boolean | null
           has_shutter?: boolean | null
@@ -79,11 +91,13 @@ export type Database = {
           is_square?: boolean | null
           laying_type?: string | null
           material?: string | null
+          modification_notes?: string | null
           notes?: string | null
           num_panels?: number | null
           opening_direction?: string | null
           out_of_square_mm?: number | null
           panel_type?: string | null
+          payment_status?: string | null
           photo_urls?: string[] | null
           product_type: string
           remove_old?: boolean | null
@@ -95,17 +109,22 @@ export type Database = {
         }
         Update: {
           accessories_config?: Json | null
+          amount_paid?: number | null
           client_address?: string
           client_name?: string
           color_external?: string | null
           color_internal?: string | null
           created_at?: string
           depth_mm?: number | null
+          dispute_notes?: string | null
+          estimated_price?: number | null
           external_space_mm?: number | null
           frame_type?: string | null
           glass_type?: string | null
           handle_type?: string | null
           has_box?: boolean | null
+          has_dispute?: boolean | null
+          has_modification?: boolean | null
           has_mosquito_net?: boolean | null
           has_motorization?: boolean | null
           has_shutter?: boolean | null
@@ -118,11 +137,13 @@ export type Database = {
           is_square?: boolean | null
           laying_type?: string | null
           material?: string | null
+          modification_notes?: string | null
           notes?: string | null
           num_panels?: number | null
           opening_direction?: string | null
           out_of_square_mm?: number | null
           panel_type?: string | null
+          payment_status?: string | null
           photo_urls?: string[] | null
           product_type?: string
           remove_old?: boolean | null

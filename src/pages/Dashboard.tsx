@@ -339,6 +339,9 @@ export default function Dashboard() {
                           {m.width_mm}×{m.height_mm} mm • {m.client_name || 'Senza nome'}
                         </p>
                         {m.client_address && <p className="text-xs text-muted-foreground">{m.client_address}</p>}
+                        {(m as any).estimated_price > 0 && (
+                          <p className="text-xs font-medium text-accent mt-0.5">Prezzo stimato: €{Number((m as any).estimated_price).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+                        )}
                         {/* Photo thumbnails */}
                         {photos.length > 0 && (
                           <div className="flex gap-1.5 mt-2">

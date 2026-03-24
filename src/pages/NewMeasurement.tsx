@@ -105,6 +105,21 @@ export default function NewMeasurement() {
     return parts.length > 0 ? `${parts.join('; ')} - Bozza Salvata` : 'Bozza Salvata';
   };
 
+  const getEstimatedPrice = () => {
+    const basePrices: Record<string, [number, number]> = {
+      finestra: [280, 650], porta_finestra: [450, 950], porta: [350, 1200],
+      basculante: [400, 900], zanzariera: [80, 250], persiana: [200, 500],
+    };
+    const [min, max] = basePrices[form.product_type] || [200, 600];
+    const width = parseInt(form.width_mm) || 1000;
+    const height = parseInt(form.height_mm) || 1000;
+    const sizeFactor = (width * height) / 1000000;
+    const materialMult = form.material === 'alluminio' ? 1.3 : form.material === 'legno' ? 1.5 : 1;
+    const glassMult = form.glass_type === 'triplo_vetro' ? 1.25 : form.glass_type === 'sicurezza' ? 1.35 : 1;
+    const base = min + (max - min) * Math.min(sizeFactor, 2) / 2;
+    return Math.round(base * materialMult * glassMult * 100) / 100;
+  };
+
   const buildInsertData = (status: string, photo_urls: string[] = []) => ({
     user_id: user.id,
     product_type: form.product_type,
@@ -140,7 +155,8 @@ export default function NewMeasurement() {
     photo_urls: photo_urls.length > 0 ? photo_urls : null,
     status,
     accessories_config: accessoriesConfig as any,
-  });
+    estimated_price: status !== 'bozza' ? getEstimatedPrice() : null,
+  } as any);
 
   // Create separate measurement records for each selected accessory
   const createAccessoryRecords = async (status: string) => {
