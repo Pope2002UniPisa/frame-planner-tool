@@ -11,6 +11,7 @@ import NewMeasurement from "./pages/NewMeasurement";
 import MeasurementView from "./pages/MeasurementView";
 import MeasurementPrint from "./pages/MeasurementPrint";
 import EditMeasurement from "./pages/EditMeasurement";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/misurazione/:id" element={<MeasurementView />} />
             <Route path="/misurazione/:id/stampa" element={<MeasurementPrint />} />
             <Route path="/misurazione/:id/modifica" element={<EditMeasurement />} />
+            <Route path="/profilo" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

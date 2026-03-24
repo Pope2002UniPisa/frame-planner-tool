@@ -142,11 +142,35 @@ export default function NewMeasurement() {
     accessories_config: accessoriesConfig as any,
   });
 
+  // Create separate measurement records for each selected accessory
+  const createAccessoryRecords = async (status: string) => {
+    const accessoryMap = [
+      { flag: form.has_mosquito_net, type: 'zanzariera', config: { mosquito_type: accessoriesConfig.mosquito_type, mosquito_color: accessoriesConfig.mosquito_color } },
+      { flag: form.has_shutter, type: 'persiana', config: { shutter_color: accessoriesConfig.shutter_color, shutter_operation: accessoriesConfig.shutter_operation } },
+    ];
+    for (const acc of accessoryMap) {
+      if (!acc.flag) continue;
+      await supabase.from('measurements').insert({
+        user_id: user.id,
+        product_type: acc.type,
+        client_name: form.client_name,
+        client_address: form.client_address,
+        survey_type: form.survey_type || 'foro_muro',
+        width_mm: parseInt(form.width_mm) || 0,
+        height_mm: parseInt(form.height_mm) || 0,
+        status,
+        accessories_config: acc.config as any,
+        notes: `Accessorio di ${form.product_type} - ${form.client_name}`,
+      });
+    }
+  };
+
   const handleSaveDraft = async () => {
     setSavingDraft(true);
     try {
       const { error } = await supabase.from('measurements').insert(buildInsertData('bozza'));
       if (error) throw error;
+      await createAccessoryRecords('bozza');
       toast.success(getDraftName(), { description: 'Puoi aggiungere le foto in seguito.' });
       navigate('/dashboard');
     } catch (err: any) {
@@ -170,6 +194,7 @@ export default function NewMeasurement() {
       }
       const { error } = await supabase.from('measurements').insert(buildInsertData('ricevuto', photo_urls));
       if (error) throw error;
+      await createAccessoryRecords('ricevuto');
       toast.success('Misurazione inviata con successo!');
       navigate('/dashboard');
     } catch (err: any) {
@@ -542,27 +567,46 @@ export default function NewMeasurement() {
             {step === 6 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Vetro</CardTitle>
-                <CardDescription>Seleziona la tipologia di vetro</CardDescription>
+                <CardDescription>
+                  {form.product_type === 'porta_finestra' 
+                    ? 'La porta è cieca di default. Puoi aggiungere un vetro se desiderato.'
+                    : 'Seleziona la tipologia di vetro'}
+                </CardDescription>
                 <RadioGroup value={form.glass_type} onValueChange={v => update('glass_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {[
-                    { value: 'doppio', label: 'Doppio vetro' },
-                    { value: 'triplo', label: 'Triplo vetro' },
-                    { value: 'basso_emissivo', label: 'Basso emissivo' },
-                    { value: 'antisfondamento', label: 'Antisfondamento' },
-                    { value: 'satinato', label: 'Satinato' },
-                    { value: 'selettivo', label: 'Selettivo' },
-                  ].map(opt => (
-                    <Label
-                      key={opt.value}
-                      htmlFor={`glass-${opt.value}`}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                        form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'
-                      }`}
-                    >
-                      <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
-                      {opt.label}
-                    </Label>
-                  ))}
+                  {form.product_type === 'porta_finestra' ? (
+                    <>
+                      {[
+                        { value: 'cieca', label: '🚪 Porta cieca (no vetro)' },
+                        { value: 'trasparente', label: '🔍 Vetro trasparente' },
+                        { value: 'satinato', label: '🌫️ Vetro satinato' },
+                        { value: 'a_quadri', label: '🔲 Vetro a quadri' },
+                        { value: 'stondato', label: '🔘 Vetro stondato' },
+                        { value: 'doppio', label: '📐 Doppio vetro' },
+                        { value: 'triplo', label: '📏 Triplo vetro' },
+                      ].map(opt => (
+                        <Label key={opt.value} htmlFor={`glass-${opt.value}`} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                          <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
+                          {opt.label}
+                        </Label>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {[
+                        { value: 'doppio', label: 'Doppio vetro' },
+                        { value: 'triplo', label: 'Triplo vetro' },
+                        { value: 'basso_emissivo', label: 'Basso emissivo' },
+                        { value: 'antisfondamento', label: 'Antisfondamento' },
+                        { value: 'satinato', label: 'Satinato' },
+                        { value: 'selettivo', label: 'Selettivo' },
+                      ].map(opt => (
+                        <Label key={opt.value} htmlFor={`glass-${opt.value}`} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                          <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
+                          {opt.label}
+                        </Label>
+                      ))}
+                    </>
+                  )}
                 </RadioGroup>
               </div>
             )}
