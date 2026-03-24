@@ -14,16 +14,192 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      measurements: {
+        Row: {
+          client_address: string
+          client_name: string
+          color_external: string | null
+          color_internal: string | null
+          created_at: string
+          depth_mm: number | null
+          external_space_mm: number | null
+          frame_type: string | null
+          glass_type: string | null
+          handle_type: string | null
+          has_box: boolean | null
+          has_mosquito_net: boolean | null
+          has_motorization: boolean | null
+          has_shutter: boolean | null
+          height_mm: number
+          id: string
+          installation_type: string | null
+          internal_space_mm: number | null
+          is_level: boolean | null
+          is_plumb: boolean | null
+          is_square: boolean | null
+          laying_type: string | null
+          material: string | null
+          notes: string | null
+          num_panels: number | null
+          opening_direction: string | null
+          out_of_square_mm: number | null
+          panel_type: string | null
+          photo_urls: string[] | null
+          product_type: string
+          remove_old: boolean | null
+          status: string
+          survey_type: string
+          updated_at: string
+          user_id: string
+          width_mm: number
+        }
+        Insert: {
+          client_address?: string
+          client_name?: string
+          color_external?: string | null
+          color_internal?: string | null
+          created_at?: string
+          depth_mm?: number | null
+          external_space_mm?: number | null
+          frame_type?: string | null
+          glass_type?: string | null
+          handle_type?: string | null
+          has_box?: boolean | null
+          has_mosquito_net?: boolean | null
+          has_motorization?: boolean | null
+          has_shutter?: boolean | null
+          height_mm: number
+          id?: string
+          installation_type?: string | null
+          internal_space_mm?: number | null
+          is_level?: boolean | null
+          is_plumb?: boolean | null
+          is_square?: boolean | null
+          laying_type?: string | null
+          material?: string | null
+          notes?: string | null
+          num_panels?: number | null
+          opening_direction?: string | null
+          out_of_square_mm?: number | null
+          panel_type?: string | null
+          photo_urls?: string[] | null
+          product_type: string
+          remove_old?: boolean | null
+          status?: string
+          survey_type: string
+          updated_at?: string
+          user_id: string
+          width_mm: number
+        }
+        Update: {
+          client_address?: string
+          client_name?: string
+          color_external?: string | null
+          color_internal?: string | null
+          created_at?: string
+          depth_mm?: number | null
+          external_space_mm?: number | null
+          frame_type?: string | null
+          glass_type?: string | null
+          handle_type?: string | null
+          has_box?: boolean | null
+          has_mosquito_net?: boolean | null
+          has_motorization?: boolean | null
+          has_shutter?: boolean | null
+          height_mm?: number
+          id?: string
+          installation_type?: string | null
+          internal_space_mm?: number | null
+          is_level?: boolean | null
+          is_plumb?: boolean | null
+          is_square?: boolean | null
+          laying_type?: string | null
+          material?: string | null
+          notes?: string | null
+          num_panels?: number | null
+          opening_direction?: string | null
+          out_of_square_mm?: number | null
+          panel_type?: string | null
+          photo_urls?: string[] | null
+          product_type?: string
+          remove_old?: boolean | null
+          status?: string
+          survey_type?: string
+          updated_at?: string
+          user_id?: string
+          width_mm?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          approved: boolean
+          client_code: string
+          company_name: string
+          created_at: string
+          email: string
+          id: string
+          phone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved?: boolean
+          client_code?: string
+          company_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved?: boolean
+          client_code?: string
+          company_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "dealer" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +326,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "dealer", "user"],
+    },
   },
 } as const
