@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Image, Camera } from 'lucide-react';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   bozza: { label: 'Bozza', variant: 'outline' },
@@ -46,13 +46,22 @@ interface NewsItem {
   summary: string;
   image?: string;
   link?: string;
+  socialLink?: string;
 }
 
 const NEWS_ITEMS: NewsItem[] = [
-  { id: 1, date: '2026-03-20', title: 'Sconto in fattura 50% – Prorogato fino a giugno 2026', tag: 'Agevolazione', summary: 'Il governo ha prorogato lo sconto in fattura al 50% per la sostituzione degli infissi fino a giugno 2026. Approfitta subito di questa agevolazione per i tuoi clienti.', link: '#' },
-  { id: 2, date: '2026-03-15', title: 'Nuovo modello Finestra EcoPlus: isolamento termico superiore', tag: 'Nuovo prodotto', summary: 'La nuova finestra EcoPlus garantisce un isolamento termico del 40% superiore rispetto ai modelli precedenti, con un design minimalista e materiali ecosostenibili.', image: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=250&fit=crop' },
-  { id: 3, date: '2026-03-10', title: 'Conto Termico 2.0: come accedere agli incentivi', tag: 'Agevolazione', summary: 'Guida completa per accedere agli incentivi del Conto Termico 2.0 per la sostituzione degli infissi. Documentazione necessaria e procedura passo-passo.', link: '#' },
-  { id: 4, date: '2026-03-05', title: 'Tapparelle motorizzate: promozione -15% fino ad aprile', tag: 'Promozione', summary: 'Promozione speciale su tutte le tapparelle motorizzate Somfy. Sconto del 15% valido fino al 30 aprile 2026.', image: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=250&fit=crop' },
+  { id: 1, date: '2026-03-20', title: 'Sconto in fattura 50% – Prorogato fino a giugno 2026', tag: 'Agevolazione', summary: 'Il governo ha prorogato lo sconto in fattura al 50% per la sostituzione degli infissi fino a giugno 2026.', link: '#' },
+  { id: 2, date: '2026-03-15', title: 'Nuovo modello Finestra EcoPlus', tag: 'Nuovo prodotto', summary: 'La nuova finestra EcoPlus garantisce un isolamento termico del 40% superiore.', socialLink: 'https://instagram.com' },
+  { id: 3, date: '2026-03-10', title: 'Conto Termico 2.0: incentivi disponibili', tag: 'Agevolazione', summary: 'Guida completa per accedere agli incentivi del Conto Termico 2.0.', link: '#' },
+  { id: 4, date: '2026-03-05', title: 'Tapparelle motorizzate -15%', tag: 'Promozione', summary: 'Promozione su tapparelle motorizzate Somfy fino al 30 aprile.', socialLink: 'https://facebook.com' },
+];
+
+// Sample portfolio images
+const PORTFOLIO_IMAGES = [
+  { id: 1, src: '/images/portfolio-1.jpeg', title: 'Cantiere San Vincenzo', desc: 'Finestre Nurith x Dienne' },
+  { id: 2, src: '/images/portfolio-1.jpeg', title: 'Installazione Villa Toscana', desc: 'Porte e finestre in legno' },
+  { id: 3, src: '/images/portfolio-1.jpeg', title: 'Ristrutturazione Milano', desc: 'Infissi in alluminio' },
+  { id: 4, src: '/images/portfolio-1.jpeg', title: 'Progetto residenziale Roma', desc: 'Basculanti e persiane' },
 ];
 
 export default function Dashboard() {
@@ -67,6 +76,7 @@ export default function Dashboard() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -137,41 +147,30 @@ export default function Dashboard() {
       </header>
 
       <main className="container py-8 flex-1">
-        {/* News Section - clickable cards */}
-        <Card className="mb-8">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-heading flex items-center gap-2">
-              <Newspaper className="h-4 w-4 text-accent" />
-              Novità e Promozioni
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {NEWS_ITEMS.map(n => (
-                <div
-                  key={n.id}
-                  onClick={() => setSelectedNews(n)}
-                  className="rounded-xl border border-border overflow-hidden hover:shadow-card-hover transition-all cursor-pointer group"
-                >
-                  {n.image && (
-                    <div className="h-32 overflow-hidden">
-                      <img src={n.image} alt={n.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    </div>
-                  )}
-                  <div className="p-5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="secondary" className="text-xs">{n.tag}</Badge>
-                      {n.link && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
-                    </div>
-                    <p className="text-sm font-semibold text-foreground leading-snug mb-2">{n.title}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{n.summary}</p>
-                    <p className="text-xs text-muted-foreground mt-2">{new Date(n.date).toLocaleDateString('it-IT')}</p>
-                  </div>
+        {/* News Section - compact */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Newspaper className="h-4 w-4 text-accent" />
+            <h3 className="text-sm font-heading font-semibold text-foreground">Novità e Promozioni</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {NEWS_ITEMS.map(n => (
+              <div
+                key={n.id}
+                onClick={() => setSelectedNews(n)}
+                className="rounded-lg border border-border p-3 hover:shadow-card-hover transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{n.tag}</Badge>
+                  {n.link && <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />}
+                  {n.socialLink && <Instagram className="h-2.5 w-2.5 text-muted-foreground" />}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{n.title}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.date).toLocaleDateString('it-IT')}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* News Dialog */}
         <Dialog open={!!selectedNews} onOpenChange={open => !open && setSelectedNews(null)}>
@@ -179,26 +178,44 @@ export default function Dashboard() {
             <DialogHeader>
               <DialogTitle className="font-heading">{selectedNews?.title}</DialogTitle>
             </DialogHeader>
-            {selectedNews?.image && (
-              <img src={selectedNews.image} alt={selectedNews.title} className="w-full h-48 object-cover rounded-lg" />
-            )}
             <div className="space-y-3">
               <Badge variant="secondary">{selectedNews?.tag}</Badge>
               <p className="text-sm text-foreground leading-relaxed">{selectedNews?.summary}</p>
               <p className="text-xs text-muted-foreground">{selectedNews && new Date(selectedNews.date).toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-              {selectedNews?.link && (
-                <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                  <a href={selectedNews.link} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-3.5 w-3.5" /> Leggi articolo completo
-                  </a>
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {selectedNews?.link && (
+                  <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                    <a href={selectedNews.link} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3.5 w-3.5" /> Leggi articolo
+                    </a>
+                  </Button>
+                )}
+                {selectedNews?.socialLink && (
+                  <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                    <a href={selectedNews.socialLink} target="_blank" rel="noopener noreferrer">
+                      <Instagram className="h-3.5 w-3.5" /> Vedi post social
+                    </a>
+                  </Button>
+                )}
+              </div>
             </div>
           </DialogContent>
         </Dialog>
 
+        {/* Photo preview dialog */}
+        <Dialog open={!!selectedPhoto} onOpenChange={open => !open && setSelectedPhoto(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="font-heading">Foto misurazione</DialogTitle>
+            </DialogHeader>
+            {selectedPhoto && (
+              <img src={selectedPhoto} alt="Foto misurazione" className="w-full rounded-lg" />
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Stats cards */}
-        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
+        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
           <StatCard icon={FileText} label="Totale" value={stats.total} />
           <StatCard icon={Edit3} label="Bozze" value={stats.drafts} />
           <StatCard icon={Send} label="Inviate" value={stats.sent} />
@@ -207,11 +224,11 @@ export default function Dashboard() {
         </div>
 
         {/* CTA */}
-        <Card className="mb-8 gradient-primary border-0">
-          <CardContent className="flex flex-col items-center gap-4 py-8 text-center sm:flex-row sm:text-left">
+        <Card className="mb-6 gradient-primary border-0">
+          <CardContent className="flex flex-col items-center gap-4 py-6 text-center sm:flex-row sm:text-left">
             <div className="flex-1">
               <h2 className="text-xl font-bold font-heading text-primary-foreground">Inserisci una nuova misurazione</h2>
-              <p className="mt-1 text-primary-foreground/70">Compila il form guidato per inviare le misure di finestre, porte, basculanti e altro.</p>
+              <p className="mt-1 text-sm text-primary-foreground/70">Compila il form guidato per inviare le misure.</p>
             </div>
             <Link to="/nuova-misurazione">
               <Button size="lg" className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
@@ -294,6 +311,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               {filteredMeasurements.map(m => {
                 const pi = productIcons[m.product_type] || { emoji: '📦', color: '#6b7280' };
+                const photos: string[] = m.photo_urls || [];
                 return (
                   <Card key={m.id} className="transition-shadow hover:shadow-card-hover">
                     <CardContent className="flex items-center gap-4 py-4">
@@ -312,6 +330,25 @@ export default function Dashboard() {
                           {m.width_mm}×{m.height_mm} mm • {m.client_name || 'Senza nome'}
                         </p>
                         {m.client_address && <p className="text-xs text-muted-foreground">{m.client_address}</p>}
+                        {/* Photo thumbnails */}
+                        {photos.length > 0 && (
+                          <div className="flex gap-1.5 mt-2">
+                            {photos.slice(0, 4).map((url: string, i: number) => (
+                              <div
+                                key={i}
+                                className="w-10 h-10 rounded border border-border overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all"
+                                onClick={(e) => { e.stopPropagation(); setSelectedPhoto(url); }}
+                              >
+                                <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                              </div>
+                            ))}
+                            {photos.length > 4 && (
+                              <div className="w-10 h-10 rounded border border-border bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                                +{photos.length - 4}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         {m.status === 'bozza' && (
@@ -335,6 +372,31 @@ export default function Dashboard() {
               })}
             </div>
           )}
+        </div>
+
+        {/* Portfolio / Lavori svolti */}
+        <div className="mt-10">
+          <div className="flex items-center gap-2 mb-4">
+            <Camera className="h-5 w-5 text-accent" />
+            <h2 className="text-lg font-bold font-heading text-foreground">I nostri lavori</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {PORTFOLIO_IMAGES.map(img => (
+              <div
+                key={img.id}
+                className="group rounded-xl overflow-hidden border border-border cursor-pointer hover:shadow-card-hover transition-all"
+                onClick={() => setSelectedPhoto(img.src)}
+              >
+                <div className="aspect-square overflow-hidden">
+                  <img src={img.src} alt={img.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                </div>
+                <div className="p-3">
+                  <p className="text-xs font-semibold text-foreground line-clamp-1">{img.title}</p>
+                  <p className="text-[10px] text-muted-foreground">{img.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </main>
 
