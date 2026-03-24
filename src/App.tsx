@@ -31,6 +31,7 @@ const App = () => (
             <Route path="/misurazione/:id" element={<MeasurementView />} />
             <Route path="/misurazione/:id/stampa" element={<MeasurementPrint />} />
             <Route path="/misurazione/:id/modifica" element={<EditMeasurement />} />
+            <Route path="/profilo" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
