@@ -7,8 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, BarChart3, Search, Filter, Printer, Eye, Newspaper, User, Calendar } from 'lucide-react';
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar } from 'lucide-react';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   bozza: { label: 'Bozza', variant: 'outline' },
@@ -28,13 +27,13 @@ const productLabels: Record<string, string> = {
   persiana: 'Persiana',
 };
 
-const CHART_COLORS = ['#f97316', '#3b82f6', '#6366f1', '#f59e0b', '#10b981', '#ef4444'];
-const LINE_COLORS: Record<string, string> = {
-  Finestra: '#f97316',
-  'Porta Finestra': '#3b82f6',
-  Basculante: '#6366f1',
-  Zanzariera: '#10b981',
-  Persiana: '#f59e0b',
+// Product icons and colors
+const productIcons: Record<string, { emoji: string; color: string }> = {
+  finestra: { emoji: '🪟', color: '#3b82f6' },
+  porta_finestra: { emoji: '🚪', color: '#8b5cf6' },
+  basculante: { emoji: '🏗️', color: '#f97316' },
+  zanzariera: { emoji: '🦟', color: '#10b981' },
+  persiana: { emoji: '🪵', color: '#f59e0b' },
 };
 
 const NEWS_ITEMS = [
@@ -50,7 +49,6 @@ export default function Dashboard() {
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loadingData, setLoadingData] = useState(true);
-  // Filters
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProduct, setFilterProduct] = useState('all');
@@ -79,35 +77,6 @@ export default function Dashboard() {
     completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
   }), [measurements]);
 
-  // Monthly line chart data for products
-  const monthlyProductData = useMemo(() => {
-    const months: Record<string, Record<string, number>> = {};
-    measurements.forEach(m => {
-      const d = new Date(m.created_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = productLabels[m.product_type] || m.product_type;
-      if (!months[key]) months[key] = {};
-      months[key][label] = (months[key][label] || 0) + 1;
-    });
-    return Object.entries(months)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, counts]) => ({ month, ...counts }));
-  }, [measurements]);
-
-  const productTypes = useMemo(() => {
-    const s = new Set<string>();
-    measurements.forEach(m => s.add(productLabels[m.product_type] || m.product_type));
-    return Array.from(s);
-  }, [measurements]);
-
-  const statusChartData = useMemo(() => [
-    { name: 'Bozze', value: stats.drafts, color: '#94a3b8' },
-    { name: 'Inviate', value: stats.sent, color: '#3b82f6' },
-    { name: 'Preventivate', value: stats.quoted, color: '#f59e0b' },
-    { name: 'Completate', value: stats.completed, color: '#10b981' },
-  ].filter(d => d.value > 0), [stats]);
-
-  // Filtered measurements
   const filteredMeasurements = useMemo(() => {
     return measurements.filter(m => {
       if (filterStatus !== 'all') {
@@ -126,10 +95,6 @@ export default function Dashboard() {
       return true;
     });
   }, [measurements, filterStatus, filterProduct, searchText, filterDateFrom, filterDateTo]);
-
-  const handlePrint = (m: any) => {
-    navigate(`/misurazione/${m.id}/stampa`);
-  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -159,21 +124,21 @@ export default function Dashboard() {
       </header>
 
       <main className="container py-8">
-        {/* News Section */}
+        {/* News Section - larger cards */}
         <Card className="mb-8">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-3">
             <CardTitle className="text-sm font-heading flex items-center gap-2">
               <Newspaper className="h-4 w-4 text-accent" />
               Novità e Promozioni
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {NEWS_ITEMS.map(n => (
-                <div key={n.id} className="rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                  <Badge variant="secondary" className="mb-1 text-xs">{n.tag}</Badge>
-                  <p className="text-sm font-medium text-foreground line-clamp-2">{n.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(n.date).toLocaleDateString('it-IT')}</p>
+                <div key={n.id} className="rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors cursor-pointer">
+                  <Badge variant="secondary" className="mb-2 text-xs">{n.tag}</Badge>
+                  <p className="text-sm font-semibold text-foreground leading-snug mb-2">{n.title}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(n.date).toLocaleDateString('it-IT')}</p>
                 </div>
               ))}
             </div>
@@ -188,54 +153,6 @@ export default function Dashboard() {
           <StatCard icon={Package} label="Preventivate" value={stats.quoted} />
           <StatCard icon={CheckCircle} label="Completate" value={stats.completed} />
         </div>
-
-        {/* Charts */}
-        {measurements.length > 0 && (
-          <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-heading flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  Stato misurazioni
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie data={statusChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name}: ${value}`}>
-                      {statusChartData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-heading flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  Andamento per tipologia
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={monthlyProductData}>
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                    <Tooltip />
-                    <Legend />
-                    {productTypes.map(pt => (
-                      <Line key={pt} type="monotone" dataKey={pt} stroke={LINE_COLORS[pt] || '#8884d8'} strokeWidth={2} dot={{ r: 3 }} />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {/* CTA */}
         <Card className="mb-8 gradient-primary border-0">
@@ -323,43 +240,47 @@ export default function Dashboard() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {filteredMeasurements.map(m => (
-                <Card key={m.id} className="transition-shadow hover:shadow-card-hover">
-                  <CardContent className="flex items-center gap-4 py-4">
-                    <div className="hidden rounded-lg bg-muted p-3 sm:block">
-                      <Package className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{productLabels[m.product_type] || m.product_type}</span>
-                        <Badge variant={statusLabels[m.status]?.variant || 'default'}>
-                          {statusLabels[m.status]?.label || m.status}
-                        </Badge>
+              {filteredMeasurements.map(m => {
+                const pi = productIcons[m.product_type] || { emoji: '📦', color: '#6b7280' };
+                return (
+                  <Card key={m.id} className="transition-shadow hover:shadow-card-hover">
+                    <CardContent className="flex items-center gap-4 py-4">
+                      <div className="hidden sm:flex items-center justify-center rounded-lg p-3" style={{ backgroundColor: `${pi.color}15` }}>
+                        <span className="text-xl">{pi.emoji}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {m.width_mm}×{m.height_mm} mm • {m.client_name || 'Senza nome'}
-                      </p>
-                      {m.client_address && <p className="text-xs text-muted-foreground">{m.client_address}</p>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {m.status === 'bozza' && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/misurazione/${m.id}/modifica`)} title="Modifica">
-                          <Edit3 className="h-4 w-4" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pi.color }} />
+                          <span className="font-semibold text-foreground">{productLabels[m.product_type] || m.product_type}</span>
+                          <Badge variant={statusLabels[m.status]?.variant || 'default'}>
+                            {statusLabels[m.status]?.label || m.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {m.width_mm}×{m.height_mm} mm • {m.client_name || 'Senza nome'}
+                        </p>
+                        {m.client_address && <p className="text-xs text-muted-foreground">{m.client_address}</p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {m.status === 'bozza' && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/misurazione/${m.id}/modifica`)} title="Modifica">
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/misurazione/${m.id}/stampa`)} title="Stampa/PDF">
+                          <Printer className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/misurazione/${m.id}/stampa`)} title="Stampa/PDF">
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/misurazione/${m.id}`)} title="Visualizza">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="text-right text-sm text-muted-foreground whitespace-nowrap">
-                      {new Date(m.created_at).toLocaleDateString('it-IT')}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/misurazione/${m.id}`)} title="Visualizza">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="text-right text-sm text-muted-foreground whitespace-nowrap">
+                        {new Date(m.created_at).toLocaleDateString('it-IT')}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
