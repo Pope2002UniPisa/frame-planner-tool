@@ -89,6 +89,9 @@ export default function Dashboard() {
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [expandedClientName, setExpandedClientName] = useState<string | null>(null);
+  const [showClientSummary, setShowClientSummary] = useState(false);
+  const [clientSearchText, setClientSearchText] = useState('');
+  const [clientFilterStatus, setClientFilterStatus] = useState('all');
 
   useEffect(() => {
     if (!user) return;
