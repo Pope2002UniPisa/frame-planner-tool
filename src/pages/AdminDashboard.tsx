@@ -396,28 +396,33 @@ export default function AdminDashboard() {
 
           {/* CLIENTS */}
           <TabsContent value="clients" className="space-y-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Select value={clientFilter} onValueChange={(v: any) => setClientFilter(v)}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti i clienti</SelectItem>
-                  <SelectItem value="approved">Approvati</SelectItem>
-                  <SelectItem value="pending">In attesa di approvazione</SelectItem>
-                </SelectContent>
-              </Select>
-              {pendingCount > 0 && (
-                <Badge variant="destructive">{pendingCount} in attesa</Badge>
-              )}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Select value={clientFilter} onValueChange={(v: any) => setClientFilter(v)}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i clienti</SelectItem>
+                    <SelectItem value="approved">Approvati</SelectItem>
+                    <SelectItem value="pending">In attesa di approvazione</SelectItem>
+                  </SelectContent>
+                </Select>
+                {pendingCount > 0 && (
+                  <Badge variant="destructive">{pendingCount} in attesa</Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground font-medium">{filteredClients.length} clienti totali</p>
             </div>
 
             <div className="space-y-4">
               {filteredClients.map((c: any, i: number) => {
                 const objProgress = getObjectiveProgress(c.user_id);
+                const isExpanded = expandedClient === c.user_id;
+                const clientMeasurements = measurements.filter(m => m.user_id === c.user_id && m.status !== 'bozza');
                 return (
-                  <Card key={i} className={!c.approved ? 'border-amber-300 dark:border-amber-700' : ''}>
-                    <CardContent className="py-4 space-y-3">
+                  <Card key={i} className={`cursor-pointer transition-all ${!c.approved ? 'border-amber-300 dark:border-amber-700' : ''} ${isExpanded ? 'ring-2 ring-primary/30' : ''}`}>
+                    <CardContent className="py-4 space-y-3" onClick={() => setExpandedClient(isExpanded ? null : c.user_id)}>
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-center gap-2">
@@ -428,7 +433,7 @@ export default function AdminDashboard() {
                           </div>
                           <p className="text-xs text-muted-foreground">{c.email}</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                           {!c.approved && (
                             <>
                               <Button size="sm" variant="default" className="gap-1 h-7" onClick={() => handleApproveProfile(c.user_id, true)}>
@@ -442,13 +447,15 @@ export default function AdminDashboard() {
                           <Badge variant="secondary">{c.total} misurazioni</Badge>
                         </div>
                       </div>
-                      <div className="grid grid-cols-5 gap-2">
+                      <div className="grid grid-cols-7 gap-2">
                         {[
                           { label: 'Bozze', value: c.drafts },
                           { label: 'Inviate', value: c.sent },
                           { label: 'Preventivate', value: c.quoted },
                           { label: 'Completate', value: c.completed },
-                          { label: 'Fatturato', value: `€${Math.round(c.revenue).toLocaleString('it-IT')}` },
+                          { label: 'Fatt. stimato', value: `€${Math.round(c.revenue).toLocaleString('it-IT')}` },
+                          { label: 'Fatt. realizzato', value: `€${Math.round(c.realizedRevenue).toLocaleString('it-IT')}` },
+                          { label: 'Fatt. riscosso', value: `€${Math.round(c.collectedRevenue).toLocaleString('it-IT')}` },
                         ].map(st => (
                           <div key={st.label} className="rounded-lg bg-muted p-2 text-center">
                             <p className="text-sm font-bold text-foreground">{st.value}</p>
@@ -464,6 +471,33 @@ export default function AdminDashboard() {
                           ))}
                         </div>
                       )}
+
+                      {/* Expanded: show all measurements for this client */}
+                      {isExpanded && (
+                        <div className="pt-3 border-t border-border space-y-2">
+                          <p className="text-xs font-semibold text-muted-foreground">Misurazioni inviate ({clientMeasurements.length})</p>
+                          {clientMeasurements.length === 0 && <p className="text-xs text-muted-foreground">Nessuna misurazione inviata</p>}
+                          {clientMeasurements.map(m => (
+                            <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-2 bg-background" onClick={e => e.stopPropagation()}>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-xs text-foreground">{productLabels[m.product_type] || m.product_type}</span>
+                                  <Badge variant="outline" className="text-[9px]">{statusLabels[m.status] || m.status}</Badge>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">{m.client_name} • {m.client_address}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {m.estimated_price > 0 && <span className="text-xs font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/misurazione/${m.id}`)}>
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                                <span className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleDateString('it-IT')}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {/* Objectives progress */}
                       {objProgress.length > 0 && (
                         <div className="space-y-2 pt-2 border-t border-border">
