@@ -320,8 +320,8 @@ export default function ProductDiagram({
       const dw = drawW;
       const dh = drawH;
 
-      // Handle side is plain, lines are on the opposite side
-      const linesOnLeft = !effectiveHandleLeft;
+      // Handle side is plain, lines are on the hinge side
+      const linesOnLeft = !effectiveHandleRight;
       
       // Vertical lines region: about 5 lines spanning ~55% of width on the non-handle side
       const lineStartX = linesOnLeft ? doorL + dw * 0.12 : doorL + dw * 0.35;
