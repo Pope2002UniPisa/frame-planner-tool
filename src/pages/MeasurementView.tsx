@@ -121,12 +121,15 @@ export default function MeasurementView() {
           <CardHeader><CardTitle className="font-heading">Dati misurazione</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {fields.map(([label, value]) => (
-                <div key={label} className="flex justify-between border-b border-border/50 py-2">
-                  <span className="text-sm text-muted-foreground">{label}</span>
-                  <span className="text-sm font-medium text-foreground">{value}</span>
-                </div>
-              ))}
+             {fields.map(([label, value, colorInfo]) => (
+                <div key={label} className="flex justify-between items-center border-b border-border/50 py-2">
+                   <span className="text-sm text-muted-foreground">{label}</span>
+                   {(label === 'Colore interno' || label === 'Colore esterno' || label === 'Colore porta') 
+                     ? renderColorValue(value, colorInfo)
+                     : <span className="text-sm font-medium text-foreground">{value}</span>
+                   }
+                 </div>
+               ))}
             </div>
           </CardContent>
         </Card>

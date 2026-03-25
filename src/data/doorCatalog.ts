@@ -398,3 +398,16 @@ export function getColorsByFinish(colors: DoorColor[], finish?: string): DoorCol
 export function isDoorType(productType: string): boolean {
   return productType === 'porta' || productType === 'porta_finestrata' || productType === 'porta_filomuro';
 }
+
+// Look up a door color by its ID across all models
+export function getDoorColorById(colorId: string): DoorColor | undefined {
+  return YNCISA_70_COLORS.find(c => c.id === colorId);
+}
+
+// Get a human-readable color label with finish info
+export function getColorLabel(colorId: string): { name: string; hex: string; finish: string } | null {
+  const color = getDoorColorById(colorId);
+  if (!color) return null;
+  const finishLabel = color.finish === 'laccato_ultra_opaco' ? 'Laccato ULTRA Opaco' : 'Laccato Opaco';
+  return { name: `${finishLabel} ${color.name}`, hex: color.hex, finish: finishLabel };
+}
