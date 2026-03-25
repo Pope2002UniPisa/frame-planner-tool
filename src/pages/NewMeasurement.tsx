@@ -408,7 +408,9 @@ export default function NewMeasurement() {
               externalSpaceMm={isMultiProduct ? (activeItem?.external_space_mm || '') : form.external_space_mm}
               view={view}
               doorColorHex={form.product_type === 'porta' && form.door_color_id ? (getDoorModel(form.door_model)?.colors.find(c => c.id === form.door_color_id)?.hex) : undefined}
-              doorHandleId={form.product_type === 'porta' ? form.door_handle_id : undefined}
+              doorHandleFinishId={form.product_type === 'porta' ? form.door_handle_finish_id : undefined}
+              doorHandleModelId={form.product_type === 'porta' ? form.door_handle_model_id : undefined}
+              doorModelId={form.product_type === 'porta' ? form.door_model : undefined}
             />
           </div>
         </div>
