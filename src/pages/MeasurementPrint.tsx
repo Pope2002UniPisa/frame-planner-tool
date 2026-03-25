@@ -53,6 +53,24 @@ export default function MeasurementPrint() {
   const iva = Math.round(price * 0.22 * 100) / 100;
   const totalWithIva = Math.round((price + iva) * 100) / 100;
 
+  const resolveColor = (colorId: string): string => {
+    const doorColor = getColorLabel(colorId);
+    if (doorColor) return doorColor.name;
+    const windowColor = COLOR_OPTIONS.find(c => c.value === colorId);
+    if (windowColor) return windowColor.label;
+    return colorId;
+  };
+
+  const resolveHandleType = (id: string): string => {
+    const finish = ALL_HANDLE_FINISHES.find(f => f.id === id);
+    return finish ? finish.name : id;
+  };
+
+  const resolveFrame = (id: string): string => {
+    const frame = ALL_FRAMES.find(f => f.id === id);
+    return frame ? frame.name : id;
+  };
+
   const rows: [string, string][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
     ['Cliente', m.client_name || '-'],
@@ -64,11 +82,11 @@ export default function MeasurementPrint() {
     ...(m.num_panels ? [['Numero ante', `${m.num_panels}`] as [string, string]] : []),
     ...(m.panel_type ? [['Tipologia apertura', m.panel_type] as [string, string]] : []),
     ...(m.opening_direction ? [['Direzione apertura', m.opening_direction] as [string, string]] : []),
-    ...(m.frame_type ? [['Tipo telaio', m.frame_type] as [string, string]] : []),
+    ...(m.frame_type ? [['Tipo telaio', resolveFrame(m.frame_type)] as [string, string]] : []),
     ...(m.material ? [['Materiale', m.material] as [string, string]] : []),
-    ...(m.color_internal ? [['Colore interno', COLOR_OPTIONS.find(c => c.value === m.color_internal)?.label || m.color_internal] as [string, string]] : []),
-    ...(m.color_external ? [['Colore esterno', COLOR_OPTIONS.find(c => c.value === m.color_external)?.label || m.color_external] as [string, string]] : []),
-    ...(m.handle_type ? [['Tipo maniglia', m.handle_type] as [string, string]] : []),
+    ...(m.color_internal ? [['Colore interno', resolveColor(m.color_internal)] as [string, string]] : []),
+    ...(m.color_external ? [['Colore esterno', resolveColor(m.color_external)] as [string, string]] : []),
+    ...(m.handle_type ? [['Tipo maniglia', resolveHandleType(m.handle_type)] as [string, string]] : []),
     ...(m.glass_type ? [['Tipo vetro', m.glass_type] as [string, string]] : []),
     ...(m.is_square === false ? [['Fuori squadro', `${m.out_of_square_mm || 0} mm`] as [string, string]] : []),
     ...(m.is_plumb === false ? [['A piombo', 'No'] as [string, string]] : []),
