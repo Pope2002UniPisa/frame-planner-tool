@@ -3,13 +3,12 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Image, Camera, Shield, ChevronDown, ChevronUp, Users, CreditCard } from 'lucide-react';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 const WORKFLOW_STEPS = [
@@ -88,10 +87,6 @@ export default function Dashboard() {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [expandedClientName, setExpandedClientName] = useState<string | null>(null);
-  const [showClientSummary, setShowClientSummary] = useState(false);
-  const [clientSearchText, setClientSearchText] = useState('');
-  const [clientFilterStatus, setClientFilterStatus] = useState('all');
 
   useEffect(() => {
     if (!user) return;
@@ -119,38 +114,10 @@ export default function Dashboard() {
     completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
   }), [measurements]);
 
-  // Client summary grouped by client_name
-  const clientSummary = useMemo(() => {
-    const map: Record<string, { name: string; total: number; drafts: number; sent: number; quoted: number; completed: number; estimatedRevenue: number; realizedRevenue: number; collectedRevenue: number; measurements: any[] }> = {};
-    measurements.forEach(m => {
-      const name = (m.client_name || 'Senza nome').trim();
-      if (!map[name]) map[name] = { name, total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0, estimatedRevenue: 0, realizedRevenue: 0, collectedRevenue: 0, measurements: [] };
-      const c = map[name];
-      c.total++;
-      c.measurements.push(m);
-      c.estimatedRevenue += Number(m.estimated_price) || 0;
-      if (m.status === 'bozza') c.drafts++;
-      else if (['ricevuto', 'submitted', 'in_review'].includes(m.status)) c.sent++;
-      else if (m.status === 'quoted') c.quoted++;
-      else if (['completed', 'ordered'].includes(m.status)) {
-        c.completed++;
-        c.realizedRevenue += Number(m.estimated_price) || 0;
-        if (m.payment_status === 'pagato') c.collectedRevenue += Number(m.amount_paid) || Number(m.estimated_price) || 0;
-      }
-    });
-    return Object.values(map).sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  const clientSummaryCount = useMemo(() => {
+    const names = new Set(measurements.map(m => (m.client_name || 'Senza nome').trim()));
+    return names.size;
   }, [measurements]);
-
-  const filteredClientSummary = useMemo(() => {
-    return clientSummary.filter(cs => {
-      if (clientSearchText && !cs.name.toLowerCase().includes(clientSearchText.toLowerCase())) return false;
-      if (clientFilterStatus === 'with_drafts' && cs.drafts === 0) return false;
-      if (clientFilterStatus === 'with_sent' && cs.sent === 0) return false;
-      if (clientFilterStatus === 'with_completed' && cs.completed === 0) return false;
-      if (clientFilterStatus === 'with_disputes' && !cs.measurements.some((m: any) => m.has_dispute)) return false;
-      return true;
-    });
-  }, [clientSummary, clientSearchText, clientFilterStatus]);
 
   const filteredMeasurements = useMemo(() => {
     return measurements.filter(m => {
@@ -300,149 +267,24 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Client Summary - Clickable Card */}
-        {clientSummary.length > 0 && (
-          <div className="mb-6">
-            {!showClientSummary ? (
-              <Card
-                className="cursor-pointer hover:shadow-card-hover transition-all border-dashed"
-                onClick={() => setShowClientSummary(true)}
-              >
-                <CardContent className="flex items-center justify-between py-5 px-6">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-muted p-2.5">
-                      <Users className="h-5 w-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground font-heading">Riepilogo Clienti</p>
-                      <p className="text-xs text-muted-foreground">{clientSummary.length} nominativi • Clicca per vedere il dettaglio</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{clientSummary.length}</Badge>
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-accent" />
-                    <h3 className="text-sm font-heading font-semibold text-foreground">Riepilogo per Cliente</h3>
-                    <Badge variant="secondary" className="text-[10px]">{filteredClientSummary.length} / {clientSummary.length}</Badge>
-                  </div>
-                  <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => { setShowClientSummary(false); setExpandedClientName(null); setClientSearchText(''); setClientFilterStatus('all'); }}>
-                    <ChevronUp className="h-3.5 w-3.5" /> Chiudi
-                  </Button>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex-1 min-w-[180px]">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                      <Input placeholder="Cerca nominativo..." className="pl-9 h-9 text-sm" value={clientSearchText} onChange={e => setClientSearchText(e.target.value)} />
-                    </div>
-                  </div>
-                  <Select value={clientFilterStatus} onValueChange={setClientFilterStatus}>
-                    <SelectTrigger className="w-[180px] h-9">
-                      <Filter className="h-3 w-3 mr-1" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutti</SelectItem>
-                      <SelectItem value="with_drafts">Con bozze</SelectItem>
-                      <SelectItem value="with_sent">Con inviate</SelectItem>
-                      <SelectItem value="with_completed">Con completate</SelectItem>
-                      <SelectItem value="with_disputes">Con contestazioni</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {(clientSearchText || clientFilterStatus !== 'all') && (
-                    <Button variant="ghost" size="sm" className="h-9" onClick={() => { setClientSearchText(''); setClientFilterStatus('all'); }}>
-                      Cancella filtri
-                    </Button>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  {filteredClientSummary.map(cs => {
-                    const isExpanded = expandedClientName === cs.name;
-                    return (
-                      <Card key={cs.name} className={`transition-all ${isExpanded ? 'ring-2 ring-primary/20' : ''}`}>
-                        <CardContent className="py-3 px-4">
-                          <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpandedClientName(isExpanded ? null : cs.name)}>
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-semibold text-sm text-foreground">{cs.name}</span>
-                              <Badge variant="outline" className="text-[10px]">{cs.total} misurazioni</Badge>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="hidden sm:flex items-center gap-2 text-[10px] text-muted-foreground">
-                                <span>📝 {cs.drafts}</span>
-                                <span>📤 {cs.sent}</span>
-                                <span>💰 {cs.quoted}</span>
-                                <span>✅ {cs.completed}</span>
-                              </div>
-                              {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                            </div>
-                          </div>
-                          {isExpanded && (
-                            <div className="mt-3 pt-3 border-t border-border space-y-3">
-                              <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
-                                {[
-                                  { label: 'Bozze', value: cs.drafts },
-                                  { label: 'Inviate', value: cs.sent },
-                                  { label: 'Preventivate', value: cs.quoted },
-                                  { label: 'Completate', value: cs.completed },
-                                  { label: 'Fatt. stimato', value: `€${Math.round(cs.estimatedRevenue).toLocaleString('it-IT')}` },
-                                  { label: 'Fatt. realizzato', value: `€${Math.round(cs.realizedRevenue).toLocaleString('it-IT')}` },
-                                  { label: 'Fatt. incassato', value: `€${Math.round(cs.collectedRevenue).toLocaleString('it-IT')}` },
-                                ].map(st => (
-                                  <div key={st.label} className="rounded-lg bg-muted p-2 text-center">
-                                    <p className="text-xs font-bold text-foreground">{st.value}</p>
-                                    <p className="text-[9px] text-muted-foreground">{st.label}</p>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="space-y-1.5">
-                                {cs.measurements.map(m => {
-                                  const pi = productIcons[m.product_type] || { emoji: '📦', color: '#6b7280' };
-                                  return (
-                                    <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-2 bg-background">
-                                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pi.color }} />
-                                        <span className="text-xs font-medium text-foreground">{productLabels[m.product_type] || m.product_type}</span>
-                                        <Badge variant={statusLabels[m.status]?.variant || 'default'} className="text-[9px]">
-                                          {statusLabels[m.status]?.label || m.status}
-                                        </Badge>
-                                        <span className="text-[10px] text-muted-foreground">{m.width_mm}×{m.height_mm}mm</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        {m.estimated_price > 0 && <span className="text-[10px] font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
-                                        {m.payment_status === 'pagato' && <span className="text-[10px]" role="img" aria-label="Pagato">💳</span>}
-                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/misurazione/${m.id}`)}>
-                                          <Eye className="h-3 w-3" />
-                                        </Button>
-                                        <span className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleDateString('it-IT')}</span>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                  {filteredClientSummary.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-6">Nessun nominativo corrisponde ai filtri.</p>
-                  )}
-                </div>
+        {/* Riepilogo Clienti - pagina dedicata */}
+        <Card className="mb-6 border-dashed">
+          <CardContent className="flex items-center justify-between py-5 px-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-muted p-2.5">
+                <Users className="h-5 w-5 text-accent" />
               </div>
-            )}
-          </div>
-        )}
+              <div>
+                <p className="font-semibold text-foreground font-heading">Riepilogo Clienti</p>
+                <p className="text-xs text-muted-foreground">{clientSummaryCount} nominativi • Vista separata e pulita con lista alfabetica e filtri avanzati</p>
+              </div>
+            </div>
+            <Button onClick={() => navigate('/dashboard/clienti')} className="gap-2">
+              Apri riepilogo
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Measurements list with filters */}
         <div>

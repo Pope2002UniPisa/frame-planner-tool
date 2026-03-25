@@ -12,9 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp } from 'lucide-react';
+import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp, HelpCircle } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 
@@ -34,6 +35,8 @@ const statusLabels: Record<string, string> = {
 };
 
 const BRANDS = ['FerreroLegno SPA', 'AluK Group', 'Finstral SPA', 'Somfy Italia'];
+const ALL_PRODUCTS_VALUE = '__all_products__';
+const ALL_BRANDS_VALUE = '__all_brands__';
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -59,7 +62,7 @@ export default function AdminDashboard() {
 
   // Sales objectives
   const [objectiveDialog, setObjectiveDialog] = useState(false);
-  const [objForm, setObjForm] = useState({ user_id: '', product_type: '', brand: '', target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
+  const [objForm, setObjForm] = useState({ user_id: '', product_type: ALL_PRODUCTS_VALUE, brand: ALL_BRANDS_VALUE, target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
 
   useEffect(() => {
     if (!user || !isAdmin) return;
@@ -196,10 +199,16 @@ export default function AdminDashboard() {
   // Sales objective CRUD
   const handleSaveObjective = async () => {
     try {
-      const { data, error } = await supabase.from('sales_objectives').insert(objForm as any).select().single();
+      const payload = {
+        ...objForm,
+        product_type: objForm.product_type === ALL_PRODUCTS_VALUE ? null : objForm.product_type,
+        brand: objForm.brand === ALL_BRANDS_VALUE ? null : objForm.brand,
+      };
+      const { data, error } = await supabase.from('sales_objectives').insert(payload as any).select().single();
       if (error) throw error;
       setSalesObjectives(prev => [data, ...prev]);
       setObjectiveDialog(false);
+      setObjForm({ user_id: '', product_type: ALL_PRODUCTS_VALUE, brand: ALL_BRANDS_VALUE, target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
       toast.success('Obiettivo di vendita creato!');
     } catch (err: any) { toast.error(err.message); }
   };
@@ -537,7 +546,7 @@ export default function AdminDashboard() {
                     Obiettivi di vendita
                   </CardTitle>
                   <Button size="sm" className="gap-1.5" onClick={() => {
-                    setObjForm({ user_id: '', product_type: '', brand: '', target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
+                    setObjForm({ user_id: '', product_type: ALL_PRODUCTS_VALUE, brand: ALL_BRANDS_VALUE, target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
                     setObjectiveDialog(true);
                   }}>
                     <Plus className="h-3.5 w-3.5" /> Nuovo obiettivo
@@ -620,7 +629,7 @@ export default function AdminDashboard() {
                       <Select value={objForm.product_type} onValueChange={v => setObjForm(f => ({ ...f, product_type: v }))}>
                         <SelectTrigger><SelectValue placeholder="Tutti..." /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Tutti i prodotti</SelectItem>
+                          <SelectItem value={ALL_PRODUCTS_VALUE}>Tutti i prodotti</SelectItem>
                           {Object.entries(productLabels).map(([v, l]) => (
                             <SelectItem key={v} value={v}>{l}</SelectItem>
                           ))}
@@ -632,7 +641,7 @@ export default function AdminDashboard() {
                       <Select value={objForm.brand} onValueChange={v => setObjForm(f => ({ ...f, brand: v }))}>
                         <SelectTrigger><SelectValue placeholder="Tutte..." /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Tutte le marche</SelectItem>
+                          <SelectItem value={ALL_BRANDS_VALUE}>Tutte le marche</SelectItem>
                           {BRANDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -826,8 +835,6 @@ export default function AdminDashboard() {
 }
 
 // ─── Business Indices Card ──────────────────────────────────────
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { HelpCircle } from 'lucide-react';
 
 const BUSINESS_INDICES = [
   {
