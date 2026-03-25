@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { isDoorType } from '@/data/doorCatalog';
 
 // 10 predefined colors
 export const COLOR_OPTIONS = [
