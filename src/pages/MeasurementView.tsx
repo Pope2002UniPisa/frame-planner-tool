@@ -117,16 +117,15 @@ export default function MeasurementView() {
   };
 
   const doorModelId = acc?.door_model || '';
-  const doorModelResolved = doorModelId ? getDoorModel(doorModelId) : null;
+  const doorModelName = acc?.door_model_name || (doorModelId ? getDoorModel(doorModelId)?.name : null);
+  const isDoor = ['porta', 'porta_finestrata', 'porta_filomuro'].includes(m.product_type);
   const fields: [string, any, any?][] = [
-    ['Prodotto', doorModelResolved?.name || (productLabels[m.product_type] || m.product_type)],
-    ['Cliente', m.client_name],
-    ['Indirizzo', m.client_address],
+    ['Prodotto', doorModelName || (productLabels[m.product_type] || m.product_type)],
     ['Tipo rilievo', m.survey_type],
     ['Larghezza (mm)', m.width_mm],
     ['Altezza (mm)', m.height_mm],
     m.depth_mm && ['Profondità (mm)', m.depth_mm],
-    m.num_panels && ['Numero ante', m.num_panels],
+    !isDoor && m.num_panels && ['Numero ante', m.num_panels],
     m.panel_type && ['Tipologia apertura', m.panel_type],
     m.opening_direction && ['Direzione apertura', m.opening_direction],
     m.frame_type && ['Tipo telaio', resolveFrame(m.frame_type)],

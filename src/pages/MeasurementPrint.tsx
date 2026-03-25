@@ -94,17 +94,17 @@ export default function MeasurementPrint() {
     return model ? model.name : id;
   };
 
-  // Resolve door model name from catalog
-  const doorModel = doorModelId ? getDoorModel(doorModelId) : null;
-  const productDisplayName = doorModel?.name || doorColorName ? (doorModel?.name || productLabels[m.product_type] || m.product_type) : (productLabels[m.product_type] || m.product_type);
+  // Resolve door model name: prefer saved name, then catalog lookup, then generic label
+  const doorModelName = acc?.door_model_name || (doorModelId ? getDoorModel(doorModelId)?.name : null);
+  const isDoor = ['porta', 'porta_finestrata', 'porta_filomuro'].includes(m.product_type);
 
   const rows: [string, string][] = [
-    ['Prodotto', doorModel?.name || (productLabels[m.product_type] || m.product_type)],
+    ['Prodotto', doorModelName || (productLabels[m.product_type] || m.product_type)],
     ['Tipo rilievo', surveyLabels[m.survey_type] || m.survey_type],
     ['Larghezza', `${m.width_mm} mm`],
     ['Altezza', `${m.height_mm} mm`],
     ...(m.depth_mm ? [['Profondità muro', `${m.depth_mm} mm`] as [string, string]] : []),
-    ...(m.num_panels ? [['Numero ante', `${m.num_panels}`] as [string, string]] : []),
+    ...(!isDoor && m.num_panels ? [['Numero ante', `${m.num_panels}`] as [string, string]] : []),
     ...(m.panel_type ? [['Tipologia apertura', m.panel_type] as [string, string]] : []),
     ...(m.opening_direction ? [['Direzione apertura', m.opening_direction] as [string, string]] : []),
     ...(m.frame_type ? [['Tipo telaio', resolveFrame(m.frame_type)] as [string, string]] : []),

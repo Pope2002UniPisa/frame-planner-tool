@@ -167,8 +167,10 @@ export default function NewMeasurement() {
   // They only need: product(0), client(1), survey(2) → then jump to notes(9)
   // For maniglia, we show config step(4) for handle selection
   const getStepsForProduct = () => {
-    if (form.product_type === 'battiscopa') return [0, 1, 2, 7, 9]; // product, client, survey, accessories (battiscopa config), notes
-    if (form.product_type === 'maniglia') return [0, 1, 2, 4, 5, 9]; // product, client, survey, config (handle model), finishes (handle finish), notes
+    if (form.product_type === 'battiscopa') return [0, 1, 2, 7, 9];
+    if (form.product_type === 'maniglia') return [0, 1, 2, 4, 5, 9];
+    // Skip glass step (6) for porta (standard door - always cieca)
+    if (form.product_type === 'porta') return STEPS.map((_, i) => i).filter(i => i !== 6);
     return STEPS.map((_, i) => i);
   };
 
@@ -348,15 +350,15 @@ export default function NewMeasurement() {
       if (isMultiProduct) {
         const groupId = crypto.randomUUID();
         for (let i = 0; i < multiItems.length; i++) {
-          const { error } = await supabase.from('measurements').insert(
-            buildInsertData('quoted', photo_urls, multiItems[i], groupId, i + 1, multiItems.length)
+        const { error } = await supabase.from('measurements').insert(
+            buildInsertData('submitted', photo_urls, multiItems[i], groupId, i + 1, multiItems.length)
           );
           if (error) throw error;
         }
       } else {
-        const { error } = await supabase.from('measurements').insert(buildInsertData('quoted', photo_urls));
+        const { error } = await supabase.from('measurements').insert(buildInsertData('submitted', photo_urls));
         if (error) throw error;
-        await createAccessoryRecords('quoted');
+        await createAccessoryRecords('submitted');
       }
 
       // Send email notification
@@ -386,7 +388,7 @@ export default function NewMeasurement() {
         console.log('Email notification skipped:', e);
       }
 
-      toast.success('Misurazione inviata con successo!');
+      toast.success('Preventivo inviato con successo!', { description: 'Riceverai una risposta a breve.' });
       navigate('/dashboard');
     } catch (err: any) {
       toast.error(err.message || "Errore durante l'invio");
@@ -1272,7 +1274,35 @@ export default function NewMeasurement() {
                         })()}
                       </div>
 
-                      {/* Handle model selection */}
+                      {/* No-handle option */}
+                      <div className="space-y-2">
+                        <Label>Maniglia</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                          {[
+                            { value: 'none', label: '🔩 Con maniglia', desc: 'Seleziona modello e finitura' },
+                            { value: 'foro_maniglia', label: '🕳️ Solo foro maniglia', desc: 'Senza maniglia, solo predisposizione' },
+                            { value: 'foro_chiave', label: '🔑 Solo foro chiave', desc: 'Senza maniglia, solo serratura' },
+                            { value: 'foro_maniglia_chiave', label: '🕳️🔑 Foro maniglia + chiave', desc: 'Predisposizione maniglia e serratura' },
+                          ].map(opt => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => setAccessoriesConfig(prev => ({ ...prev, no_handle_mode: opt.value as any }))}
+                              className={`flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-sm transition-all text-left ${
+                                noHandleMode === opt.value
+                                  ? 'border-accent bg-accent/10'
+                                  : 'border-border hover:border-muted-foreground/30'
+                              }`}
+                            >
+                              <span className="font-medium">{opt.label}</span>
+                              <span className="text-xs text-muted-foreground">{opt.desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Handle model selection - only when handle is selected */}
+                      {!hasNoHandleSelection && (
                       <div className="space-y-2">
                         <Label>Tipo maniglia</Label>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1294,8 +1324,10 @@ export default function NewMeasurement() {
                           ))}
                         </div>
                       </div>
+                      )}
 
-                      {/* Handle finish selection */}
+                      {/* Handle finish selection - only when handle is selected */}
+                      {!hasNoHandleSelection && (
                       <div className="space-y-2">
                         <Label>Finitura maniglia</Label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1317,6 +1349,7 @@ export default function NewMeasurement() {
                           ))}
                         </div>
                       </div>
+                      )}
                     </div>
                   );
                 })() : (
@@ -1678,7 +1711,7 @@ export default function NewMeasurement() {
             ) : (
               <Button onClick={handleSubmit} disabled={submitting || savingDraft} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
                 <Check className="h-4 w-4" />
-                {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Misurazioni` : 'Ordine'}`}
+                {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Preventivi` : 'Preventivo'}`}
               </Button>
             )}
           </div>
