@@ -16,7 +16,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import AccessoryConfig, { type AccessoriesConfig } from '@/components/AccessoryConfig';
 import { Switch } from '@/components/ui/switch';
-import { DOOR_MODELS, getDoorModel, getCompatibleFrames, getCompatibleHandleModels, getCompatibleHandleFinishes, getHandleFinishHex, getColorsByFinish, ALL_FRAMES, ALL_HANDLE_MODELS, ALL_HANDLE_FINISHES, type DoorColor } from '@/data/doorCatalog';
+import { DOOR_MODELS, getDoorModel, getCompatibleFrames, getCompatibleHandleModels, getCompatibleHandleFinishes, getHandleFinishHex, getColorsByFinish, ALL_FRAMES, ALL_HANDLE_MODELS, ALL_HANDLE_FINISHES, getModelsForProductType, isDoorType, type DoorColor } from '@/data/doorCatalog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const STEPS = [
