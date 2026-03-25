@@ -386,7 +386,7 @@ export default function NewMeasurement() {
         console.log('Email notification skipped:', e);
       }
 
-      toast.success('Misurazione inviata con successo!');
+      toast.success('Preventivo inviato con successo!', { description: 'Riceverai una risposta a breve.' });
       navigate('/dashboard');
     } catch (err: any) {
       toast.error(err.message || "Errore durante l'invio");
