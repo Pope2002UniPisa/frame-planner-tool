@@ -17,28 +17,29 @@ import pratelliLogo from '@/assets/pratelli-logo.png';
 
 const WORKFLOW_STEPS = [
   { key: 'bozza', label: 'Bozza', icon: '📝' },
-  { key: 'ricevuto', label: 'Inviata', icon: '📤' },
-  { key: 'in_review', label: 'In revisione', icon: '🔍' },
-  { key: 'quoted', label: 'Preventivata', icon: '💰' },
-  { key: 'quote_accepted', label: 'Accettata', icon: '✅' },
-  { key: 'ordered', label: 'Ordinata', icon: '📦' },
+  { key: 'quoted', label: 'Preventivo', icon: '💰' },
+  { key: 'ordered', label: 'Ordine', icon: '📋' },
+  { key: 'in_production', label: 'Produzione', icon: '✅' },
+  { key: 'delivering', label: 'Consegna', icon: '📦' },
   { key: 'completed', label: 'Completata', icon: '🏁' },
 ];
 
 const getWorkflowIndex = (status: string): number => {
-  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, in_review: 2, quoted: 3, quote_accepted: 4, quote_modifications: 3, ordered: 5, completed: 6 };
+  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, quoted: 1, quote_accepted: 1, quote_modifications: 1, ordered: 2, in_production: 3, delivering: 4, completed: 5 };
   return map[status] ?? 0;
 };
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   bozza: { label: 'Bozza', variant: 'outline' },
-  ricevuto: { label: 'Inviata', variant: 'default' },
-  submitted: { label: 'Inviata', variant: 'default' },
+  ricevuto: { label: 'Preventivo', variant: 'default' },
+  submitted: { label: 'Preventivo', variant: 'default' },
   in_review: { label: 'In revisione', variant: 'secondary' },
-  quoted: { label: 'Preventivata', variant: 'outline' },
+  quoted: { label: 'Preventivo', variant: 'default' },
   quote_accepted: { label: 'Preventivo accettato', variant: 'default' },
   quote_modifications: { label: 'Modifiche richieste', variant: 'destructive' },
-  ordered: { label: 'Ordinata', variant: 'default' },
+  ordered: { label: 'Ordinata', variant: 'secondary' },
+  in_production: { label: 'In produzione', variant: 'default' },
+  delivering: { label: 'In consegna', variant: 'default' },
   completed: { label: 'Completata', variant: 'secondary' },
 };
 
@@ -126,9 +127,9 @@ export default function Dashboard() {
   const stats = useMemo(() => ({
     total: measurements.length,
     drafts: measurements.filter(m => m.status === 'bozza').length,
-    sent: measurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted' || m.status === 'in_review').length,
-    quoted: measurements.filter(m => m.status === 'quoted').length,
-    completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
+    quoted: measurements.filter(m => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)).length,
+    ordered: measurements.filter(m => ['ordered', 'in_production', 'delivering'].includes(m.status)).length,
+    completed: measurements.filter(m => m.status === 'completed').length,
   }), [measurements]);
 
   const clientSummaryCount = useMemo(() => {
@@ -140,9 +141,9 @@ export default function Dashboard() {
     return measurements.filter(m => {
       if (filterStatus !== 'all') {
         if (filterStatus === 'bozza' && m.status !== 'bozza') return false;
-        if (filterStatus === 'inviata' && m.status !== 'ricevuto' && m.status !== 'submitted') return false;
-        if (filterStatus === 'quoted' && m.status !== 'quoted') return false;
-        if (filterStatus === 'completed' && m.status !== 'completed' && m.status !== 'ordered') return false;
+        if (filterStatus === 'quoted' && !['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)) return false;
+        if (filterStatus === 'ordered' && !['ordered', 'in_production', 'delivering'].includes(m.status)) return false;
+        if (filterStatus === 'completed' && m.status !== 'completed') return false;
       }
       if (filterProduct !== 'all' && m.product_type !== filterProduct) return false;
       if (searchText) {
@@ -297,8 +298,8 @@ export default function Dashboard() {
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
           <StatCard icon={FileText} label="Totale" value={stats.total} />
           <StatCard icon={Edit3} label="Bozze" value={stats.drafts} />
-          <StatCard icon={Send} label="Inviate" value={stats.sent} />
-          <StatCard icon={Package} label="Preventivate" value={stats.quoted} />
+          <StatCard icon={Send} label="Preventivi" value={stats.quoted} />
+          <StatCard icon={Package} label="Ordini" value={stats.ordered} />
           <StatCard icon={CheckCircle} label="Completate" value={stats.completed} />
         </div>
 
@@ -391,8 +392,8 @@ export default function Dashboard() {
                 <SelectContent>
                   <SelectItem value="all">Tutti gli stati</SelectItem>
                   <SelectItem value="bozza">Bozze</SelectItem>
-                  <SelectItem value="inviata">Inviate</SelectItem>
-                  <SelectItem value="quoted">Preventivate</SelectItem>
+                  <SelectItem value="quoted">Preventivi</SelectItem>
+                  <SelectItem value="ordered">Ordini</SelectItem>
                   <SelectItem value="completed">Completate</SelectItem>
                 </SelectContent>
               </Select>

@@ -10,9 +10,9 @@ import ProductDiagram from '@/components/ProductDiagram';
 import { getColorLabel } from '@/data/doorCatalog';
 
 const statusLabels: Record<string, string> = {
-  bozza: 'Bozza', ricevuto: 'Inviata', submitted: 'Inviata', in_review: 'In revisione',
-  quoted: 'Preventivata', quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
-  ordered: 'Ordinata', completed: 'Completata',
+  bozza: 'Bozza', ricevuto: 'Preventivo', submitted: 'Preventivo', in_review: 'In revisione',
+  quoted: 'Preventivo', quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
+  ordered: 'Ordinata', in_production: 'In produzione', delivering: 'In consegna', completed: 'Completata',
 };
 const productLabels: Record<string, string> = {
   finestra: 'Finestra', porta_finestra: 'Porta Finestra', basculante: 'Basculante',

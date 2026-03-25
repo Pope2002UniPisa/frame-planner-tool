@@ -30,10 +30,10 @@ const LINE_COLORS: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  bozza: 'Bozza', ricevuto: 'Inviata', submitted: 'Inviata',
-  in_review: 'In revisione', quoted: 'Preventivata', 
+  bozza: 'Bozza', ricevuto: 'Preventivo', submitted: 'Preventivo',
+  in_review: 'In revisione', quoted: 'Preventivo', 
   quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
-  ordered: 'Ordinata', completed: 'Completata',
+  ordered: 'Ordinata', in_production: 'In produzione', delivering: 'In consegna', completed: 'Completata',
 };
 
 const BRANDS = ['FerreroLegno SPA', 'AluK Group', 'Finstral SPA', 'Somfy Italia'];
@@ -95,15 +95,15 @@ export default function AdminDashboard() {
   // Stats
   const stats = useMemo(() => {
     const nonDraft = measurements.filter(m => m.status !== 'bozza');
-    const completed = measurements.filter(m => ['completed', 'ordered'].includes(m.status));
+    const completed = measurements.filter(m => ['completed', 'ordered', 'in_production', 'delivering'].includes(m.status));
     const paidCompleted = completed.filter(m => m.payment_status === 'pagato');
     return {
       totalMeasurements: nonDraft.length,
       totalClients: profiles.length,
       drafts: measurements.filter(m => m.status === 'bozza').length,
-      sent: measurements.filter(m => ['ricevuto', 'submitted', 'in_review'].includes(m.status)).length,
-      quoted: measurements.filter(m => m.status === 'quoted').length,
-      completed: completed.length,
+      quoted: measurements.filter(m => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)).length,
+      ordered: measurements.filter(m => ['ordered', 'in_production', 'delivering'].includes(m.status)).length,
+      completed: measurements.filter(m => m.status === 'completed').length,
       totalRevenue: nonDraft.reduce((s, m) => s + (Number(m.estimated_price) || 0), 0),
       realizedRevenue: completed.reduce((s, m) => s + (Number(m.estimated_price) || 0), 0),
       collectedRevenue: paidCompleted.reduce((s, m) => s + (Number(m.amount_paid) || Number(m.estimated_price) || 0), 0),
@@ -112,8 +112,8 @@ export default function AdminDashboard() {
 
   const statusChartData = useMemo(() => [
     { name: 'Bozze', value: stats.drafts, color: '#94a3b8' },
-    { name: 'Inviate', value: stats.sent, color: '#3b82f6' },
-    { name: 'Preventivate', value: stats.quoted, color: '#f59e0b' },
+    { name: 'Preventivi', value: stats.quoted, color: '#3b82f6' },
+    { name: 'Ordini', value: stats.ordered, color: '#f59e0b' },
     { name: 'Completate', value: stats.completed, color: '#10b981' },
   ].filter(d => d.value > 0), [stats]);
 
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
     profiles.forEach(p => {
       map[p.user_id] = {
         user_id: p.user_id, name: p.company_name || p.email, email: p.email, approved: p.approved,
-        total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0, revenue: 0,
+        total: 0, drafts: 0, quoted: 0, ordered: 0, completed: 0, revenue: 0,
         realizedRevenue: 0, collectedRevenue: 0,
         byProduct: {} as Record<string, number>,
       };
@@ -161,9 +161,11 @@ export default function AdminDashboard() {
       const pt = productLabels[m.product_type] || m.product_type;
       map[m.user_id].byProduct[pt] = (map[m.user_id].byProduct[pt] || 0) + 1;
       if (m.status === 'bozza') map[m.user_id].drafts++;
-      else if (['ricevuto', 'submitted', 'in_review'].includes(m.status)) map[m.user_id].sent++;
-      else if (m.status === 'quoted') map[m.user_id].quoted++;
-      else if (['completed', 'ordered'].includes(m.status)) {
+      else if (['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)) map[m.user_id].quoted++;
+      else if (['ordered', 'in_production', 'delivering'].includes(m.status)) {
+        map[m.user_id].ordered++;
+        map[m.user_id].realizedRevenue += Number(m.estimated_price) || 0;
+      } else if (m.status === 'completed') {
         map[m.user_id].completed++;
         map[m.user_id].realizedRevenue += Number(m.estimated_price) || 0;
         if (m.payment_status === 'pagato') {
@@ -354,8 +356,8 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
               {[
                 { icon: Edit3, label: 'Bozze totali', value: stats.drafts },
-                { icon: Send, label: 'Inviate', value: stats.sent },
-                { icon: Package, label: 'Preventivate', value: stats.quoted },
+                { icon: Send, label: 'Preventivi', value: stats.quoted },
+                { icon: Package, label: 'Ordini', value: stats.ordered },
                 { icon: CheckCircle, label: 'Completate', value: stats.completed },
                 { icon: TrendingUp, label: 'Fatt. stimato', value: `€${Math.round(stats.totalRevenue).toLocaleString('it-IT')}` },
                 { icon: TrendingUp, label: 'Fatt. realizzato', value: `€${Math.round(stats.realizedRevenue).toLocaleString('it-IT')}` },
@@ -386,7 +388,7 @@ export default function AdminDashboard() {
                         <Tooltip />
                       </PieChart>
                     </ResponsiveContainer>
-                    <p className="text-xs text-muted-foreground mt-1">Totale misurazioni: <span className="font-bold text-foreground">{stats.drafts + stats.sent + stats.quoted + stats.completed}</span></p>
+                    <p className="text-xs text-muted-foreground mt-1">Totale misurazioni: <span className="font-bold text-foreground">{stats.drafts + stats.quoted + stats.ordered + stats.completed}</span></p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -514,8 +516,8 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-7 gap-2">
                         {[
                           { label: 'Bozze', value: c.drafts },
-                          { label: 'Inviate', value: c.sent },
-                          { label: 'Preventivate', value: c.quoted },
+                          { label: 'Preventivi', value: c.quoted },
+                          { label: 'Ordini', value: c.ordered },
                           { label: 'Completate', value: c.completed },
                           { label: 'Fatt. stimato', value: `€${Math.round(c.revenue).toLocaleString('it-IT')}` },
                           { label: 'Fatt. realizzato', value: `€${Math.round(c.realizedRevenue).toLocaleString('it-IT')}` },
@@ -931,15 +933,8 @@ export default function AdminDashboard() {
                   <div className="border-t border-border pt-4 space-y-2">
                     <p className="text-xs font-semibold text-muted-foreground">Azioni workflow</p>
                     <div className="flex flex-wrap gap-2">
-                      {(currentStatus === 'submitted' || currentStatus === 'ricevuto') && (
-                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
-                          <FileText className="h-3.5 w-3.5" /> Invia Preventivo
-                        </Button>
-                      )}
-                      {currentStatus === 'in_review' && (
-                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
-                          <FileText className="h-3.5 w-3.5" /> Invia Preventivo
-                        </Button>
+                      {(currentStatus === 'submitted' || currentStatus === 'ricevuto' || currentStatus === 'quoted') && (
+                        <p className="text-xs text-muted-foreground italic">In attesa di risposta dal cliente...</p>
                       )}
                       {currentStatus === 'quote_accepted' && (
                         <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('ordered')}>
@@ -947,17 +942,30 @@ export default function AdminDashboard() {
                         </Button>
                       )}
                       {currentStatus === 'quote_modifications' && (
-                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
-                          <FileText className="h-3.5 w-3.5" /> Invia Nuovo Preventivo
-                        </Button>
+                        <>
+                          <div className="w-full rounded-lg bg-destructive/10 border border-destructive/20 p-3 mb-2">
+                            <p className="text-xs font-semibold text-destructive">Modifiche richieste dal cliente:</p>
+                            <p className="text-xs text-foreground mt-1">{manageMeasurement.modification_notes || 'Nessuna nota'}</p>
+                          </div>
+                          <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
+                            <FileText className="h-3.5 w-3.5" /> Invia Nuovo Preventivo
+                          </Button>
+                        </>
                       )}
                       {currentStatus === 'ordered' && (
-                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('completed')}>
-                          <CheckCircle className="h-3.5 w-3.5" /> Segna Completata
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('in_production')}>
+                          <CheckCircle className="h-3.5 w-3.5" /> Invia in Produzione
                         </Button>
                       )}
-                      {currentStatus === 'quoted' && (
-                        <p className="text-xs text-muted-foreground italic">In attesa di risposta dal cliente...</p>
+                      {currentStatus === 'in_production' && (
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('delivering')}>
+                          <Package className="h-3.5 w-3.5" /> Pronta per Consegna
+                        </Button>
+                      )}
+                      {currentStatus === 'delivering' && (
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('completed')}>
+                          <CheckCircle className="h-3.5 w-3.5" /> Bolla Firmata - Completa
+                        </Button>
                       )}
                     </div>
                   </div>
