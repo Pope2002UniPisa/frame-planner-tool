@@ -611,6 +611,11 @@ export default function ProductDiagram({
               Telaio: {frameLabel}
             </text>
           )}
+          {handleModelLabel && handleFinishLabel && (
+            <text x={offsetX + drawW / 2} y={offsetY + drawH + (frameLabel ? 58 : 46)} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+              {handleModelLabel} — {handleFinishLabel}
+            </text>
+          )}
 
           {view && (
             <text x={8} y={16} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
