@@ -38,6 +38,8 @@ interface ProductDiagramProps {
   internalSpaceMm?: string;
   externalSpaceMm?: string;
   view?: 'internal' | 'external';
+  doorColorHex?: string;
+  doorHandleId?: string;
 }
 
 export default function ProductDiagram({
