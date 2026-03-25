@@ -114,3 +114,13 @@
     box-shadow: 0 10px 25px -5px hsl(220 30% 12% / 0.1), 0 4px 10px -3px hsl(220 30% 12% / 0.05);
   }
 }
+
+@media print {
+  @page {
+    margin: 15mm 10mm 20mm 10mm;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
