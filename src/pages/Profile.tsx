@@ -43,6 +43,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [measurements, setMeasurements] = useState<any[]>([]);
+  const [objectives, setObjectives] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ company_name: '', phone: '', email: '', client_code: '' });
