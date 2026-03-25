@@ -95,15 +95,15 @@ export default function AdminDashboard() {
   // Stats
   const stats = useMemo(() => {
     const nonDraft = measurements.filter(m => m.status !== 'bozza');
-    const completed = measurements.filter(m => ['completed', 'ordered'].includes(m.status));
+    const completed = measurements.filter(m => ['completed', 'ordered', 'in_production', 'delivering'].includes(m.status));
     const paidCompleted = completed.filter(m => m.payment_status === 'pagato');
     return {
       totalMeasurements: nonDraft.length,
       totalClients: profiles.length,
       drafts: measurements.filter(m => m.status === 'bozza').length,
-      sent: measurements.filter(m => ['ricevuto', 'submitted', 'in_review'].includes(m.status)).length,
-      quoted: measurements.filter(m => m.status === 'quoted').length,
-      completed: completed.length,
+      quoted: measurements.filter(m => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)).length,
+      ordered: measurements.filter(m => ['ordered', 'in_production', 'delivering'].includes(m.status)).length,
+      completed: measurements.filter(m => m.status === 'completed').length,
       totalRevenue: nonDraft.reduce((s, m) => s + (Number(m.estimated_price) || 0), 0),
       realizedRevenue: completed.reduce((s, m) => s + (Number(m.estimated_price) || 0), 0),
       collectedRevenue: paidCompleted.reduce((s, m) => s + (Number(m.amount_paid) || Number(m.estimated_price) || 0), 0),
