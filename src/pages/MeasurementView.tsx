@@ -116,8 +116,9 @@ export default function MeasurementView() {
     return finish ? finish.name : id;
   };
 
+  const doorModelDisplayName = acc?.door_model_name || '';
   const fields: [string, any, any?][] = [
-    ['Prodotto', productLabels[m.product_type] || m.product_type],
+    ['Prodotto', doorModelDisplayName || (productLabels[m.product_type] || m.product_type)],
     ['Cliente', m.client_name],
     ['Indirizzo', m.client_address],
     ['Tipo rilievo', m.survey_type],
@@ -177,7 +178,7 @@ export default function MeasurementView() {
         </div>
 
         {/* Accept/Reject quote buttons */}
-        {m.status === 'quoted' && (
+        {['ricevuto', 'submitted', 'quoted'].includes(m.status) && (
           <Card className="border-2 border-accent/30 bg-accent/5">
             <CardContent className="py-5 space-y-3">
               <p className="text-sm font-semibold text-foreground">Vuoi accettare questo preventivo?</p>

@@ -457,7 +457,7 @@ export default function Dashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pi.color }} />
-                          <span className="font-semibold text-foreground">{productLabels[m.product_type] || m.product_type}</span>
+                          <span className="font-semibold text-foreground">{m.client_name || 'Senza nome'}</span>
                           <Badge variant={statusLabels[m.status]?.variant || 'default'}>
                             {statusLabels[m.status]?.label || m.status}
                           </Badge>
@@ -468,7 +468,7 @@ export default function Dashboard() {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {m.width_mm}×{m.height_mm} mm • {m.client_name || 'Senza nome'}
+                          {productLabels[m.product_type] || m.product_type} • {m.width_mm}×{m.height_mm} mm
                         </p>
                         {m.client_address && <p className="text-xs text-muted-foreground">{m.client_address}</p>}
                         {(m as any).estimated_price > 0 && (
@@ -517,7 +517,7 @@ export default function Dashboard() {
                           </div>
                         )}
                         {/* Quote response buttons */}
-                        {m.status === 'quoted' && (
+                        {['ricevuto', 'submitted', 'quoted'].includes(m.status) && (
                           <div className="flex gap-2 mt-2">
                             <Button size="sm" className="gap-1.5" onClick={(e) => { e.stopPropagation(); handleQuoteResponse(m.id, true); }}>
                               <ThumbsUp className="h-3.5 w-3.5" /> Accetta preventivo

@@ -87,14 +87,18 @@ export default function MeasurementPrint() {
   const doorHandleModel = acc?.door_handle_model_id || '';
   const doorHandleFinish = acc?.door_handle_finish_id || '';
   const doorColorName = acc?.door_color_name || '';
+  const doorModelName = acc?.door_model_name || '';
 
   const resolveHandleModel = (id: string): string => {
     const model = ALL_HANDLE_MODELS.find(m => m.id === id);
     return model ? model.name : id;
   };
 
+  // For product name: use door model name if available, otherwise generic label
+  const productDisplayName = doorModelName || (productLabels[m.product_type] || m.product_type);
+
   const rows: [string, string][] = [
-    ['Prodotto', productLabels[m.product_type] || m.product_type],
+    ['Prodotto', productDisplayName],
     ['Cliente', m.client_name || '-'],
     ['Indirizzo', m.client_address || '-'],
     ['Tipo rilievo', surveyLabels[m.survey_type] || m.survey_type],
@@ -154,7 +158,6 @@ export default function MeasurementPrint() {
             </div>
             <div className="text-right text-sm text-muted-foreground shrink-0">
               <p>Data: {new Date(m.created_at).toLocaleDateString('it-IT')}</p>
-              <p>Stato: {statusLabels[m.status] || m.status}</p>
             </div>
           </div>
 
@@ -224,9 +227,10 @@ export default function MeasurementPrint() {
             </div>
           )}
 
-          {/* Footer with Pratelli logo */}
-          <div className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-3">
-            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-12 object-contain" />
+          {/* Footer with logos side by side */}
+          <div className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-6">
+            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-10 object-contain" />
+            <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-8 object-contain" />
           </div>
         </div>
       </div>
