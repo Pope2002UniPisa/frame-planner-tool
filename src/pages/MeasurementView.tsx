@@ -74,7 +74,20 @@ export default function MeasurementView() {
     m.laying_type && ['Tipo posa', m.laying_type],
     m.remove_old && ['Rimozione vecchio', 'Sì'],
     m.notes && ['Note', m.notes],
-  ].filter(Boolean) as [string, any][];
+  ].filter(Boolean) as [string, any, any?][];
+
+  const renderColorValue = (value: any, colorInfo: any) => {
+    if (!colorInfo) return <span className="text-sm font-medium text-foreground">{value}</span>;
+    return (
+      <div className="flex items-center gap-2">
+        <div
+          className="w-5 h-5 rounded-md border border-border shadow-sm shrink-0"
+          style={{ backgroundColor: colorInfo.hex }}
+        />
+        <span className="text-sm font-medium text-foreground">{colorInfo.name}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
