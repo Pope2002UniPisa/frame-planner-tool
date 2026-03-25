@@ -1223,37 +1223,47 @@ export default function NewMeasurement() {
             {step === 7 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Accessori</CardTitle>
-                <CardDescription>Seleziona gli accessori e configurali</CardDescription>
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="has_mosquito_net" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_mosquito_net ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                      <Checkbox id="has_mosquito_net" checked={form.has_mosquito_net} onCheckedChange={v => update('has_mosquito_net', v)} />
-                      <span className="text-lg">🦟 Zanzariera</span>
-                    </Label>
-                    {form.has_mosquito_net && <AccessoryConfig type="mosquito_net" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                <CardDescription>
+                  {form.product_type === 'porta'
+                    ? 'La sezione accessori per le porte verrà aggiornata prossimamente.'
+                    : 'Seleziona gli accessori e configurali'}
+                </CardDescription>
+                {form.product_type === 'porta' ? (
+                  <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
+                    <p className="text-sm text-muted-foreground">Nessun accessorio disponibile per il momento</p>
                   </div>
-                  <div>
-                    <Label htmlFor="has_shutter" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_shutter ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                      <Checkbox id="has_shutter" checked={form.has_shutter} onCheckedChange={v => update('has_shutter', v)} />
-                      <span className="text-lg">🪟 Tapparella</span>
-                    </Label>
-                    {form.has_shutter && <AccessoryConfig type="shutter" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="has_mosquito_net" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_mosquito_net ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_mosquito_net" checked={form.has_mosquito_net} onCheckedChange={v => update('has_mosquito_net', v)} />
+                        <span className="text-lg">🦟 Zanzariera</span>
+                      </Label>
+                      {form.has_mosquito_net && <AccessoryConfig type="mosquito_net" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                    </div>
+                    <div>
+                      <Label htmlFor="has_shutter" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_shutter ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_shutter" checked={form.has_shutter} onCheckedChange={v => update('has_shutter', v)} />
+                        <span className="text-lg">🪟 Tapparella</span>
+                      </Label>
+                      {form.has_shutter && <AccessoryConfig type="shutter" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                    </div>
+                    <div>
+                      <Label htmlFor="has_box" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_box ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_box" checked={form.has_box} onCheckedChange={v => update('has_box', v)} />
+                        <span className="text-lg">📦 Cassonetto</span>
+                      </Label>
+                      {form.has_box && <AccessoryConfig type="box" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                    </div>
+                    <div>
+                      <Label htmlFor="has_motorization" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_motorization ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_motorization" checked={form.has_motorization} onCheckedChange={v => update('has_motorization', v)} />
+                        <span className="text-lg">⚡ Motorizzazione</span>
+                      </Label>
+                      {form.has_motorization && <AccessoryConfig type="motorization" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="has_box" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_box ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                      <Checkbox id="has_box" checked={form.has_box} onCheckedChange={v => update('has_box', v)} />
-                      <span className="text-lg">📦 Cassonetto</span>
-                    </Label>
-                    {form.has_box && <AccessoryConfig type="box" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
-                  </div>
-                  <div>
-                    <Label htmlFor="has_motorization" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_motorization ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                      <Checkbox id="has_motorization" checked={form.has_motorization} onCheckedChange={v => update('has_motorization', v)} />
-                      <span className="text-lg">⚡ Motorizzazione</span>
-                    </Label>
-                    {form.has_motorization && <AccessoryConfig type="motorization" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
