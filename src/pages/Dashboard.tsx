@@ -155,7 +155,7 @@ export default function Dashboard() {
       return true;
     });
   }, [measurements, filterStatus, filterProduct, searchText, filterDateFrom, filterDateTo]);
-
+{/* Stato accettazione preventivo e workflow conseguente */}
   const handleQuoteResponse = async (measurementId: string, accept: boolean) => {
     const newStatus = accept ? 'quote_accepted' : 'quote_modifications';
     const updates: any = { status: newStatus };
@@ -587,10 +587,10 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {/* Company info and logo */}
             <div>
-              <div className="flex items-center justify-start gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-3 -ml-3.5">
                 <img src={pratelliLogo} 
                 alt="Pratelli Rappresentanze" 
-                className="h-12 object-contain" 
+                className="h-16 object-contain" 
               />
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">

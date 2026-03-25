@@ -51,4 +51,36 @@ salvi
 il browser si aggiorna quasi subito
 non devi rilanciare npm run dev
 Quindi quello che vedi è un segnale buono, non un errore.
+Flusso da accettazione preventivo ad accettazione ordine:
+2) Il flusso corretto che ti consiglio
+Tu vuoi ottenere questo:
+Stato 1
+Preventivo
+badge blu
+pulsanti:
+Accetta preventivo
+Richiedi modifiche
+Stato 2
+Ordine
+badge verde
+pallino successivo attivo
+i pulsanti cambiano:
+Accetta ordine
+eventualmente Richiedi modifiche ordine, oppure niente per ora
+Stato 3
+Ordine firmato
+si genera il PDF ordine
+viene applicata la firma caricata per il cliente
+salvi il PDF firmato
+più avanti lo manderai in produzione
+Quindi, tecnicamente, ti serve uno stato intermedio. (order_pending_signature)
 
+Ti consiglio questa sequenza:
+bozza
+submitted
+quoted
+order_pending_signature
+ordered
+in_production
+delivered
+completed
