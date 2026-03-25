@@ -1269,7 +1269,6 @@ export default function NewMeasurement() {
                         ...(form.product_type !== 'porta_finestrata' ? [{ value: 'cieca', label: '🚪 Porta cieca (no vetro)' }] : []),
                         { value: 'trasparente', label: '🔍 Vetro trasparente' },
                         { value: 'satinato', label: '🌫️ Vetro satinato' },
-                        { value: 'a_quadri', label: '🔲 Vetro a quadri' },
                       ].map(opt => (
                         <Label key={opt.value} htmlFor={`glass-${opt.value}`} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
                           <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
