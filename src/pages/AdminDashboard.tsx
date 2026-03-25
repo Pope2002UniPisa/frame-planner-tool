@@ -966,7 +966,6 @@ export default function AdminDashboard() {
         </Dialog>
       </main>
     </div>
-    </div>
   );
 }
 
