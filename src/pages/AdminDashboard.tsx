@@ -12,9 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp } from 'lucide-react';
+import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp, HelpCircle } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 
