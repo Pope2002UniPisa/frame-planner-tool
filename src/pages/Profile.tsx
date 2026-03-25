@@ -342,10 +342,11 @@ export default function Profile() {
             <Card>
               <CardHeader>
                 <CardTitle className="font-heading flex items-center gap-3">
+                  {/* con logoUrl si mostra l'immagine, altrimenti icona grigia */}
                   {logoUrl ? (
-                    <img src={logoUrl} alt="Logo" className="h-12 w-12 rounded-lg object-cover border border-border cursor-pointer hover:ring-2 hover:ring-accent transition-all" onClick={() => setLogoPreview(true)} />
+                    <img src={logoUrl} alt="Logo" className="h-12 w-12 rounded-lg object-contain border border-border cursor-pointer hover:ring-2 hover:ring-accent transition-all" onClick={() => setLogoPreview(true)} />
                   ) : (
-                    <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                    <div className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center">
                       <Building2 className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
