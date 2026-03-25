@@ -468,7 +468,7 @@ export default function Dashboard() {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {m.width_mm}×{m.height_mm} mm • {m.client_name || 'Senza nome'}
+                          {productLabels[m.product_type] || m.product_type} • {m.width_mm}×{m.height_mm} mm
                         </p>
                         {m.client_address && <p className="text-xs text-muted-foreground">{m.client_address}</p>}
                         {(m as any).estimated_price > 0 && (
