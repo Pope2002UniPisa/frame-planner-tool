@@ -98,7 +98,7 @@ export default function MeasurementPrint() {
   const productDisplayName = doorModelName || (productLabels[m.product_type] || m.product_type);
 
   const rows: [string, string][] = [
-    ['Prodotto', productLabels[m.product_type] || m.product_type],
+    ['Prodotto', productDisplayName],
     ['Cliente', m.client_name || '-'],
     ['Indirizzo', m.client_address || '-'],
     ['Tipo rilievo', surveyLabels[m.survey_type] || m.survey_type],
