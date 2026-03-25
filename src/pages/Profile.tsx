@@ -25,10 +25,32 @@ const LINE_COLORS: Record<string, string> = {
 };
 
 const SUPPLIERS = [
-  { id: 'ferrerolegno', name: 'FerreroLegno SPA', category: 'Porte e finestre in legno', catalogs: ['Catalogo Porte 2026', 'Listino Prezzi Q1'] },
-  { id: 'aluk', name: 'AluK Group', category: 'Sistemi in alluminio', catalogs: ['Catalogo Alluminio 2026', 'Soluzioni Scorrevoli'] },
-  { id: 'finstral', name: 'Finstral SPA', category: 'Finestre e porte in PVC', catalogs: ['Catalogo PVC 2026', 'Innovazioni Termiche'] },
-  { id: 'somfy', name: 'Somfy Italia', category: 'Motorizzazioni e domotica', catalogs: ['Catalogo Motori 2026'] },
+  { id: 'ferrerolegno', 
+    name: 'FerreroLegno SPA', 
+    category: 'Porte in legno e vetro', 
+    catalogs: ['Catalogo Porte 2026', 'Listino Prezzi Q1'] 
+  },
+  { id: 'madrugada', 
+    name: 'Madrugada Group', 
+    category: 'Infissi in PVC', 
+    catalogs: ['Catalogo 2026'] 
+  },
+  { 
+  id: 'nurith',
+  name: 'Nurith SPA',
+  category: 'Infissi, oscuranti e portoncini in PVC',
+  catalogs: ['Catalogo PVC 2026', 'Innovazioni Termiche', 'Listino Premium 2026']
+  },
+  { id: 'denardi',
+    name: 'Denardi SRL', 
+    category: 'Basculanti in acciaio e legno', 
+    catalogs: ['Catalogo Basculanti 2026', 'Catalogo Motorizzazioni 2026'] 
+  },
+  { id: 'anger',
+    name: 'Anger SRL', 
+    category: 'Infissi in legno', 
+    catalogs: ['Catalogo 2026', 'Catalogo legno/alluminio 2026']
+  },
 ];
 
 const DEFAULT_ORG_ROLES = [

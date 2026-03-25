@@ -35,3 +35,20 @@ Dopo il push:
 - Lovable dovrebbe sincronizzarsi col repository
 - se vuoi aggiornare il sito live, fai anche Publish / Update in Lovable.
 
+1) Cosa significa quello che appare nel terminale
+
+Quelle righe tipo:
+[vite] hmr update /src/pages/Profile.tsx, /src/index.css
+vogliono dire:
+Vite ha rilevato che hai salvato un file
+ha aggiornato l’app senza riavviare tutto
+ha ricaricato solo la parte necessaria della pagina
+hmr cosa vuol dire
+hmr = Hot Module Replacement
+In pratica:
+modifichi il file
+salvi
+il browser si aggiorna quasi subito
+non devi rilanciare npm run dev
+Quindi quello che vedi è un segnale buono, non un errore.
+
