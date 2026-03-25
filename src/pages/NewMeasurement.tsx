@@ -482,29 +482,31 @@ export default function NewMeasurement() {
           )}
         </div>
 
-        <div className="space-y-3 pt-2">
-          <Label className="text-base font-semibold">Controlli tecnici</Label>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Checkbox id={`square-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_square} onCheckedChange={v => updateItem(activeItemIndex, 'is_square', v)} />
-              <Label htmlFor={`square-${activeItemIndex}`}>Squadrato</Label>
-            </div>
-            {!multiItems[activeItemIndex].is_square && (
-              <div className="ml-8 space-y-2">
-                <Label>Fuori squadro (mm)</Label>
-                <Input type="number" value={multiItems[activeItemIndex].out_of_square_mm} onChange={e => updateItem(activeItemIndex, 'out_of_square_mm', e.target.value)} placeholder="5" />
+        {form.product_type !== 'porta' && (
+          <div className="space-y-3 pt-2">
+            <Label className="text-base font-semibold">Controlli tecnici</Label>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Checkbox id={`square-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_square} onCheckedChange={v => updateItem(activeItemIndex, 'is_square', v)} />
+                <Label htmlFor={`square-${activeItemIndex}`}>Squadrato</Label>
               </div>
-            )}
-            <div className="flex items-center gap-3">
-              <Checkbox id={`plumb-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_plumb} onCheckedChange={v => updateItem(activeItemIndex, 'is_plumb', v)} />
-              <Label htmlFor={`plumb-${activeItemIndex}`}>A piombo</Label>
-            </div>
-            <div className="flex items-center gap-3">
-              <Checkbox id={`level-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_level} onCheckedChange={v => updateItem(activeItemIndex, 'is_level', v)} />
-              <Label htmlFor={`level-${activeItemIndex}`}>Livellato</Label>
+              {!multiItems[activeItemIndex].is_square && (
+                <div className="ml-8 space-y-2">
+                  <Label>Fuori squadro (mm)</Label>
+                  <Input type="number" value={multiItems[activeItemIndex].out_of_square_mm} onChange={e => updateItem(activeItemIndex, 'out_of_square_mm', e.target.value)} placeholder="5" />
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <Checkbox id={`plumb-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_plumb} onCheckedChange={v => updateItem(activeItemIndex, 'is_plumb', v)} />
+                <Label htmlFor={`plumb-${activeItemIndex}`}>A piombo</Label>
+              </div>
+              <div className="flex items-center gap-3">
+                <Checkbox id={`level-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_level} onCheckedChange={v => updateItem(activeItemIndex, 'is_level', v)} />
+                <Label htmlFor={`level-${activeItemIndex}`}>Livellato</Label>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {form.product_type !== 'porta' && (
           <div className="grid grid-cols-2 gap-4 pt-2">
