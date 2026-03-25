@@ -41,6 +41,16 @@ export default function MeasurementPrint() {
       setLoading(false);
     });
   }, [user, id]);
+  // Set document title so browser print header shows this instead of "Lovable App"
+  useEffect(() => {
+    const origTitle = document.title;
+    if (m) {
+      const isQ = isQuoteStatus(m.status);
+      const isO = ['ordered', 'in_production', 'delivering', 'completed'].includes(m.status);
+      document.title = isO ? 'Conferma d\'Ordine' : isQ ? 'Preventivo' : 'Scheda Misurazione';
+    }
+    return () => { document.title = origTitle; };
+  }, [m]);
 
   const handlePrint = () => window.print();
 
