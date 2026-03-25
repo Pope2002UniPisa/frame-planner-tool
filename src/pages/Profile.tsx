@@ -28,7 +28,8 @@ const SUPPLIERS = [
   { id: 'ferrerolegno', 
     name: 'FerreroLegno SPA', 
     category: 'Porte in legno e vetro', 
-    catalogs: ['Catalogo Porte 2026', 'Listino Prezzi Q1'] 
+    catalogs: ['Catalogo Porte 2026', 'Listino Prezzi Q1'],
+    defaultLogo: '/images/ferrerolegno.png',
   },
   { id: 'madrugada', 
     name: 'Madrugada Group', 
@@ -49,7 +50,8 @@ const SUPPLIERS = [
   { id: 'anger',
     name: 'Anger SRL', 
     category: 'Infissi in legno', 
-    catalogs: ['Catalogo 2026', 'Catalogo legno/alluminio 2026']
+    catalogs: ['Catalogo 2026', 'Catalogo legno/alluminio 2026'],
+    defaultLogo: '/images/logo-anger.png',
   },
 ];
 
