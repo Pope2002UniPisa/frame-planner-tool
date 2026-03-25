@@ -587,10 +587,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="rounded-lg gradient-accent p-1.5">
-                  <Ruler className="h-4 w-4 text-accent-foreground" />
-                </div>
-                <span className="font-heading font-bold text-foreground">Measure Master</span>
+                <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-10 object-contain" />
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Portale professionale per la gestione delle misurazioni e configurazione di infissi.
