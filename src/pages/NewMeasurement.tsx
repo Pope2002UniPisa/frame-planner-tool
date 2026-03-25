@@ -755,12 +755,6 @@ export default function NewMeasurement() {
 
 
 
-                          {/* Inline Avanti button after model selection */}
-                          <div className="pt-3">
-                            <Button onClick={() => setStep(step + 1)} className="w-full gap-2">
-                              Avanti <ArrowRight className="h-4 w-4" />
-                            </Button>
-                          </div>
                         </div>
                       );
                     })()}
