@@ -7,9 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard, ThumbsUp, MessageSquare } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { toast } from 'sonner';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 
 
