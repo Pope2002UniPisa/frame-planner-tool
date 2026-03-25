@@ -50,6 +50,12 @@ export default function AdminDashboard() {
   const [salesObjectives, setSalesObjectives] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
+  // Measurement management dialog
+  const [manageMeasurement, setManageMeasurement] = useState<any>(null);
+  const [managePrice, setManagePrice] = useState('');
+  const [manageDeliveryDate, setManageDeliveryDate] = useState('');
+  const [manageNotes, setManageNotes] = useState('');
+
   // News form
   const [newsDialog, setNewsDialog] = useState(false);
   const [editingNews, setEditingNews] = useState<any>(null);
