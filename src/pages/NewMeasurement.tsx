@@ -176,6 +176,8 @@ export default function NewMeasurement() {
     const basePrices: Record<string, [number, number]> = {
       finestra: [280, 650], porta_finestra: [450, 950], porta: [350, 1200],
       basculante: [400, 900], zanzariera: [80, 250], persiana: [200, 500],
+      porta_finestrata: [400, 1400], porta_filomuro: [500, 1500],
+      battiscopa: [5, 25], maniglia: [30, 250],
     };
     const [min, max] = basePrices[form.product_type] || [200, 600];
     const width = parseInt(widthStr || form.width_mm) || 1000;
