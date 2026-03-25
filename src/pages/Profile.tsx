@@ -57,9 +57,10 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [{ data: pData }, { data: mData }] = await Promise.all([
+      const [{ data: pData }, { data: mData }, { data: oData }] = await Promise.all([
         supabase.from('profiles').select('*').eq('user_id', user.id).single(),
         supabase.from('measurements').select('*').order('created_at', { ascending: false }),
+        supabase.from('sales_objectives').select('*').eq('user_id', user.id),
       ]);
       if (pData) {
         setProfile(pData);
@@ -70,6 +71,7 @@ export default function Profile() {
         }
       }
       setMeasurements(mData || []);
+      setObjectives(oData || []);
       setLoadingData(false);
     };
     fetchData();
