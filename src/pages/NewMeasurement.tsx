@@ -834,7 +834,7 @@ export default function NewMeasurement() {
                       </div>
                     );
                   })()}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className={`grid grid-cols-1 gap-4 ${form.product_type === 'porta' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                     <div className="space-y-2">
                       <Label>Larghezza (mm) *</Label>
                       <Input type="number" value={form.width_mm} onChange={e => update('width_mm', e.target.value)} placeholder="1200" />
@@ -843,10 +843,12 @@ export default function NewMeasurement() {
                       <Label>Altezza (mm) *</Label>
                       <Input type="number" value={form.height_mm} onChange={e => update('height_mm', e.target.value)} placeholder="1400" />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Profondità muro (mm)</Label>
-                      <Input type="number" value={form.depth_mm} onChange={e => update('depth_mm', e.target.value)} placeholder="300" />
-                    </div>
+                    {form.product_type !== 'porta' && (
+                      <div className="space-y-2">
+                        <Label>Profondità muro (mm)</Label>
+                        <Input type="number" value={form.depth_mm} onChange={e => update('depth_mm', e.target.value)} placeholder="300" />
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-3 pt-4">
@@ -873,16 +875,18 @@ export default function NewMeasurement() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-4">
-                    <div className="space-y-2">
-                      <Label>Spazio interno (mm)</Label>
-                      <Input type="number" value={form.internal_space_mm} onChange={e => update('internal_space_mm', e.target.value)} placeholder="100" />
+                  {form.product_type !== 'porta' && (
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                      <div className="space-y-2">
+                        <Label>Spazio interno (mm)</Label>
+                        <Input type="number" value={form.internal_space_mm} onChange={e => update('internal_space_mm', e.target.value)} placeholder="100" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Spazio esterno (mm)</Label>
+                        <Input type="number" value={form.external_space_mm} onChange={e => update('external_space_mm', e.target.value)} placeholder="50" />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Spazio esterno (mm)</Label>
-                      <Input type="number" value={form.external_space_mm} onChange={e => update('external_space_mm', e.target.value)} placeholder="50" />
-                    </div>
-                  </div>
+                  )}
                 </div>
               )
             )}
