@@ -167,8 +167,10 @@ export default function NewMeasurement() {
   // They only need: product(0), client(1), survey(2) → then jump to notes(9)
   // For maniglia, we show config step(4) for handle selection
   const getStepsForProduct = () => {
-    if (form.product_type === 'battiscopa') return [0, 1, 2, 7, 9]; // product, client, survey, accessories (battiscopa config), notes
-    if (form.product_type === 'maniglia') return [0, 1, 2, 4, 5, 9]; // product, client, survey, config (handle model), finishes (handle finish), notes
+    if (form.product_type === 'battiscopa') return [0, 1, 2, 7, 9];
+    if (form.product_type === 'maniglia') return [0, 1, 2, 4, 5, 9];
+    // Skip glass step (6) for porta (standard door - always cieca)
+    if (form.product_type === 'porta') return STEPS.map((_, i) => i).filter(i => i !== 6);
     return STEPS.map((_, i) => i);
   };
 
