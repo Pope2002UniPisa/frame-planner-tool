@@ -349,18 +349,19 @@ export default function ProductDiagram({
       const smallR2 = dw * 0.08;
       const smallDotR2 = dw * 0.025;
 
-      // Darker/lighter shade for pantograph grooves
-      const grooveColor = adjustColor(doorColor, -15);
+      // Darker shade for pantograph grooves - more visible
+      const grooveColor = adjustColor(doorColor, -30);
+      const grooveOpacity = 0.55;
+      const grooveWidth = 1.5;
 
       return (
         <g>
-          {/* Subtle shadow filter for grooves */}
           <defs>
             <filter id="pantograph" x="-2%" y="-2%" width="104%" height="104%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="0.5" />
+              <feGaussianBlur in="SourceAlpha" stdDeviation="0.8" />
               <feOffset dx="0.5" dy="0.5" />
               <feComponentTransfer>
-                <feFuncA type="linear" slope="0.15" />
+                <feFuncA type="linear" slope="0.25" />
               </feComponentTransfer>
               <feMerge>
                 <feMergeNode />
@@ -378,55 +379,51 @@ export default function ProductDiagram({
               x2={lineStartX + i * lineSpacing}
               y2={lineBottomY}
               stroke={grooveColor}
-              strokeWidth="1"
-              opacity="0.35"
+              strokeWidth={grooveWidth}
+              opacity={grooveOpacity}
               filter="url(#pantograph)"
             />
           ))}
 
-          {/* The continuing vertical lines that curve into the U */}
-          {/* U-shape: two outer vertical lines curve down and become the U */}
+          {/* U-shape curves */}
           <path
             d={`M ${lineStartX + 2 * lineSpacing} ${lineBottomY} 
                 L ${lineStartX + 2 * lineSpacing} ${curveCenterY + dh * 0.02}
-                Q ${lineStartX + 2 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX} ${arcCY - arcR1 * 0.3}
-                `}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+                Q ${lineStartX + 2 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX} ${arcCY - arcR1 * 0.3}`}
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
           <path
             d={`M ${lineStartX + 4 * lineSpacing} ${lineBottomY}
                 L ${lineStartX + 4 * lineSpacing} ${curveCenterY + dh * 0.02}
-                Q ${lineStartX + 4 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX + (linesOnLeft ? arcR1 * 0.6 : -arcR1 * 0.6)} ${arcCY - arcR1 * 0.1}
-                `}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+                Q ${lineStartX + 4 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX + (linesOnLeft ? arcR1 * 0.6 : -arcR1 * 0.6)} ${arcCY - arcR1 * 0.1}`}
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
 
-          {/* Large concentric arcs (semi-circles opening upward on handle side) */}
+          {/* Large concentric arcs */}
           <path
             d={`M ${arcCX - arcR1} ${arcCY} A ${arcR1} ${arcR1} 0 0 ${linesOnLeft ? 0 : 1} ${arcCX + arcR1} ${arcCY}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
           <path
             d={`M ${arcCX - arcR2} ${arcCY} A ${arcR2} ${arcR2} 0 0 ${linesOnLeft ? 0 : 1} ${arcCX + arcR2} ${arcCY}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
           <path
             d={`M ${arcCX - arcR3} ${arcCY} A ${arcR3} ${arcR3} 0 0 ${linesOnLeft ? 0 : 1} ${arcCX + arcR3} ${arcCY}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
-          {/* Small center dot */}
-          <circle cx={arcCX} cy={arcCY - smallDotR * 1.5} r={smallDotR} fill="none" stroke={grooveColor} strokeWidth="0.8" opacity="0.3" filter="url(#pantograph)" />
+          <circle cx={arcCX} cy={arcCY - smallDotR * 1.5} r={smallDotR} fill="none" stroke={grooveColor} strokeWidth="1.2" opacity={grooveOpacity} filter="url(#pantograph)" />
 
           {/* Small bottom pattern */}
           <path
             d={`M ${smallCX} ${doorB - 10} A ${smallR1} ${smallR1} 0 0 ${linesOnLeft ? 1 : 0} ${smallCX + (linesOnLeft ? smallR1 : -smallR1)} ${smallCY}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.25" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity * 0.8} filter="url(#pantograph)"
           />
           <path
             d={`M ${smallCX} ${doorB - 10} A ${smallR2} ${smallR2} 0 0 ${linesOnLeft ? 1 : 0} ${smallCX + (linesOnLeft ? smallR2 : -smallR2)} ${smallCY + (smallR1 - smallR2) * 0.5}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.25" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity * 0.8} filter="url(#pantograph)"
           />
-          <circle cx={smallCX + (linesOnLeft ? smallDotR2 * 2 : -smallDotR2 * 2)} cy={smallCY + smallR1 * 0.3} r={smallDotR2} fill="none" stroke={grooveColor} strokeWidth="0.8" opacity="0.25" filter="url(#pantograph)" />
+          <circle cx={smallCX + (linesOnLeft ? smallDotR2 * 2 : -smallDotR2 * 2)} cy={smallCY + smallR1 * 0.3} r={smallDotR2} fill="none" stroke={grooveColor} strokeWidth="1" opacity={grooveOpacity * 0.8} filter="url(#pantograph)" />
         </g>
       );
     };
