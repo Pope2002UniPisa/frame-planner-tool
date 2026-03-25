@@ -312,6 +312,22 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Riepilogo Pagamenti */}
+        <Card className="mb-6 border-2 border-green-500/20 bg-green-500/5 shadow-md">
+          <CardContent className="py-5 px-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="rounded-lg bg-green-500/10 p-2.5">
+                <CreditCard className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground font-heading">Riepilogo Pagamenti</p>
+                <p className="text-xs text-muted-foreground">Stato pagamenti, metodi e ricevute</p>
+              </div>
+            </div>
+            <PaymentSummary userId={user.id} />
+          </CardContent>
+        </Card>
+
         <div>
           <h2 className="mb-4 text-xl font-bold font-heading text-foreground">Le tue misurazioni</h2>
 
