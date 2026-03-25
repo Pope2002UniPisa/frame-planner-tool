@@ -35,6 +35,20 @@ export default function MeasurementView() {
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!m) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Misurazione non trovata</div>;
 
+  // Extract door-specific data from accessories_config if stored there
+  const acc = m.accessories_config as any;
+  const doorHandleModel = acc?.door_handle_model_id || '';
+  const doorHandleFinish = acc?.door_handle_finish_id || '';
+  const doorColorName = acc?.door_color_name || '';
+
+  const handleModelLabels: Record<string, string> = {
+    minimal_design: 'Minimal Design', pure: 'Pure', baar: 'Baar',
+  };
+  const handleFinishLabels: Record<string, string> = {
+    cromo_satinato: 'Cromo Satinato', cromo_lucido: 'Cromo Lucido',
+    bianco_optical: 'Bianco Optical', nero: 'Nero', grigio_alluminio: 'Grigio Alluminio',
+  };
+
   const fields: [string, any][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
     ['Cliente', m.client_name],
@@ -50,7 +64,10 @@ export default function MeasurementView() {
     m.material && ['Materiale', m.material],
     m.color_internal && ['Colore interno', m.color_internal],
     m.color_external && ['Colore esterno', m.color_external],
+    doorColorName && ['Colore porta', doorColorName],
     m.handle_type && ['Tipo maniglia', m.handle_type],
+    doorHandleModel && ['Modello maniglia', handleModelLabels[doorHandleModel] || doorHandleModel],
+    doorHandleFinish && ['Finitura maniglia', handleFinishLabels[doorHandleFinish] || doorHandleFinish],
     m.glass_type && ['Tipo vetro', m.glass_type],
     m.installation_type && ['Tipo fornitura', m.installation_type],
     m.laying_type && ['Tipo posa', m.laying_type],

@@ -118,13 +118,14 @@ const YNCISA_70_COLORS: DoorColor[] = [
 ];
 
 // ========== MODELLI PORTA ==========
-export const DOOR_MODELS: DoorModel[] = [
-  {
-    id: 'yncisa_70',
-    name: 'Yncisa 70',
+// Helper to create a basic model entry sharing Yncisa 70's specs
+function makeDoorModel(id: string, name: string, description: string, opts?: Partial<DoorModel>): DoorModel {
+  return {
+    id,
+    name,
     collection: 'CollezioniFL',
     brand: 'Ferrero Legno',
-    description: "Porta per interni a battente o scorrevole cieca. L'anta, ideata e creata per celebrare il settantesimo anniversario dell'azienda, è disponibile in numerose finiture laccate. Questo modello si caratterizza per morbide pantografature che creano particolari e suggestivi decori.",
+    description,
     minWidth: 600,
     maxWidth: 1000,
     minHeight: 1750,
@@ -134,35 +135,54 @@ export const DOOR_MODELS: DoorModel[] = [
     compatibleHandleModelIds: ['minimal_design', 'pure', 'baar'],
     compatibleHandleFinishIds: ['cromo_satinato', 'cromo_lucido', 'bianco_optical', 'nero', 'grigio_alluminio'],
     specialVariants: [
-      {
-        id: 'modula',
-        name: 'Sistema Modula',
-        description: "Anta pieghevole composta da due ante asimmetriche (anta lato cerniera larghezza 1/3, anta lato maniglia 2/3). Consente di ridurre l'ingombro dell'apertura della porta.",
-      },
-      {
-        id: 'indue',
-        name: 'Sistema InDue',
-        description: "Anta pieghevole composta da due ante simmetriche. Consente l'ottimizzazione degli spazi dimezzando l'ingombro dell'apertura della porta.",
-      },
-      {
-        id: 'rolling_scrighi',
-        name: 'Rolling Scrighi',
-        description: "Il sistema rolling Scrighi è scorrevole interno muro ed è disponibile per tutti i modelli di porta.",
-      },
-      {
-        id: 'rolling_magic',
-        name: 'Rolling Magic',
-        description: "Il sistema rolling Magic è scorrevole esterno muro: chiedete al vostro rivenditore di fiducia per quali modelli è disponibile.",
-      },
-      {
-        id: 'rolling_prima',
-        name: 'Rolling Prima',
-        description: "Il sistema rolling Prima è scorrevole esterno muro ed è disponibile per tutti i modelli di porta.",
-      },
+      { id: 'modula', name: 'Sistema Modula', description: "Anta pieghevole composta da due ante asimmetriche (1/3 + 2/3)." },
+      { id: 'indue', name: 'Sistema InDue', description: "Anta pieghevole composta da due ante simmetriche (50/50)." },
+      { id: 'rolling_scrighi', name: 'Rolling Scrighi', description: "Scorrevole interno muro." },
+      { id: 'rolling_magic', name: 'Rolling Magic', description: "Scorrevole esterno muro." },
+      { id: 'rolling_prima', name: 'Rolling Prima', description: "Scorrevole esterno muro." },
     ],
     hasWindowVersion: true,
     openingTypes: ['battente', 'scorrevole'],
-  },
+    ...opts,
+  };
+}
+
+export const DOOR_MODELS: DoorModel[] = [
+  makeDoorModel('yncisa_70', 'Yncisa 70', "Porta per interni a battente o scorrevole cieca. L'anta celebra il settantesimo anniversario con morbide pantografature decorative."),
+  makeDoorModel('yncisa_zig_1', 'Yncisa Zig/1', "Porta con pantografatura a zig-zag singola, design geometrico moderno."),
+  makeDoorModel('yncisa_zig_2', 'Yncisa Zig/2', "Porta con doppia pantografatura a zig-zag, effetto decorativo pronunciato."),
+  makeDoorModel('yncisa_segni', 'Yncisa Segni', "Porta con incisioni lineari orizzontali, stile contemporaneo."),
+  makeDoorModel('yncisa_styla', 'Yncisa Styla', "Porta dal design elegante con pantografature stilizzate."),
+  makeDoorModel('yncisa_tartan', 'Yncisa Tartan', "Porta con motivo a intreccio ispirato al tartan."),
+  makeDoorModel('yncisa_tratto', 'Yncisa Tratto', "Porta con tratti lineari orizzontali, design minimalista."),
+  makeDoorModel('yncisa_0', 'Yncisa/0', "Porta liscia senza pantografature, finitura pulita e uniforme."),
+  makeDoorModel('yncisa_1', 'Yncisa/1', "Porta con singola incisione orizzontale, stile essenziale."),
+  makeDoorModel('yncisa_8', 'Yncisa/8', "Porta con otto incisioni orizzontali equidistanti."),
+  makeDoorModel('equa', 'Equa', "Porta con suddivisione simmetrica delle pantografature."),
+  makeDoorModel('equa_1', 'Equa/1', "Porta con singola pantografatura centrale simmetrica."),
+  makeDoorModel('equa_styla', 'Equa Styla', "Porta con design simmetrico e finiture stilizzate."),
+  makeDoorModel('lignum_exit', 'Lignum Exit', "Porta con inserti in legno e vetro, design premium."),
+  makeDoorModel('lignum_exitlyne', 'Lignum Exitlyne', "Porta con linea di vetro e cornice in legno."),
+  makeDoorModel('exit', 'Exit', "Porta con inserto vetro nella parte superiore."),
+  makeDoorModel('plisse', 'Plissè', "Porta con pantografature plissettate orizzontali."),
+  makeDoorModel('plisse_vario', 'Plissè Vario', "Porta con pantografature plissettate a spaziatura variabile."),
+  makeDoorModel('suite_9', 'Suite/9', "Porta con nove bugne in stile classico rivisitato."),
+  makeDoorModel('suite_10', 'Suite/10', "Porta con dieci bugne decorative."),
+  makeDoorModel('intaglio_1', 'Intaglio/1', "Porta con singolo intaglio decorativo."),
+  makeDoorModel('intaglio_4', 'Intaglio/4', "Porta con quattro intagli decorativi."),
+  makeDoorModel('intaglio_8', 'Intaglio/8', "Porta con otto intagli decorativi."),
+  makeDoorModel('supernova', 'Supernova', "Porta in legno massello con design contemporaneo."),
+  makeDoorModel('nova', 'Nova', "Porta con venatura a vista, stile naturale."),
+  makeDoorModel('tratto', 'Tratto', "Porta con incisioni lineari, design pulito."),
+  makeDoorModel('segni', 'Segni', "Porta con segni decorativi orizzontali."),
+  makeDoorModel('logica', 'Logica', "Porta con pantografature geometriche logiche."),
+  makeDoorModel('logica_1', 'Logica/1', "Porta con singola pantografatura logica."),
+  makeDoorModel('logica_4', 'Logica/4', "Porta con quattro pantografature logiche."),
+  makeDoorModel('logica_90', 'Logica/90', "Porta con pantografature logiche a 90 gradi."),
+  makeDoorModel('liss', 'Liss', "Porta liscia con venatura sottile."),
+  makeDoorModel('liss_4', 'Liss/4', "Porta liscia con quattro incisioni."),
+  makeDoorModel('liss_90', 'Liss/90', "Porta liscia con incisioni a 90 gradi."),
+  makeDoorModel('bilico', 'Bilico', "Porta a bilico con apertura pivotante centrale."),
 ];
 
 // ========== HELPER FUNCTIONS ==========

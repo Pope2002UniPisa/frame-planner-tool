@@ -301,8 +301,23 @@ export default function ProductDiagram({
 
     // Model name to display
     const doorModelName = (() => {
-      const models: Record<string, string> = { 'yncisa_70': 'Yncisa 70' };
-      return doorModelId ? (models[doorModelId] || doorModelId) : '';
+      if (!doorModelId) return '';
+      const model = doorModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).replace(/\//g, '/');
+      // Special formatting
+      const map: Record<string, string> = {
+        'yncisa_70': 'Yncisa 70', 'yncisa_zig_1': 'Yncisa Zig/1', 'yncisa_zig_2': 'Yncisa Zig/2',
+        'yncisa_segni': 'Yncisa Segni', 'yncisa_styla': 'Yncisa Styla', 'yncisa_tartan': 'Yncisa Tartan',
+        'yncisa_tratto': 'Yncisa Tratto', 'yncisa_0': 'Yncisa/0', 'yncisa_1': 'Yncisa/1', 'yncisa_8': 'Yncisa/8',
+        'equa_styla': 'Equa Styla', 'equa': 'Equa', 'equa_1': 'Equa/1',
+        'lignum_exit': 'Lignum Exit', 'lignum_exitlyne': 'Lignum Exitlyne',
+        'exit': 'Exit', 'plisse': 'Plissè', 'plisse_vario': 'Plissè Vario',
+        'suite_9': 'Suite/9', 'suite_10': 'Suite/10',
+        'intaglio_1': 'Intaglio/1', 'intaglio_4': 'Intaglio/4', 'intaglio_8': 'Intaglio/8',
+        'supernova': 'Supernova', 'nova': 'Nova', 'tratto': 'Tratto', 'segni': 'Segni',
+        'logica': 'Logica', 'logica_1': 'Logica/1', 'logica_4': 'Logica/4', 'logica_90': 'Logica/90',
+        'liss': 'Liss', 'liss_4': 'Liss/4', 'liss_90': 'Liss/90', 'bilico': 'Bilico',
+      };
+      return map[doorModelId] || model;
     })();
 
     // Opening direction label
@@ -421,14 +436,17 @@ export default function ProductDiagram({
     // ===== FOLDING DOOR RENDERING (Modula / InDue) =====
     if (isFolding) {
       const isModula = doorSpecialVariant === 'modula';
+      const isInDue = doorSpecialVariant === 'indue';
       // Modula: 1/3 + 2/3, InDue: 50/50
       const leftRatio = isModula ? 0.33 : 0.5;
       const rightRatio = 1 - leftRatio;
       const leftW = drawW * leftRatio;
       const rightW = drawW * rightRatio;
       const foldGap = 3;
-      // Show door slightly folded/angled
-      const foldAngle = 12;
+
+      // InDue: handle is centered on the fold line, Modula: handle on the bigger panel
+      const indueHandleX = offsetX + leftW - 2; // centered on fold
+      const modulaHandleX = effectiveHandleRight ? offsetX + drawW - 24 : offsetX + 20;
 
       return (
         <svg viewBox={`0 0 ${svgW} ${svgH + 50}`} className="w-full max-w-sm mx-auto">
@@ -448,8 +466,20 @@ export default function ProductDiagram({
           {/* Fold line / hinge between panels */}
           <line x1={offsetX + leftW} y1={offsetY} x2={offsetX + leftW} y2={offsetY + drawH} stroke="hsl(var(--foreground))" strokeWidth="1.5" strokeDasharray="4 3" />
 
-          {/* Handle on right panel */}
-          {renderBattenteHandle()}
+          {/* Handle: InDue = centered handle on fold, Modula = standard handle on bigger panel */}
+          {isInDue ? (
+            <g>
+              {/* Centered handle (lever style) at the fold line */}
+              <circle cx={indueHandleX + 2} cy={handleY} r={5} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+              <rect 
+                x={indueHandleX + 2 - 13} 
+                y={handleY - 1.5} width={26} height={3} rx={1.5} 
+                fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
+              />
+            </g>
+          ) : (
+            renderBattenteHandle()
+          )}
 
           {/* Hinges on frame side */}
           <rect x={hingeX} y={offsetY + drawH * 0.12} width={4} height={14} rx={2} fill="hsl(var(--foreground))" opacity="0.5" />
