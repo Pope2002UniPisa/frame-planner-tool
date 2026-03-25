@@ -7,6 +7,7 @@ import { ArrowLeft, Printer } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES } from '@/data/doorCatalog';
 import pratelliLogo from '@/assets/pratelli-logo.png';
+import ferreroLegnoLogo from '@/assets/ferrerolegno-logo.png';
 
 const productLabels: Record<string, string> = {
   finestra: 'Finestra', porta_finestra: 'Porta Finestra', basculante: 'Basculante',
