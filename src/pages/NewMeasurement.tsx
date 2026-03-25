@@ -15,7 +15,7 @@ import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import AccessoryConfig, { type AccessoriesConfig } from '@/components/AccessoryConfig';
 import { Switch } from '@/components/ui/switch';
-import { DOOR_MODELS, getDoorModel, getCompatibleFrames, getCompatibleHandles, getColorsByFinish, ALL_FRAMES, ALL_HANDLES, type DoorColor } from '@/data/doorCatalog';
+import { DOOR_MODELS, getDoorModel, getCompatibleFrames, getCompatibleHandleModels, getCompatibleHandleFinishes, getHandleFinishHex, getColorsByFinish, ALL_FRAMES, ALL_HANDLE_MODELS, ALL_HANDLE_FINISHES, type DoorColor } from '@/data/doorCatalog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const STEPS = [
