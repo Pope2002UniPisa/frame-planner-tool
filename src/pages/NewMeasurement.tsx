@@ -907,15 +907,26 @@ export default function NewMeasurement() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tipologia apertura</Label>
-                  <Select value={form.panel_type} onValueChange={v => update('panel_type', v)}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="battente">Battente</SelectItem>
-                      <SelectItem value="anta_ribalta">Anta-Ribalta</SelectItem>
-                      <SelectItem value="vasistas">Vasistas</SelectItem>
-                      <SelectItem value="scorrevole">Scorrevole</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {form.product_type === 'porta' && form.door_model ? (
+                    <Select value={form.panel_type} onValueChange={v => update('panel_type', v)}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                      <SelectContent>
+                        {(getDoorModel(form.door_model)?.openingTypes || []).map(t => (
+                          <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Select value={form.panel_type} onValueChange={v => update('panel_type', v)}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="battente">Battente</SelectItem>
+                        <SelectItem value="anta_ribalta">Anta-Ribalta</SelectItem>
+                        <SelectItem value="vasistas">Vasistas</SelectItem>
+                        <SelectItem value="scorrevole">Scorrevole</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Direzione apertura</Label>
@@ -930,14 +941,35 @@ export default function NewMeasurement() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo telaio</Label>
-                  <Select value={form.frame_type} onValueChange={v => update('frame_type', v)}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="ridotto">Ridotto</SelectItem>
-                      <SelectItem value="maggiorato">Maggiorato</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {form.product_type === 'porta' && form.door_model ? (
+                    <>
+                      <Select value={form.door_frame_id} onValueChange={v => { update('door_frame_id', v); update('frame_type', v); }}>
+                        <SelectTrigger><SelectValue placeholder="Seleziona telaio..." /></SelectTrigger>
+                        <SelectContent>
+                          {getCompatibleFrames(form.door_model).map(f => (
+                            <SelectItem key={f.id} value={f.id}>
+                              {f.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {form.door_frame_id && (() => {
+                        const frame = getCompatibleFrames(form.door_model).find(f => f.id === form.door_frame_id);
+                        return frame?.description ? (
+                          <p className="text-xs text-muted-foreground mt-1">{frame.description}</p>
+                        ) : null;
+                      })()}
+                    </>
+                  ) : (
+                    <Select value={form.frame_type} onValueChange={v => update('frame_type', v)}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">Standard</SelectItem>
+                        <SelectItem value="ridotto">Ridotto</SelectItem>
+                        <SelectItem value="maggiorato">Maggiorato</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 {isMultiProduct && (
