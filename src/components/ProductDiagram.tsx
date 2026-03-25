@@ -304,22 +304,17 @@ export default function ProductDiagram({
     // Model name to display
     const doorModelName = (() => {
       if (!doorModelId) return '';
-      const model = doorModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).replace(/\//g, '/');
-      // Special formatting
-      const map: Record<string, string> = {
-        'yncisa_70': 'Yncisa 70', 'yncisa_zig_1': 'Yncisa Zig/1', 'yncisa_zig_2': 'Yncisa Zig/2',
-        'yncisa_segni': 'Yncisa Segni', 'yncisa_styla': 'Yncisa Styla', 'yncisa_tartan': 'Yncisa Tartan',
-        'yncisa_tratto': 'Yncisa Tratto', 'yncisa_0': 'Yncisa/0', 'yncisa_1': 'Yncisa/1', 'yncisa_8': 'Yncisa/8',
-        'equa_styla': 'Equa Styla', 'equa': 'Equa', 'equa_1': 'Equa/1',
-        'lignum_exit': 'Lignum Exit', 'lignum_exitlyne': 'Lignum Exitlyne',
-        'exit': 'Exit', 'plisse': 'Plissè', 'plisse_vario': 'Plissè Vario',
-        'suite_9': 'Suite/9', 'suite_10': 'Suite/10',
-        'intaglio_1': 'Intaglio/1', 'intaglio_4': 'Intaglio/4', 'intaglio_8': 'Intaglio/8',
-        'supernova': 'Supernova', 'nova': 'Nova', 'tratto': 'Tratto', 'segni': 'Segni',
-        'logica': 'Logica', 'logica_1': 'Logica/1', 'logica_4': 'Logica/4', 'logica_90': 'Logica/90',
-        'liss': 'Liss', 'liss_4': 'Liss/4', 'liss_90': 'Liss/90', 'bilico': 'Bilico',
-      };
-      return map[doorModelId] || model;
+      const catalogModel = getDoorModel(doorModelId);
+      if (catalogModel) return catalogModel.name;
+      return doorModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    })();
+
+    // Handle model name for label
+    const handleModelLabel = doorHandleModelId ? (ALL_HANDLE_MODELS.find(h => h.id === doorHandleModelId)?.name || '') : '';
+    const handleFinishLabel = doorHandleFinishId ? (ALL_HANDLE_FINISHES.find(h => h.id === doorHandleFinishId)?.name || '') : '';
+
+    // Product type label
+    const productTypeLabel = productType === 'porta_finestrata' ? 'Porta finestrata' : productType === 'porta_filomuro' ? 'Porta filomuro' : 'Porta cieca';
     })();
 
     // Opening direction label
