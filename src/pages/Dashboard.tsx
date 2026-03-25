@@ -517,7 +517,7 @@ export default function Dashboard() {
                           </div>
                         )}
                         {/* Quote response buttons */}
-                        {m.status === 'quoted' && (
+                        {['ricevuto', 'submitted', 'quoted'].includes(m.status) && (
                           <div className="flex gap-2 mt-2">
                             <Button size="sm" className="gap-1.5" onClick={(e) => { e.stopPropagation(); handleQuoteResponse(m.id, true); }}>
                               <ThumbsUp className="h-3.5 w-3.5" /> Accetta preventivo

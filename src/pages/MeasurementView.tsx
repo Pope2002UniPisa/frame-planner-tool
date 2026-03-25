@@ -177,7 +177,7 @@ export default function MeasurementView() {
         </div>
 
         {/* Accept/Reject quote buttons */}
-        {m.status === 'quoted' && (
+        {['ricevuto', 'submitted', 'quoted'].includes(m.status) && (
           <Card className="border-2 border-accent/30 bg-accent/5">
             <CardContent className="py-5 space-y-3">
               <p className="text-sm font-semibold text-foreground">Vuoi accettare questo preventivo?</p>

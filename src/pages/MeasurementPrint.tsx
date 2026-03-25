@@ -154,7 +154,6 @@ export default function MeasurementPrint() {
             </div>
             <div className="text-right text-sm text-muted-foreground shrink-0">
               <p>Data: {new Date(m.created_at).toLocaleDateString('it-IT')}</p>
-              <p>Stato: {statusLabels[m.status] || m.status}</p>
             </div>
           </div>
 
