@@ -348,15 +348,15 @@ export default function NewMeasurement() {
       if (isMultiProduct) {
         const groupId = crypto.randomUUID();
         for (let i = 0; i < multiItems.length; i++) {
-          const { error } = await supabase.from('measurements').insert(
-            buildInsertData('quoted', photo_urls, multiItems[i], groupId, i + 1, multiItems.length)
+        const { error } = await supabase.from('measurements').insert(
+            buildInsertData('submitted', photo_urls, multiItems[i], groupId, i + 1, multiItems.length)
           );
           if (error) throw error;
         }
       } else {
-        const { error } = await supabase.from('measurements').insert(buildInsertData('quoted', photo_urls));
+        const { error } = await supabase.from('measurements').insert(buildInsertData('submitted', photo_urls));
         if (error) throw error;
-        await createAccessoryRecords('quoted');
+        await createAccessoryRecords('submitted');
       }
 
       // Send email notification
