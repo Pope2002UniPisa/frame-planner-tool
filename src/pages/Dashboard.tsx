@@ -156,11 +156,8 @@ export default function Dashboard() {
       <header className="border-b border-border bg-card shadow-card">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-10 object-contain" />
-            <div>
-              <h1 className="text-lg font-bold font-heading text-foreground">Portale Misurazioni</h1>
-              {profile && <p className="text-xs text-muted-foreground">{profile.company_name || user.email}</p>}
-            </div>
+            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-12 object-contain" />
+            {profile && <h1 className="text-lg font-bold font-heading text-foreground">{profile.company_name || user.email}</h1>}
           </div>
           <div className="flex items-center gap-3">
             {isAdmin && (
