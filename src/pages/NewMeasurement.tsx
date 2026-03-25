@@ -11,10 +11,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn, ZoomOut, Copy, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn, ZoomOut, Copy, Plus, Trash2, Info, Leaf } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import AccessoryConfig, { type AccessoriesConfig } from '@/components/AccessoryConfig';
 import { Switch } from '@/components/ui/switch';
+import { DOOR_MODELS, getDoorModel, getCompatibleFrames, getCompatibleHandles, getColorsByFinish, ALL_FRAMES, ALL_HANDLES, type DoorColor } from '@/data/doorCatalog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const STEPS = [
   { id: 'product', label: 'Prodotto' },
