@@ -112,8 +112,8 @@ export default function AdminDashboard() {
 
   const statusChartData = useMemo(() => [
     { name: 'Bozze', value: stats.drafts, color: '#94a3b8' },
-    { name: 'Inviate', value: stats.sent, color: '#3b82f6' },
-    { name: 'Preventivate', value: stats.quoted, color: '#f59e0b' },
+    { name: 'Preventivi', value: stats.quoted, color: '#3b82f6' },
+    { name: 'Ordini', value: stats.ordered, color: '#f59e0b' },
     { name: 'Completate', value: stats.completed, color: '#10b981' },
   ].filter(d => d.value > 0), [stats]);
 
