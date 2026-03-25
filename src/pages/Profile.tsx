@@ -29,29 +29,32 @@ const SUPPLIERS = [
     name: 'FerreroLegno SPA', 
     category: 'Porte in legno e vetro', 
     catalogs: ['Catalogo Porte 2026', 'Listino Prezzi Q1'],
-    defaultLogo: '/images/ferrerolegno.png',
+    defaultLogo: '/images/ferrerolegno.png'
   },
   { id: 'madrugada', 
     name: 'Madrugada Group', 
     category: 'Infissi in PVC', 
-    catalogs: ['Catalogo 2026'] 
+    catalogs: ['Catalogo 2026'],
+    defaultLogo: '/images/madrugada.png'
   },
   { 
   id: 'nurith',
   name: 'Nurith SPA',
   category: 'Infissi, oscuranti e portoncini in PVC',
-  catalogs: ['Catalogo PVC 2026', 'Innovazioni Termiche', 'Listino Premium 2026']
+  catalogs: ['Catalogo PVC 2026', 'Innovazioni Termiche', 'Listino Premium 2026'],
+  defaultLogo: '/images/finestrenurith.png'
   },
   { id: 'denardi',
     name: 'Denardi SRL', 
     category: 'Basculanti in acciaio e legno', 
-    catalogs: ['Catalogo Basculanti 2026', 'Catalogo Motorizzazioni 2026'] 
+    catalogs: ['Catalogo Basculanti 2026', 'Catalogo Motorizzazioni 2026'],
+    defaultLogo: '/images/denardi.png'
   },
   { id: 'anger',
     name: 'Anger SRL', 
     category: 'Infissi in legno', 
     catalogs: ['Catalogo 2026', 'Catalogo legno/alluminio 2026'],
-    defaultLogo: '/images/logo-anger.png',
+    defaultLogo: '/images/logo-Anger.png'
   },
 ];
 
