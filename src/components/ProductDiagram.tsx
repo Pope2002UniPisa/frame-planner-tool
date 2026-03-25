@@ -334,43 +334,228 @@ export default function ProductDiagram({
       const rosetteCX = handleX + 2;
       const rosetteR = 5;
       const leverLen = 26;
-      
-      if (doorHandleModelId === 'pure') {
+      const hId = doorHandleModelId || 'minimal_design';
+
+      // Pomoli (knobs) - no lever
+      if (['pomax_quadra', 'pomax_tonda', 'pomolo_1', 'pomolo_2', 'pomolo_3'].includes(hId)) {
+        const isSquare = hId === 'pomax_quadra';
+        const isLarge = hId === 'pomolo_2';
+        const r = isLarge ? 7 : 6;
         return (
           <g>
-            <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
-            <rect 
-              x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} 
-              y={handleY - 1.5} width={leverLen} height={3} rx={1.5} 
-              fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
-            />
-            <circle cx={rosetteCX} cy={handleY + 22} r={4} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
-            <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
+            {isSquare ? (
+              <rect x={rosetteCX - r} y={handleY - r} width={r * 2} height={r * 2} rx={1.5} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.6" />
+            ) : (
+              <circle cx={rosetteCX} cy={handleY} r={r} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.6" />
+            )}
+            {hId === 'pomolo_3' && <circle cx={rosetteCX} cy={handleY} r={3} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" opacity="0.4" />}
+            {hId === 'pomax_tonda' && <circle cx={rosetteCX} cy={handleY} r={3.5} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.3" />}
           </g>
         );
       }
-      
-      if (doorHandleModelId === 'baar') {
+
+      // Premi-Apri (push-to-open) - flush plate
+      if (hId === 'premi_apri') {
+        return (
+          <g>
+            <rect x={rosetteCX - 4} y={handleY - 12} width={8} height={24} rx={4} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" opacity="0.6" />
+            <circle cx={rosetteCX} cy={handleY} r={2} fill="hsl(var(--foreground))" opacity="0.3" />
+          </g>
+        );
+      }
+
+      // Wave (integrated/flush handle)
+      if (hId === 'wave') {
+        return (
+          <g>
+            <rect x={rosetteCX - 2} y={handleY - 18} width={4} height={36} rx={2} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={rosetteCX - 1} y={handleY - 14} width={2} height={28} rx={1} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.4" />
+          </g>
+        );
+      }
+
+      // Keyhole element (bocchetta) for all lever handles
+      const keyhole = (
+        <g>
+          <circle cx={rosetteCX} cy={handleY + 22} r={4} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+          <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
+        </g>
+      );
+
+      // Pure - straight clean lever with round rosette
+      if (hId === 'pure') {
+        return (
+          <g>
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} y={handleY - 1.5} width={leverLen} height={3} rx={1.5} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Baar - square rosette with L-shaped lever
+      if (hId === 'baar') {
         return (
           <g>
             <rect x={rosetteCX - rosetteR} y={handleY - rosetteR} width={rosetteR * 2} height={rosetteR * 2} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
-            <rect 
-              x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} 
-              y={handleY - 2} width={leverLen} height={4} rx={1} 
-              fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
-            />
-            <rect 
-              x={rosetteCX + leverDir * leverLen - 2} y={handleY - 2} 
-              width={4} height={10} rx={1} 
-              fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
-            />
+            <rect x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} y={handleY - 2} width={leverLen} height={4} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
+            <rect x={rosetteCX + leverDir * leverLen - 2} y={handleY - 2} width={4} height={10} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
             <rect x={rosetteCX - 4} y={handleY + 18} width={8} height={8} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
             <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
           </g>
         );
       }
-      
-      // Minimal Design (default)
+
+      // Wind - aerodynamic curved lever
+      if (hId === 'wind') {
+        return (
+          <g>
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <path d={`M ${rosetteCX} ${handleY} Q ${rosetteCX + leverDir * 10} ${handleY + 3} ${rosetteCX + leverDir * 20} ${handleY - 2} L ${rosetteCX + leverDir * leverLen} ${handleY - 5}`} fill="none" stroke={handleColor} strokeWidth="3.5" strokeLinecap="round" />
+            <path d={`M ${rosetteCX} ${handleY} Q ${rosetteCX + leverDir * 10} ${handleY + 3} ${rosetteCX + leverDir * 20} ${handleY - 2} L ${rosetteCX + leverDir * leverLen} ${handleY - 5}`} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeLinecap="round" />
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Lui - exclusive compact handle
+      if (hId === 'lui') {
+        return (
+          <g>
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR - 1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={leverDir > 0 ? rosetteCX : rosetteCX - 18} y={handleY - 2.5} width={18} height={5} rx={2.5} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
+            <circle cx={rosetteCX + leverDir * 18} cy={handleY} r={2} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.3" />
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Pepe - compact modern lever
+      if (hId === 'pepe') {
+        return (
+          <g>
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={leverDir > 0 ? rosetteCX : rosetteCX - 20} y={handleY - 2} width={20} height={4} rx={2} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Atlanta - round rosette with clean lines
+      if (hId === 'atlanta') {
+        return (
+          <g>
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR + 1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR - 1} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.3" />
+            <rect x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} y={handleY - 1.5} width={leverLen} height={3} rx={1.5} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Classica 1/2 - classic curved profile
+      if (hId === 'classica_1' || hId === 'classica_2') {
+        const curvature = hId === 'classica_2' ? 6 : 4;
+        return (
+          <g>
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <path d={`M ${rosetteCX} ${handleY} Q ${rosetteCX + leverDir * 14} ${handleY + curvature} ${rosetteCX + leverDir * leverLen} ${handleY}`} fill="none" stroke={handleColor} strokeWidth="3.5" strokeLinecap="round" />
+            <path d={`M ${rosetteCX} ${handleY} Q ${rosetteCX + leverDir * 14} ${handleY + curvature} ${rosetteCX + leverDir * leverLen} ${handleY}`} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeLinecap="round" />
+            <circle cx={rosetteCX + leverDir * leverLen} cy={handleY} r={1.5} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.3" />
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Morbida 1/2 - soft rounded profile
+      if (hId === 'morbida_1' || hId === 'morbida_2') {
+        const len = hId === 'morbida_2' ? 20 : leverLen;
+        return (
+          <g>
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <path d={`M ${rosetteCX} ${handleY} C ${rosetteCX + leverDir * 8} ${handleY - 5} ${rosetteCX + leverDir * (len - 8)} ${handleY + 5} ${rosetteCX + leverDir * len} ${handleY - 2}`} fill="none" stroke={handleColor} strokeWidth="4" strokeLinecap="round" />
+            <path d={`M ${rosetteCX} ${handleY} C ${rosetteCX + leverDir * 8} ${handleY - 5} ${rosetteCX + leverDir * (len - 8)} ${handleY + 5} ${rosetteCX + leverDir * len} ${handleY - 2}`} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeLinecap="round" />
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Elegante 1/2/3 - elegant with refined details
+      if (hId === 'elegante_1' || hId === 'elegante_2' || hId === 'elegante_3') {
+        const tipDrop = hId === 'elegante_3' ? -6 : hId === 'elegante_2' ? -3 : -4;
+        return (
+          <g>
+            <ellipse cx={rosetteCX} cy={handleY} rx={rosetteR - 0.5} ry={rosetteR + 1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <path d={`M ${rosetteCX} ${handleY} L ${rosetteCX + leverDir * 10} ${handleY} Q ${rosetteCX + leverDir * 18} ${handleY} ${rosetteCX + leverDir * leverLen} ${handleY + tipDrop}`} fill="none" stroke={handleColor} strokeWidth="3" strokeLinecap="round" />
+            <path d={`M ${rosetteCX} ${handleY} L ${rosetteCX + leverDir * 10} ${handleY} Q ${rosetteCX + leverDir * 18} ${handleY} ${rosetteCX + leverDir * leverLen} ${handleY + tipDrop}`} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeLinecap="round" />
+            {hId === 'elegante_3' && <circle cx={rosetteCX + leverDir * 5} cy={handleY - 3} r={1} fill="hsl(var(--foreground))" opacity="0.3" />}
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Avanti Più Tonda / Avanti Tonda - oversized/regular round rosette
+      if (hId === 'avanti_piu_tonda' || hId === 'avanti_tonda') {
+        const rSize = hId === 'avanti_piu_tonda' ? rosetteR + 2 : rosetteR;
+        return (
+          <g>
+            <circle cx={rosetteCX} cy={handleY} r={rSize} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} y={handleY - 2} width={leverLen} height={4} rx={2} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
+            <circle cx={rosetteCX + leverDir * leverLen} cy={handleY} r={1.5} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.3" />
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Avanti Più Quadra / Avanti Quadra - oversized/regular square rosette
+      if (hId === 'avanti_piu_quadra' || hId === 'avanti_quadra') {
+        const rSize = hId === 'avanti_piu_quadra' ? rosetteR + 2 : rosetteR;
+        return (
+          <g>
+            <rect x={rosetteCX - rSize} y={handleY - rSize} width={rSize * 2} height={rSize * 2} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} y={handleY - 2} width={leverLen} height={4} rx={2} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
+            <circle cx={rosetteCX + leverDir * leverLen} cy={handleY} r={1.5} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.3" />
+            <rect x={rosetteCX - 4} y={handleY + 18} width={8} height={8} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
+          </g>
+        );
+      }
+
+      // Moderna 0-6 - modern linear handles with variations
+      if (hId.startsWith('moderna_')) {
+        const num = parseInt(hId.split('_')[1]) || 0;
+        const hasBicolor = num === 1 || num === 2 || num === 4;
+        const hasRosetta = num === 2;
+        const isThin = num === 6;
+        const leverW = isThin ? 2.5 : 3.5;
+        return (
+          <g>
+            {hasRosetta ? (
+              <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            ) : (
+              <circle cx={rosetteCX} cy={handleY} r={rosetteR - 1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            )}
+            <rect x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} y={handleY - leverW / 2} width={leverLen} height={leverW} rx={leverW / 2} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
+            {hasBicolor && (
+              <rect x={leverDir > 0 ? rosetteCX + leverLen * 0.4 : rosetteCX - leverLen * 0.4 - leverLen * 0.6} y={handleY - leverW / 2 + 0.3} width={leverLen * 0.6} height={leverW - 0.6} rx={1} fill="hsl(var(--foreground))" opacity="0.15" />
+            )}
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Base - classic base lever
+      if (hId === 'base') {
+        return (
+          <g>
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} y={handleY - 2} width={leverLen} height={4} rx={2} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" />
+            {keyhole}
+          </g>
+        );
+      }
+
+      // Minimal Design (default) - curved lever
       return (
         <g>
           <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
@@ -386,8 +571,7 @@ export default function ProductDiagram({
                 Q ${rosetteCX + leverDir * 20} ${handleY} ${rosetteCX + leverDir * leverLen} ${handleY - 4}`}
             fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeLinecap="round"
           />
-          <circle cx={rosetteCX} cy={handleY + 22} r={4} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
-          <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
+          {keyhole}
         </g>
       );
     };
@@ -650,12 +834,23 @@ export default function ProductDiagram({
         <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
 
         {/* Glass insert */}
-        {hasGlass && (
-          <>
-            <rect x={offsetX + 16} y={offsetY + 16} width={drawW - 32} height={(drawH - 32) * 0.3} fill={GLASS_COLOR} stroke={GLASS_STROKE} strokeWidth="1" rx={glassType === 'stondato' ? 6 : 0} />
-            {glassType === 'satinato' && <rect x={offsetX + 16} y={offsetY + 16} width={drawW - 32} height={(drawH - 32) * 0.3} fill="rgba(255,255,255,0.5)" />}
-          </>
-        )}
+        {hasGlass && (() => {
+          // Suite/21 has a tall glass panel with external frame border
+          const isSuite21 = doorModelId === 'f_suite_21' || doorModelId === 'fm_suite_21_zero';
+          const glassHeight = isSuite21 ? (drawH - 32) * 0.7 : (drawH - 32) * 0.3;
+          const glassY = isSuite21 ? offsetY + 16 : offsetY + 16;
+          const glassW = drawW - 32;
+          const frameInset = isSuite21 ? 4 : 0;
+          return (
+            <>
+              {isSuite21 && (
+                <rect x={offsetX + 12} y={glassY - 4} width={glassW + 8} height={glassHeight + 8} fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.2" rx={1} />
+              )}
+              <rect x={offsetX + 16} y={glassY} width={glassW} height={glassHeight} fill={GLASS_COLOR} stroke={GLASS_STROKE} strokeWidth="1" rx={glassType === 'stondato' ? 6 : 0} />
+              {glassType === 'satinato' && <rect x={offsetX + 16} y={glassY} width={glassW} height={glassHeight} fill="rgba(255,255,255,0.5)" />}
+            </>
+          );
+        })()}
 
         {/* Handle */}
         {isScorrevole ? renderScorrevoleHandle() : renderBattenteHandle()}
