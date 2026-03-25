@@ -14,6 +14,7 @@ import EditMeasurement from "./pages/EditMeasurement";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import ClientSummary from "./pages/ClientSummary";
 
 const queryClient = new QueryClient();
 
