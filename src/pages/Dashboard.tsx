@@ -3,13 +3,12 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Image, Camera, Shield, ChevronDown, ChevronUp, Users, CreditCard } from 'lucide-react';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 const WORKFLOW_STEPS = [
@@ -88,10 +87,6 @@ export default function Dashboard() {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [expandedClientName, setExpandedClientName] = useState<string | null>(null);
-  const [showClientSummary, setShowClientSummary] = useState(false);
-  const [clientSearchText, setClientSearchText] = useState('');
-  const [clientFilterStatus, setClientFilterStatus] = useState('all');
 
   useEffect(() => {
     if (!user) return;
@@ -119,38 +114,10 @@ export default function Dashboard() {
     completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
   }), [measurements]);
 
-  // Client summary grouped by client_name
-  const clientSummary = useMemo(() => {
-    const map: Record<string, { name: string; total: number; drafts: number; sent: number; quoted: number; completed: number; estimatedRevenue: number; realizedRevenue: number; collectedRevenue: number; measurements: any[] }> = {};
-    measurements.forEach(m => {
-      const name = (m.client_name || 'Senza nome').trim();
-      if (!map[name]) map[name] = { name, total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0, estimatedRevenue: 0, realizedRevenue: 0, collectedRevenue: 0, measurements: [] };
-      const c = map[name];
-      c.total++;
-      c.measurements.push(m);
-      c.estimatedRevenue += Number(m.estimated_price) || 0;
-      if (m.status === 'bozza') c.drafts++;
-      else if (['ricevuto', 'submitted', 'in_review'].includes(m.status)) c.sent++;
-      else if (m.status === 'quoted') c.quoted++;
-      else if (['completed', 'ordered'].includes(m.status)) {
-        c.completed++;
-        c.realizedRevenue += Number(m.estimated_price) || 0;
-        if (m.payment_status === 'pagato') c.collectedRevenue += Number(m.amount_paid) || Number(m.estimated_price) || 0;
-      }
-    });
-    return Object.values(map).sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  const clientSummaryCount = useMemo(() => {
+    const names = new Set(measurements.map(m => (m.client_name || 'Senza nome').trim()));
+    return names.size;
   }, [measurements]);
-
-  const filteredClientSummary = useMemo(() => {
-    return clientSummary.filter(cs => {
-      if (clientSearchText && !cs.name.toLowerCase().includes(clientSearchText.toLowerCase())) return false;
-      if (clientFilterStatus === 'with_drafts' && cs.drafts === 0) return false;
-      if (clientFilterStatus === 'with_sent' && cs.sent === 0) return false;
-      if (clientFilterStatus === 'with_completed' && cs.completed === 0) return false;
-      if (clientFilterStatus === 'with_disputes' && !cs.measurements.some((m: any) => m.has_dispute)) return false;
-      return true;
-    });
-  }, [clientSummary, clientSearchText, clientFilterStatus]);
 
   const filteredMeasurements = useMemo(() => {
     return measurements.filter(m => {
