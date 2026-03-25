@@ -688,9 +688,9 @@ export default function ProductDiagram({
           </text>
         )}
 
-        {doorHandleModelId && doorHandleFinishId && (
+        {handleModelLabel && handleFinishLabel && (
           <text x={offsetX + drawW / 2} y={offsetY + drawH + (doorModelName ? (frameLabel ? 54 : 42) : (frameLabel ? 42 : 30))} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-            {doorHandleModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} — {doorHandleFinishId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            {handleModelLabel} — {handleFinishLabel}
           </text>
         )}
 
