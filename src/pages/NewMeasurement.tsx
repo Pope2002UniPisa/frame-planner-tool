@@ -990,44 +990,169 @@ export default function NewMeasurement() {
                 <CardDescription>
                   {isMultiProduct
                     ? `Finiture condivise per tutti i ${multiItems.length} prodotti`
-                    : 'Materiale, colori e maniglie'}
+                    : form.product_type === 'porta' && form.door_model
+                      ? `Colori e maniglie per ${getDoorModel(form.door_model)?.name || 'porta'}`
+                      : 'Materiale, colori e maniglie'}
                 </CardDescription>
-                <div className="space-y-2">
-                  <Label>Materiale</Label>
-                  <RadioGroup value={form.material} onValueChange={v => update('material', v)} className="flex flex-wrap gap-3">
-                    {[
-                      { value: 'pvc', label: 'PVC' },
-                      { value: 'alluminio', label: 'Alluminio' },
-                      { value: 'legno', label: 'Legno' },
-                    ].map(opt => (
-                      <Label
-                        key={opt.value}
-                        htmlFor={`mat-${opt.value}`}
-                        className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 transition-all ${
-                          form.material === opt.value ? 'border-accent bg-accent/10' : 'border-border'
-                        }`}
-                      >
-                        <RadioGroupItem value={opt.value} id={`mat-${opt.value}`} />
-                        {opt.label}
-                      </Label>
-                    ))}
-                  </RadioGroup>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <ColorSelectField label="Colore interno" value={form.color_internal} field="color_internal" />
-                  <ColorSelectField label="Colore esterno" value={form.color_external} field="color_external" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tipo maniglia</Label>
-                  <Select value={form.handle_type} onValueChange={v => update('handle_type', v)}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="design">Design</SelectItem>
-                      <SelectItem value="con_chiave">Con chiave</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                {/* Material - only for non-catalog doors */}
+                {!(form.product_type === 'porta' && form.door_model) && (
+                  <div className="space-y-2">
+                    <Label>Materiale</Label>
+                    <RadioGroup value={form.material} onValueChange={v => update('material', v)} className="flex flex-wrap gap-3">
+                      {[
+                        { value: 'pvc', label: 'PVC' },
+                        { value: 'alluminio', label: 'Alluminio' },
+                        { value: 'legno', label: 'Legno' },
+                      ].map(opt => (
+                        <Label
+                          key={opt.value}
+                          htmlFor={`mat-${opt.value}`}
+                          className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 transition-all ${
+                            form.material === opt.value ? 'border-accent bg-accent/10' : 'border-border'
+                          }`}
+                        >
+                          <RadioGroupItem value={opt.value} id={`mat-${opt.value}`} />
+                          {opt.label}
+                        </Label>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                )}
+
+                {/* Door catalog colors */}
+                {form.product_type === 'porta' && form.door_model ? (() => {
+                  const model = getDoorModel(form.door_model);
+                  if (!model) return null;
+                  const finishTypes = [...new Set(model.colors.map(c => c.finish))];
+                  const filteredColors = form.door_finish_type
+                    ? getColorsByFinish(model.colors, form.door_finish_type)
+                    : model.colors;
+
+                  return (
+                    <div className="space-y-4">
+                      {/* Finish type filter */}
+                      <div className="space-y-2">
+                        <Label>Finitura</Label>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant={!form.door_finish_type ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => update('door_finish_type', '')}
+                          >
+                            Tutti ({model.colors.length})
+                          </Button>
+                          {finishTypes.map(ft => (
+                            <Button
+                              key={ft}
+                              type="button"
+                              variant={form.door_finish_type === ft ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => { update('door_finish_type', ft); update('door_color_id', ''); }}
+                            >
+                              {ft === 'laccato_opaco' ? 'Laccato Opaco' : 'Laccato ULTRA Opaco'}
+                              {' '}({getColorsByFinish(model.colors, ft).length})
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Color grid */}
+                      <div className="space-y-2">
+                        <Label>Colore porta</Label>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                          {filteredColors.map(color => (
+                            <button
+                              key={color.id}
+                              type="button"
+                              onClick={() => { update('door_color_id', color.id); update('color_internal', color.id); update('color_external', color.id); }}
+                              className={`relative flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 transition-all hover:shadow-md ${
+                                form.door_color_id === color.id
+                                  ? 'border-accent bg-accent/10 shadow-md'
+                                  : 'border-border hover:border-muted-foreground/30'
+                              }`}
+                            >
+                              <div
+                                className="w-10 h-10 rounded-full border-2 border-border shadow-inner"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              <span className="text-xs text-center font-medium leading-tight">{color.name}</span>
+                              {color.green && (
+                                <span className="absolute top-1 right-1">
+                                  <Leaf className="h-3 w-3 text-emerald-500" />
+                                </span>
+                              )}
+                              {form.door_color_id === color.id && (
+                                <div className="absolute top-1 left-1">
+                                  <Check className="h-3.5 w-3.5 text-accent" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        {form.door_color_id && (() => {
+                          const selectedColor = model.colors.find(c => c.id === form.door_color_id);
+                          return selectedColor ? (
+                            <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-muted/50">
+                              <div className="w-6 h-6 rounded-full border border-border" style={{ backgroundColor: selectedColor.hex }} />
+                              <span className="text-sm font-medium">{selectedColor.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                — {selectedColor.finish === 'laccato_opaco' ? 'Laccato Opaco' : 'Laccato ULTRA Opaco'}
+                              </span>
+                              {selectedColor.green && (
+                                <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-0.5">
+                                  <Leaf className="h-3 w-3" /> GREEN
+                                </span>
+                              )}
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+
+                      {/* Handle selection from catalog */}
+                      <div className="space-y-2">
+                        <Label>Maniglia</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {getCompatibleHandles(form.door_model).map(handle => (
+                            <button
+                              key={handle.id}
+                              type="button"
+                              onClick={() => { update('door_handle_id', handle.id); update('handle_type', handle.id); }}
+                              className={`flex items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${
+                                form.door_handle_id === handle.id
+                                  ? 'border-accent bg-accent/10'
+                                  : 'border-border hover:border-muted-foreground/30'
+                              }`}
+                            >
+                              <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
+                              <span className="font-medium">{handle.name}</span>
+                              {form.door_handle_id === handle.id && <Check className="h-4 w-4 text-accent ml-auto" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <ColorSelectField label="Colore interno" value={form.color_internal} field="color_internal" />
+                      <ColorSelectField label="Colore esterno" value={form.color_external} field="color_external" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tipo maniglia</Label>
+                      <Select value={form.handle_type} onValueChange={v => update('handle_type', v)}>
+                        <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="standard">Standard</SelectItem>
+                          <SelectItem value="design">Design</SelectItem>
+                          <SelectItem value="con_chiave">Con chiave</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
 
                 {isMultiProduct && (
                   <div className="rounded-lg bg-accent/5 border border-accent/20 p-3 mt-2">
