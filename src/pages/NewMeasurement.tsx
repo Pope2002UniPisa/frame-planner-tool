@@ -591,7 +591,7 @@ export default function NewMeasurement() {
               <div className="space-y-4">
                 <CardTitle className="font-heading">Seleziona il prodotto</CardTitle>
                 <CardDescription>Che tipo di prodotto devi misurare?</CardDescription>
-                <RadioGroup value={form.product_type} onValueChange={v => update('product_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <RadioGroup value={form.product_type} onValueChange={v => { update('product_type', v); update('door_model', ''); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_id', ''); update('door_special_variant', ''); }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {[
                     { value: 'finestra', label: '🪟 Finestra' },
                     { value: 'porta', label: '🚪 Porta' },
@@ -614,6 +614,100 @@ export default function NewMeasurement() {
                     </Label>
                   ))}
                 </RadioGroup>
+
+                {/* Door model selection when porta is selected */}
+                {form.product_type === 'porta' && (
+                  <div className="mt-6 space-y-4">
+                    <div className="border-t border-border pt-4">
+                      <Label className="text-base font-semibold">🏷️ Seleziona modello porta</Label>
+                      <p className="text-sm text-muted-foreground mt-1">Scegli il modello dal catalogo per accedere a colori, telai e maniglie specifici</p>
+                    </div>
+                    <RadioGroup value={form.door_model} onValueChange={v => { update('door_model', v); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_id', ''); update('door_special_variant', ''); }} className="space-y-3">
+                      {DOOR_MODELS.map(model => (
+                        <Label
+                          key={model.id}
+                          htmlFor={`model-${model.id}`}
+                          className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${
+                            form.door_model === model.id ? 'border-accent bg-accent/10' : 'border-border hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <RadioGroupItem value={model.id} id={`model-${model.id}`} className="mt-1" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-foreground">{model.name}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{model.collection}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1">
+                                <Leaf className="h-3 w-3" /> GREEN
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{model.description}</p>
+                            <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                              <span>📐 {model.minWidth}–{model.maxWidth} × {model.minHeight}–{model.maxHeight} mm</span>
+                              <span>🎨 {model.colors.length} colori</span>
+                              <span>🖼️ {model.compatibleFrameIds.length} telai</span>
+                            </div>
+                          </div>
+                        </Label>
+                      ))}
+                    </RadioGroup>
+
+                    {/* Selected model details */}
+                    {form.door_model && (() => {
+                      const model = getDoorModel(form.door_model);
+                      if (!model) return null;
+                      return (
+                        <div className="space-y-3">
+                          {/* Special variants */}
+                          {model.specialVariants.length > 0 && (
+                            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                              <Label className="text-sm font-semibold">✨ Soluzioni speciali (opzionale)</Label>
+                              <RadioGroup value={form.door_special_variant} onValueChange={v => update('door_special_variant', v === form.door_special_variant ? '' : v)} className="space-y-2">
+                                <Label
+                                  htmlFor="variant-none"
+                                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition-all ${
+                                    !form.door_special_variant ? 'border-accent bg-accent/10' : 'border-border'
+                                  }`}
+                                >
+                                  <RadioGroupItem value="" id="variant-none" />
+                                  <span>Standard (nessuna soluzione speciale)</span>
+                                </Label>
+                                {model.specialVariants.map(v => (
+                                  <Label
+                                    key={v.id}
+                                    htmlFor={`variant-${v.id}`}
+                                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-all ${
+                                      form.door_special_variant === v.id ? 'border-accent bg-accent/10' : 'border-border'
+                                    }`}
+                                  >
+                                    <RadioGroupItem value={v.id} id={`variant-${v.id}`} className="mt-0.5" />
+                                    <div>
+                                      <span className="font-medium">{v.name}</span>
+                                      <p className="text-xs text-muted-foreground mt-0.5">{v.description}</p>
+                                    </div>
+                                  </Label>
+                                ))}
+                              </RadioGroup>
+                            </div>
+                          )}
+
+                          {/* Window version */}
+                          {model.hasWindowVersion && (
+                            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                              <Checkbox
+                                id="window-version"
+                                checked={form.door_is_window_version}
+                                onCheckedChange={v => update('door_is_window_version', v)}
+                              />
+                              <Label htmlFor="window-version" className="text-sm cursor-pointer">
+                                🪟 Versione finestra disponibile
+                              </Label>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
 
                 {/* Multi-product toggle */}
                 {form.product_type && (
@@ -663,6 +757,10 @@ export default function NewMeasurement() {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
                   </div>
                 )}
               </div>
