@@ -7,6 +7,7 @@ import { ArrowLeft, Printer } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES } from '@/data/doorCatalog';
 import pratelliLogo from '@/assets/pratelli-logo.png';
+import ferreroLegnoLogo from '@/assets/ferrerolegno-logo.png';
 
 const productLabels: Record<string, string> = {
   finestra: 'Finestra', porta_finestra: 'Porta Finestra', basculante: 'Basculante',
@@ -40,6 +41,16 @@ export default function MeasurementPrint() {
       setLoading(false);
     });
   }, [user, id]);
+  // Set document title so browser print header shows this instead of "Lovable App"
+  useEffect(() => {
+    const origTitle = document.title;
+    if (m) {
+      const isQ = isQuoteStatus(m.status);
+      const isO = ['ordered', 'in_production', 'delivering', 'completed'].includes(m.status);
+      document.title = isO ? 'Conferma d\'Ordine' : isQ ? 'Preventivo' : 'Scheda Misurazione';
+    }
+    return () => { document.title = origTitle; };
+  }, [m]);
 
   const handlePrint = () => window.print();
 
@@ -129,14 +140,19 @@ export default function MeasurementPrint() {
         </div>
       </div>
 
-      <div ref={printRef} className="container max-w-3xl py-8 print:py-4 print:max-w-full">
+      <div ref={printRef} className="container max-w-3xl py-8 print:py-0 print:max-w-full">
         <div className="border border-border rounded-lg p-6 print:border-0 print:p-0 bg-card">
-          <div className="flex items-center justify-between mb-6 border-b border-border pb-4">
-            <div>
+          {/* Header with logos */}
+          <div className="flex items-start justify-between mb-6 border-b border-border pb-4">
+            <div className="flex flex-col gap-2">
+              <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-10 object-contain object-left" />
+              <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-8 object-contain object-left" />
+            </div>
+            <div className="text-center flex-1 px-4">
               <h2 className="text-2xl font-bold font-heading text-foreground">{docTitle}</h2>
               <p className="text-sm text-muted-foreground mt-1">{m.client_name} — {m.client_address}</p>
             </div>
-            <div className="text-right text-sm text-muted-foreground">
+            <div className="text-right text-sm text-muted-foreground shrink-0">
               <p>Data: {new Date(m.created_at).toLocaleDateString('it-IT')}</p>
               <p>Stato: {statusLabels[m.status] || m.status}</p>
             </div>
