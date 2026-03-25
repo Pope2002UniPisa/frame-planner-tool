@@ -268,15 +268,14 @@ export default function Dashboard() {
         </Card>
 
         {/* Riepilogo Clienti - pagina dedicata */}
-        <Card className="mb-6 border-dashed">
+        <Card className="mb-6 border-2 border-primary/20 bg-primary/5 shadow-md">
           <CardContent className="flex items-center justify-between py-5 px-6">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-muted p-2.5">
-                <Users className="h-5 w-5 text-accent" />
+              <div className="rounded-lg gradient-primary p-2.5">
+                <Users className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
                 <p className="font-semibold text-foreground font-heading">Riepilogo Clienti</p>
-                
               </div>
             </div>
             <Button onClick={() => navigate('/dashboard/clienti')} className="gap-2">
@@ -287,11 +286,11 @@ export default function Dashboard() {
         </Card>
 
         {/* Riepilogo Consegne - pagina dedicata */}
-        <Card className="mb-6 border-dashed">
+        <Card className="mb-6 border-2 border-accent/20 bg-accent/5 shadow-md">
           <CardContent className="flex items-center justify-between py-5 px-6">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-muted p-2.5">
-                <Truck className="h-5 w-5 text-accent" />
+              <div className="rounded-lg gradient-accent p-2.5">
+                <Truck className="h-5 w-5 text-accent-foreground" />
               </div>
               <div>
                 <p className="font-semibold text-foreground font-heading">Riepilogo Consegne</p>
