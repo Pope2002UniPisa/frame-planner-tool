@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro } from 'lucide-react';
+import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro, Target } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 
@@ -42,6 +43,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [measurements, setMeasurements] = useState<any[]>([]);
+  const [objectives, setObjectives] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ company_name: '', phone: '', email: '', client_code: '' });
@@ -55,9 +57,10 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [{ data: pData }, { data: mData }] = await Promise.all([
+      const [{ data: pData }, { data: mData }, { data: oData }] = await Promise.all([
         supabase.from('profiles').select('*').eq('user_id', user.id).single(),
         supabase.from('measurements').select('*').order('created_at', { ascending: false }),
+        supabase.from('sales_objectives').select('*').eq('user_id', user.id),
       ]);
       if (pData) {
         setProfile(pData);
@@ -68,6 +71,7 @@ export default function Profile() {
         }
       }
       setMeasurements(mData || []);
+      setObjectives(oData || []);
       setLoadingData(false);
     };
     fetchData();
@@ -530,6 +534,73 @@ export default function Profile() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Sales Objectives */}
+            {objectives.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-heading flex items-center gap-2"><Target className="h-4 w-4 text-accent" /> Obiettivi di vendita</CardTitle>
+                  <CardDescription>I tuoi obiettivi commerciali e il progresso attuale</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {objectives.map((obj: any) => {
+                    const periodLabel = obj.period === 'monthly' ? `${String(obj.month).padStart(2, '0')}/${obj.year}` : obj.period === 'quarterly' ? `Q${obj.month ? Math.ceil(obj.month / 3) : '?'}/${obj.year}` : `${obj.year}`;
+                    const productLabel = obj.product_type ? (productLabels[obj.product_type] || obj.product_type) : 'Tutti i prodotti';
+                    const brandLabel = obj.brand || 'Tutte le marche';
+
+                    // Calculate progress from measurements
+                    const relevantMeasurements = measurements.filter(m => {
+                      if (!['completed', 'ordered', 'quoted'].includes(m.status)) return false;
+                      if (obj.product_type && m.product_type !== obj.product_type) return false;
+                      const d = new Date(m.created_at);
+                      if (d.getFullYear() !== obj.year) return false;
+                      if (obj.period === 'monthly' && obj.month && (d.getMonth() + 1) !== obj.month) return false;
+                      if (obj.period === 'quarterly' && obj.month) {
+                        const q = Math.ceil((d.getMonth() + 1) / 3);
+                        const targetQ = Math.ceil(obj.month / 3);
+                        if (q !== targetQ) return false;
+                      }
+                      return true;
+                    });
+
+                    const currentCount = relevantMeasurements.length;
+                    const currentAmount = relevantMeasurements.reduce((s: number, m: any) => s + (Number(m.estimated_price) || 0), 0);
+                    const countProgress = obj.target_count ? Math.min(100, Math.round((currentCount / obj.target_count) * 100)) : null;
+                    const amountProgress = obj.target_amount ? Math.min(100, Math.round((currentAmount / obj.target_amount) * 100)) : null;
+
+                    return (
+                      <div key={obj.id} className="rounded-xl border border-border p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{productLabel}</p>
+                            <p className="text-[10px] text-muted-foreground">{brandLabel} • {periodLabel}</p>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">{obj.period === 'monthly' ? 'Mensile' : obj.period === 'quarterly' ? 'Trimestrale' : 'Annuale'}</Badge>
+                        </div>
+                        {countProgress !== null && (
+                          <div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-muted-foreground">Quantità</span>
+                              <span className="font-medium text-foreground">{currentCount}/{obj.target_count}</span>
+                            </div>
+                            <Progress value={countProgress} className="h-2" />
+                          </div>
+                        )}
+                        {amountProgress !== null && (
+                          <div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-muted-foreground">Fatturato</span>
+                              <span className="font-medium text-foreground">€{Math.round(currentAmount).toLocaleString('it-IT')} / €{Number(obj.target_amount).toLocaleString('it-IT')}</span>
+                            </div>
+                            <Progress value={amountProgress} className="h-2" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* TAB: Suppliers */}
