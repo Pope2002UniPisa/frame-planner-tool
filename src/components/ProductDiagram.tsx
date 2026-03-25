@@ -266,11 +266,13 @@ export default function ProductDiagram({
     const doorColor = doorColorHex || frontColor;
     const isScorrevole = panelType === 'scorrevole';
     
-    // Handle/hinge side logic - works for all directions and views
+    // "Apertura sinistra" = hinges LEFT, handle RIGHT (external view)
+    // "Apertura destra" = hinges RIGHT, handle LEFT (external view)
     const isInternal = view === 'internal';
-    const handleOnLeft = openingDirection === 'sinistra';
-    // Internal view mirrors the door
-    const effectiveHandleLeft = isInternal ? !handleOnLeft : handleOnLeft;
+    // External: sinistra => handle RIGHT, destra => handle LEFT
+    const handleOnRight_ext = openingDirection === 'sinistra';
+    // Internal view mirrors everything
+    const effectiveHandleRight = isInternal ? !handleOnRight_ext : handleOnRight_ext;
     
     // Handle finish color
     const getHandleColor = () => {
@@ -286,9 +288,10 @@ export default function ProductDiagram({
     const handleColor = getHandleColor();
 
     // Door panel positions
-    const handleX = effectiveHandleLeft ? offsetX + 18 : offsetX + drawW - 22;
-    const hingeX = effectiveHandleLeft ? offsetX + drawW - 6 : offsetX + 2;
-    const leverDir = effectiveHandleLeft ? -1 : 1;
+    const handleX = effectiveHandleRight ? offsetX + drawW - 22 : offsetX + 18;
+    const hingeX = effectiveHandleRight ? offsetX + 2 : offsetX + drawW - 6;
+    // Lever points OUTWARD from the door edge (away from center)
+    const leverDir = effectiveHandleRight ? 1 : -1;
 
     // Yncisa 70 specific pantograph pattern
     const renderYncisa70Pattern = () => {
@@ -317,8 +320,8 @@ export default function ProductDiagram({
       const dw = drawW;
       const dh = drawH;
 
-      // Handle side is plain, lines are on the opposite side
-      const linesOnLeft = !effectiveHandleLeft;
+      // Handle side is plain, lines are on the hinge side
+      const linesOnLeft = !effectiveHandleRight;
       
       // Vertical lines region: about 5 lines spanning ~55% of width on the non-handle side
       const lineStartX = linesOnLeft ? doorL + dw * 0.12 : doorL + dw * 0.35;
@@ -346,18 +349,19 @@ export default function ProductDiagram({
       const smallR2 = dw * 0.08;
       const smallDotR2 = dw * 0.025;
 
-      // Darker/lighter shade for pantograph grooves
-      const grooveColor = adjustColor(doorColor, -15);
+      // Darker shade for pantograph grooves - more visible
+      const grooveColor = adjustColor(doorColor, -30);
+      const grooveOpacity = 0.55;
+      const grooveWidth = 1.5;
 
       return (
         <g>
-          {/* Subtle shadow filter for grooves */}
           <defs>
             <filter id="pantograph" x="-2%" y="-2%" width="104%" height="104%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="0.5" />
+              <feGaussianBlur in="SourceAlpha" stdDeviation="0.8" />
               <feOffset dx="0.5" dy="0.5" />
               <feComponentTransfer>
-                <feFuncA type="linear" slope="0.15" />
+                <feFuncA type="linear" slope="0.25" />
               </feComponentTransfer>
               <feMerge>
                 <feMergeNode />
@@ -375,101 +379,115 @@ export default function ProductDiagram({
               x2={lineStartX + i * lineSpacing}
               y2={lineBottomY}
               stroke={grooveColor}
-              strokeWidth="1"
-              opacity="0.35"
+              strokeWidth={grooveWidth}
+              opacity={grooveOpacity}
               filter="url(#pantograph)"
             />
           ))}
 
-          {/* The continuing vertical lines that curve into the U */}
-          {/* U-shape: two outer vertical lines curve down and become the U */}
+          {/* U-shape curves */}
           <path
             d={`M ${lineStartX + 2 * lineSpacing} ${lineBottomY} 
                 L ${lineStartX + 2 * lineSpacing} ${curveCenterY + dh * 0.02}
-                Q ${lineStartX + 2 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX} ${arcCY - arcR1 * 0.3}
-                `}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+                Q ${lineStartX + 2 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX} ${arcCY - arcR1 * 0.3}`}
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
           <path
             d={`M ${lineStartX + 4 * lineSpacing} ${lineBottomY}
                 L ${lineStartX + 4 * lineSpacing} ${curveCenterY + dh * 0.02}
-                Q ${lineStartX + 4 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX + (linesOnLeft ? arcR1 * 0.6 : -arcR1 * 0.6)} ${arcCY - arcR1 * 0.1}
-                `}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+                Q ${lineStartX + 4 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX + (linesOnLeft ? arcR1 * 0.6 : -arcR1 * 0.6)} ${arcCY - arcR1 * 0.1}`}
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
 
-          {/* Large concentric arcs (semi-circles opening upward on handle side) */}
+          {/* Large concentric arcs */}
           <path
             d={`M ${arcCX - arcR1} ${arcCY} A ${arcR1} ${arcR1} 0 0 ${linesOnLeft ? 0 : 1} ${arcCX + arcR1} ${arcCY}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
           <path
             d={`M ${arcCX - arcR2} ${arcCY} A ${arcR2} ${arcR2} 0 0 ${linesOnLeft ? 0 : 1} ${arcCX + arcR2} ${arcCY}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
           <path
             d={`M ${arcCX - arcR3} ${arcCY} A ${arcR3} ${arcR3} 0 0 ${linesOnLeft ? 0 : 1} ${arcCX + arcR3} ${arcCY}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.3" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
           />
-          {/* Small center dot */}
-          <circle cx={arcCX} cy={arcCY - smallDotR * 1.5} r={smallDotR} fill="none" stroke={grooveColor} strokeWidth="0.8" opacity="0.3" filter="url(#pantograph)" />
+          <circle cx={arcCX} cy={arcCY - smallDotR * 1.5} r={smallDotR} fill="none" stroke={grooveColor} strokeWidth="1.2" opacity={grooveOpacity} filter="url(#pantograph)" />
 
           {/* Small bottom pattern */}
           <path
             d={`M ${smallCX} ${doorB - 10} A ${smallR1} ${smallR1} 0 0 ${linesOnLeft ? 1 : 0} ${smallCX + (linesOnLeft ? smallR1 : -smallR1)} ${smallCY}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.25" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity * 0.8} filter="url(#pantograph)"
           />
           <path
             d={`M ${smallCX} ${doorB - 10} A ${smallR2} ${smallR2} 0 0 ${linesOnLeft ? 1 : 0} ${smallCX + (linesOnLeft ? smallR2 : -smallR2)} ${smallCY + (smallR1 - smallR2) * 0.5}`}
-            fill="none" stroke={grooveColor} strokeWidth="1" opacity="0.25" filter="url(#pantograph)"
+            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity * 0.8} filter="url(#pantograph)"
           />
-          <circle cx={smallCX + (linesOnLeft ? smallDotR2 * 2 : -smallDotR2 * 2)} cy={smallCY + smallR1 * 0.3} r={smallDotR2} fill="none" stroke={grooveColor} strokeWidth="0.8" opacity="0.25" filter="url(#pantograph)" />
+          <circle cx={smallCX + (linesOnLeft ? smallDotR2 * 2 : -smallDotR2 * 2)} cy={smallCY + smallR1 * 0.3} r={smallDotR2} fill="none" stroke={grooveColor} strokeWidth="1" opacity={grooveOpacity * 0.8} filter="url(#pantograph)" />
         </g>
       );
     };
 
-    // Lever handle for battente
-    const renderBattenteHandle = () => (
-      <g>
-        {/* Rosetta / back plate */}
-        <rect 
-          x={handleX - 4} y={handleY - 20} width={12} height={40} rx={2} 
-          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" opacity="0.9" 
-        />
-        {/* Lever */}
-        <rect 
-          x={handleX + 2} y={handleY - 2} width={leverDir * 22} height={3.5} rx={1.5} 
-          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
-        />
-        {/* Lever tip curve */}
-        <circle 
-          cx={handleX + 2 + leverDir * 22} cy={handleY} r={2} 
-          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.3" 
-        />
-        {/* Keyhole */}
-        <circle cx={handleX + 2} cy={handleY + 28} r={3} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.6" opacity="0.5" />
-        <rect x={handleX + 1} y={handleY + 26} width={2} height={4} fill="hsl(var(--foreground))" opacity="0.3" />
-      </g>
-    );
+    // Lever handle for battente - with visible back plate
+    const renderBattenteHandle = () => {
+      const plateW = 14;
+      const plateH = 50;
+      const plateCX = handleX + 2;
+      const plateX = plateCX - plateW / 2;
+      const plateY = handleY - plateH / 2;
+      return (
+        <g>
+          {/* Back plate (placca) */}
+          <rect 
+            x={plateX} y={plateY} width={plateW} height={plateH} rx={3} 
+            fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.6" opacity="0.95" 
+          />
+          {/* Lever - extends OUTWARD from door edge */}
+          <rect 
+            x={leverDir > 0 ? plateCX : plateCX + leverDir * 24} 
+            y={handleY - 2} 
+            width={24} height={4} rx={2} 
+            fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" 
+          />
+          {/* Lever tip curve */}
+          <circle 
+            cx={plateCX + leverDir * 24} cy={handleY} r={2.5} 
+            fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
+          />
+          {/* Keyhole below */}
+          <circle cx={plateCX} cy={handleY + 18} r={3.5} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.7" opacity="0.5" />
+          <rect x={plateCX - 1} y={handleY + 16} width={2} height={4} fill="hsl(var(--foreground))" opacity="0.3" />
+        </g>
+      );
+    };
 
     // Sliding handle (recessed/pomello)
     const renderScorrevoleHandle = () => (
       <g>
-        {/* Recessed oval grip */}
         <ellipse 
-          cx={handleX + 4} cy={handleY} rx={5} ry={16} 
-          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" opacity="0.85"
+          cx={handleX + 4} cy={handleY} rx={6} ry={18} 
+          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.6" opacity="0.9"
         />
-        {/* Inner recess */}
         <ellipse 
-          cx={handleX + 4} cy={handleY} rx={3} ry={12} 
-          fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.4"
+          cx={handleX + 4} cy={handleY} rx={3.5} ry={13} 
+          fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" opacity="0.4"
         />
       </g>
     );
 
+    // Frame type label
+    const frameLabel = (() => {
+      const frames: Record<string, string> = {
+        'evoluto_eleva': 'Evoluto Eleva', 'minimal_eleva': 'Minimal Eleva',
+        'quality_eleva': 'Quality Eleva', 'dorico': 'Dorico', 'flat': 'Flat',
+        'genius_eleva': 'Genius Eleva', 'oval_eleva': 'Oval Eleva',
+        'a_filo': 'A Filo', 'concept': 'Concept',
+      };
+      return frameType ? (frames[frameType] || frameType) : '';
+    })();
+
     return (
-      <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full max-w-sm mx-auto">
+      <svg viewBox={`0 0 ${svgW} ${svgH + 30}`} className="w-full max-w-sm mx-auto">
         {/* Sliding track if scorrevole */}
         {isScorrevole && (
           <g>
@@ -487,13 +505,13 @@ export default function ProductDiagram({
         {/* Door frame (stipite) */}
         <rect x={offsetX - 5} y={offsetY - 5} width={drawW + 10} height={drawH + 10} fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" />
         
-        {/* Door body - uses selected color */}
+        {/* Door body */}
         <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
 
-        {/* Model-specific pantograph pattern */}
+        {/* Pantograph pattern */}
         {renderYncisa70Pattern()}
 
-        {/* Glass insert if selected */}
+        {/* Glass insert */}
         {hasGlass && (
           <>
             <rect x={offsetX + 16} y={offsetY + 16} width={drawW - 32} height={(drawH - 32) * 0.3} fill={GLASS_COLOR} stroke={GLASS_STROKE} strokeWidth="1" rx={glassType === 'stondato' ? 6 : 0} />
@@ -501,10 +519,10 @@ export default function ProductDiagram({
           </>
         )}
 
-        {/* Handle - ALWAYS visible for both battente and scorrevole */}
+        {/* Handle */}
         {isScorrevole ? renderScorrevoleHandle() : renderBattenteHandle()}
 
-        {/* 3 hinges on hinge side - only for battente */}
+        {/* 3 hinges - only for battente */}
         {!isScorrevole && (
           <>
             <rect x={hingeX} y={offsetY + drawH * 0.12} width={4} height={14} rx={2} fill="hsl(var(--foreground))" opacity="0.5" />
@@ -516,28 +534,35 @@ export default function ProductDiagram({
         {/* Threshold */}
         <rect x={offsetX - 6} y={offsetY + drawH + 5} width={drawW + 12} height={3} fill="hsl(var(--muted-foreground))" opacity="0.4" rx={1} />
 
-        {/* Dimensions */}
-        <DimensionH x={offsetX} y={offsetY - 28} width={drawW} label={`${w}`} />
+        {/* Dimensions - moved up to avoid overlap */}
+        <DimensionH x={offsetX} y={offsetY - 30} width={drawW} label={`${w}`} />
         <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
 
-        {/* Labels */}
-        <text x={offsetX + drawW / 2} y={offsetY + drawH + 26} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-          {hasGlass ? 'Porta con vetro' : 'Porta cieca'}
-        </text>
-
-        <text x={offsetX + drawW / 2} y={offsetY - 36} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
+        {/* Opening type label - above dimensions */}
+        <text x={offsetX + drawW / 2} y={offsetY - 44} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
           {isScorrevole ? '↔ Scorrevole' : '⟳ Battente'}
         </text>
 
-        {view && (
-          <text x={8} y={16} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
-            {view === 'internal' ? '🏠 Vista Interna' : '🌳 Vista Esterna'}
+        {/* Labels below door: porta cieca → frame type → handle info */}
+        <text x={offsetX + drawW / 2} y={offsetY + drawH + 24} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+          {hasGlass ? 'Porta con vetro' : 'Porta cieca'}
+        </text>
+
+        {frameLabel && (
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + 36} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+            Telaio: {frameLabel}
           </text>
         )}
 
         {doorHandleModelId && doorHandleFinishId && (
-          <text x={offsetX + drawW / 2} y={svgH - 4} textAnchor="middle" fontSize="6" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + (frameLabel ? 48 : 36)} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
             {doorHandleModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} — {doorHandleFinishId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          </text>
+        )}
+
+        {view && (
+          <text x={8} y={16} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
+            {view === 'internal' ? '🏠 Vista Interna' : '🌳 Vista Esterna'}
           </text>
         )}
       </svg>
