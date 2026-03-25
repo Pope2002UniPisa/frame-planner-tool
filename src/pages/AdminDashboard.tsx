@@ -35,6 +35,8 @@ const statusLabels: Record<string, string> = {
 };
 
 const BRANDS = ['FerreroLegno SPA', 'AluK Group', 'Finstral SPA', 'Somfy Italia'];
+const ALL_PRODUCTS_VALUE = '__all_products__';
+const ALL_BRANDS_VALUE = '__all_brands__';
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
