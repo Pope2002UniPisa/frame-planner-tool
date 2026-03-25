@@ -15,7 +15,7 @@ import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import AccessoryConfig, { type AccessoriesConfig } from '@/components/AccessoryConfig';
 import { Switch } from '@/components/ui/switch';
-import { DOOR_MODELS, getDoorModel, getCompatibleFrames, getCompatibleHandles, getColorsByFinish, ALL_FRAMES, ALL_HANDLES, type DoorColor } from '@/data/doorCatalog';
+import { DOOR_MODELS, getDoorModel, getCompatibleFrames, getCompatibleHandleModels, getCompatibleHandleFinishes, getHandleFinishHex, getColorsByFinish, ALL_FRAMES, ALL_HANDLE_MODELS, ALL_HANDLE_FINISHES, type DoorColor } from '@/data/doorCatalog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const STEPS = [
@@ -64,7 +64,8 @@ const initialForm = {
   door_color_id: '',
   door_finish_type: '',
   door_frame_id: '',
-  door_handle_id: '',
+  door_handle_model_id: '',
+  door_handle_finish_id: '',
   door_special_variant: '',
   door_is_window_version: false,
   client_name: '',
@@ -407,7 +408,9 @@ export default function NewMeasurement() {
               externalSpaceMm={isMultiProduct ? (activeItem?.external_space_mm || '') : form.external_space_mm}
               view={view}
               doorColorHex={form.product_type === 'porta' && form.door_color_id ? (getDoorModel(form.door_model)?.colors.find(c => c.id === form.door_color_id)?.hex) : undefined}
-              doorHandleId={form.product_type === 'porta' ? form.door_handle_id : undefined}
+              doorHandleFinishId={form.product_type === 'porta' ? form.door_handle_finish_id : undefined}
+              doorHandleModelId={form.product_type === 'porta' ? form.door_handle_model_id : undefined}
+              doorModelId={form.product_type === 'porta' ? form.door_model : undefined}
             />
           </div>
         </div>
@@ -479,29 +482,31 @@ export default function NewMeasurement() {
           )}
         </div>
 
-        <div className="space-y-3 pt-2">
-          <Label className="text-base font-semibold">Controlli tecnici</Label>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Checkbox id={`square-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_square} onCheckedChange={v => updateItem(activeItemIndex, 'is_square', v)} />
-              <Label htmlFor={`square-${activeItemIndex}`}>Squadrato</Label>
-            </div>
-            {!multiItems[activeItemIndex].is_square && (
-              <div className="ml-8 space-y-2">
-                <Label>Fuori squadro (mm)</Label>
-                <Input type="number" value={multiItems[activeItemIndex].out_of_square_mm} onChange={e => updateItem(activeItemIndex, 'out_of_square_mm', e.target.value)} placeholder="5" />
+        {form.product_type !== 'porta' && (
+          <div className="space-y-3 pt-2">
+            <Label className="text-base font-semibold">Controlli tecnici</Label>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Checkbox id={`square-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_square} onCheckedChange={v => updateItem(activeItemIndex, 'is_square', v)} />
+                <Label htmlFor={`square-${activeItemIndex}`}>Squadrato</Label>
               </div>
-            )}
-            <div className="flex items-center gap-3">
-              <Checkbox id={`plumb-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_plumb} onCheckedChange={v => updateItem(activeItemIndex, 'is_plumb', v)} />
-              <Label htmlFor={`plumb-${activeItemIndex}`}>A piombo</Label>
-            </div>
-            <div className="flex items-center gap-3">
-              <Checkbox id={`level-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_level} onCheckedChange={v => updateItem(activeItemIndex, 'is_level', v)} />
-              <Label htmlFor={`level-${activeItemIndex}`}>Livellato</Label>
+              {!multiItems[activeItemIndex].is_square && (
+                <div className="ml-8 space-y-2">
+                  <Label>Fuori squadro (mm)</Label>
+                  <Input type="number" value={multiItems[activeItemIndex].out_of_square_mm} onChange={e => updateItem(activeItemIndex, 'out_of_square_mm', e.target.value)} placeholder="5" />
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <Checkbox id={`plumb-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_plumb} onCheckedChange={v => updateItem(activeItemIndex, 'is_plumb', v)} />
+                <Label htmlFor={`plumb-${activeItemIndex}`}>A piombo</Label>
+              </div>
+              <div className="flex items-center gap-3">
+                <Checkbox id={`level-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_level} onCheckedChange={v => updateItem(activeItemIndex, 'is_level', v)} />
+                <Label htmlFor={`level-${activeItemIndex}`}>Livellato</Label>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {form.product_type !== 'porta' && (
           <div className="grid grid-cols-2 gap-4 pt-2">
@@ -597,7 +602,7 @@ export default function NewMeasurement() {
               <div className="space-y-4">
                 <CardTitle className="font-heading">Seleziona il prodotto</CardTitle>
                 <CardDescription>Che tipo di prodotto devi misurare?</CardDescription>
-                <RadioGroup value={form.product_type} onValueChange={v => { update('product_type', v); update('door_model', ''); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_id', ''); update('door_special_variant', ''); }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <RadioGroup value={form.product_type} onValueChange={v => { update('product_type', v); update('door_model', ''); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_model_id', ''); update('door_handle_finish_id', ''); update('door_special_variant', ''); }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {[
                     { value: 'finestra', label: '🪟 Finestra' },
                     { value: 'porta', label: '🚪 Porta' },
@@ -628,7 +633,7 @@ export default function NewMeasurement() {
                       <Label className="text-base font-semibold">🏷️ Seleziona modello porta</Label>
                       <p className="text-sm text-muted-foreground mt-1">Scegli il modello dal catalogo per accedere a colori, telai e maniglie specifici</p>
                     </div>
-                    <RadioGroup value={form.door_model} onValueChange={v => { update('door_model', v); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_id', ''); update('door_special_variant', ''); }} className="space-y-3">
+                    <RadioGroup value={form.door_model} onValueChange={v => { update('door_model', v); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_model_id', ''); update('door_handle_finish_id', ''); update('door_special_variant', ''); }} className="space-y-3">
                       {DOOR_MODELS.map(model => (
                         <Label
                           key={model.id}
@@ -855,29 +860,31 @@ export default function NewMeasurement() {
                     )}
                   </div>
 
-                  <div className="space-y-3 pt-4">
-                    <Label className="text-base font-semibold">Controlli tecnici</Label>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v)} />
-                        <Label htmlFor="square">Squadrato</Label>
-                      </div>
-                      {!form.is_square && (
-                        <div className="ml-8 space-y-2">
-                          <Label>Fuori squadro (mm)</Label>
-                          <Input type="number" value={form.out_of_square_mm} onChange={e => update('out_of_square_mm', e.target.value)} placeholder="5" />
+                  {form.product_type !== 'porta' && (
+                    <div className="space-y-3 pt-4">
+                      <Label className="text-base font-semibold">Controlli tecnici</Label>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v)} />
+                          <Label htmlFor="square">Squadrato</Label>
                         </div>
-                      )}
-                      <div className="flex items-center gap-3">
-                        <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} />
-                        <Label htmlFor="plumb">A piombo</Label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v)} />
-                        <Label htmlFor="level">Livellato</Label>
+                        {!form.is_square && (
+                          <div className="ml-8 space-y-2">
+                            <Label>Fuori squadro (mm)</Label>
+                            <Input type="number" value={form.out_of_square_mm} onChange={e => update('out_of_square_mm', e.target.value)} placeholder="5" />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3">
+                          <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} />
+                          <Label htmlFor="plumb">A piombo</Label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v)} />
+                          <Label htmlFor="level">Livellato</Label>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {form.product_type !== 'porta' && (
                     <div className="grid grid-cols-2 gap-4 pt-4">
@@ -1120,24 +1127,47 @@ export default function NewMeasurement() {
                         })()}
                       </div>
 
-                      {/* Handle selection from catalog */}
+                      {/* Handle model selection */}
                       <div className="space-y-2">
-                        <Label>Maniglia</Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {getCompatibleHandles(form.door_model).map(handle => (
+                        <Label>Tipo maniglia</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          {getCompatibleHandleModels(form.door_model).map(hm => (
                             <button
-                              key={handle.id}
+                              key={hm.id}
                               type="button"
-                              onClick={() => { update('door_handle_id', handle.id); update('handle_type', handle.id); }}
-                              className={`flex items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${
-                                form.door_handle_id === handle.id
+                              onClick={() => update('door_handle_model_id', hm.id)}
+                              className={`flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-sm transition-all ${
+                                form.door_handle_model_id === hm.id
                                   ? 'border-accent bg-accent/10'
                                   : 'border-border hover:border-muted-foreground/30'
                               }`}
                             >
-                              <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
-                              <span className="font-medium">{handle.name}</span>
-                              {form.door_handle_id === handle.id && <Check className="h-4 w-4 text-accent ml-auto" />}
+                              <span className="font-medium">{hm.name}</span>
+                              {hm.description && <span className="text-xs text-muted-foreground">{hm.description}</span>}
+                              {form.door_handle_model_id === hm.id && <Check className="h-4 w-4 text-accent" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Handle finish selection */}
+                      <div className="space-y-2">
+                        <Label>Finitura maniglia</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {getCompatibleHandleFinishes(form.door_model).map(hf => (
+                            <button
+                              key={hf.id}
+                              type="button"
+                              onClick={() => { update('door_handle_finish_id', hf.id); update('handle_type', hf.id); }}
+                              className={`flex items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${
+                                form.door_handle_finish_id === hf.id
+                                  ? 'border-accent bg-accent/10'
+                                  : 'border-border hover:border-muted-foreground/30'
+                              }`}
+                            >
+                              <div className="w-5 h-5 rounded-full border border-border shadow-inner" style={{ backgroundColor: hf.hex }} />
+                              <span className="font-medium">{hf.name}</span>
+                              {form.door_handle_finish_id === hf.id && <Check className="h-4 w-4 text-accent ml-auto" />}
                             </button>
                           ))}
                         </div>

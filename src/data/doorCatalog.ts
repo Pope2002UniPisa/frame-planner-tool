@@ -15,10 +15,16 @@ export interface DoorFrame {
   description?: string;
 }
 
-export interface DoorHandle {
+export interface DoorHandleModel {
   id: string;
   name: string;
-  finish: string;
+  description?: string;
+}
+
+export interface DoorHandleFinish {
+  id: string;
+  name: string;
+  hex: string; // colore visivo per il rendering
 }
 
 export interface DoorSpecialVariant {
@@ -39,7 +45,8 @@ export interface DoorModel {
   maxHeight: number; // mm
   colors: DoorColor[];
   compatibleFrameIds: string[];
-  compatibleHandleIds: string[];
+  compatibleHandleModelIds: string[];
+  compatibleHandleFinishIds: string[];
   specialVariants: DoorSpecialVariant[];
   hasWindowVersion: boolean;
   openingTypes: string[]; // battente, scorrevole, etc.
@@ -58,13 +65,20 @@ export const ALL_FRAMES: DoorFrame[] = [
   { id: 'concept', name: 'Concept', description: 'Telaio design contemporaneo' },
 ];
 
-// ========== MANIGLIE (HANDLES) - Database generale ==========
-export const ALL_HANDLES: DoorHandle[] = [
-  { id: 'cromo_satinato', name: 'Cromo Satinato', finish: 'cromo_satinato' },
-  { id: 'cromo_lucido', name: 'Cromo Lucido', finish: 'cromo_lucido' },
-  { id: 'bianco_optical', name: 'Bianco Optical', finish: 'bianco_optical' },
-  { id: 'nero', name: 'Nero', finish: 'nero' },
-  { id: 'grigio_alluminio', name: 'Grigio Alluminio', finish: 'grigio_alluminio' },
+// ========== MODELLI MANIGLIA (HANDLE MODELS) ==========
+export const ALL_HANDLE_MODELS: DoorHandleModel[] = [
+  { id: 'minimal_design', name: 'Minimal Design', description: 'Maniglia a leva design minimale con rosetta quadrata' },
+  { id: 'pure', name: 'Pure', description: 'Maniglia a leva dal design pulito e lineare' },
+  { id: 'baar', name: 'Baar', description: 'Maniglia a leva dal design contemporaneo' },
+];
+
+// ========== FINITURE MANIGLIA (HANDLE FINISHES) ==========
+export const ALL_HANDLE_FINISHES: DoorHandleFinish[] = [
+  { id: 'cromo_satinato', name: 'Cromo Satinato', hex: '#B8B8B8' },
+  { id: 'cromo_lucido', name: 'Cromo Lucido', hex: '#E0E0E0' },
+  { id: 'bianco_optical', name: 'Bianco Optical', hex: '#F0F0EC' },
+  { id: 'nero', name: 'Nero', hex: '#2A2A2A' },
+  { id: 'grigio_alluminio', name: 'Grigio Alluminio', hex: '#A0A0A0' },
 ];
 
 // ========== COLORI YNCISA 70 ==========
@@ -117,7 +131,8 @@ export const DOOR_MODELS: DoorModel[] = [
     maxHeight: 2400,
     colors: YNCISA_70_COLORS,
     compatibleFrameIds: ['evoluto_eleva', 'minimal_eleva', 'quality_eleva', 'dorico'],
-    compatibleHandleIds: ['cromo_satinato', 'cromo_lucido', 'bianco_optical', 'nero', 'grigio_alluminio'],
+    compatibleHandleModelIds: ['minimal_design', 'pure', 'baar'],
+    compatibleHandleFinishIds: ['cromo_satinato', 'cromo_lucido', 'bianco_optical', 'nero', 'grigio_alluminio'],
     specialVariants: [
       {
         id: 'modula',
@@ -146,10 +161,20 @@ export function getCompatibleFrames(modelId: string): DoorFrame[] {
   return ALL_FRAMES.filter(f => model.compatibleFrameIds.includes(f.id));
 }
 
-export function getCompatibleHandles(modelId: string): DoorHandle[] {
+export function getCompatibleHandleModels(modelId: string): DoorHandleModel[] {
   const model = getDoorModel(modelId);
-  if (!model) return ALL_HANDLES;
-  return ALL_HANDLES.filter(h => model.compatibleHandleIds.includes(h.id));
+  if (!model) return ALL_HANDLE_MODELS;
+  return ALL_HANDLE_MODELS.filter(h => model.compatibleHandleModelIds.includes(h.id));
+}
+
+export function getCompatibleHandleFinishes(modelId: string): DoorHandleFinish[] {
+  const model = getDoorModel(modelId);
+  if (!model) return ALL_HANDLE_FINISHES;
+  return ALL_HANDLE_FINISHES.filter(h => model.compatibleHandleFinishIds.includes(h.id));
+}
+
+export function getHandleFinishHex(finishId: string): string {
+  return ALL_HANDLE_FINISHES.find(f => f.id === finishId)?.hex || '#B8B8B8';
 }
 
 export function getColorsByFinish(colors: DoorColor[], finish?: string): DoorColor[] {
