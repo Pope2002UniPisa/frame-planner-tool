@@ -62,7 +62,7 @@ export default function AdminDashboard() {
 
   // Sales objectives
   const [objectiveDialog, setObjectiveDialog] = useState(false);
-  const [objForm, setObjForm] = useState({ user_id: '', product_type: '', brand: '', target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
+  const [objForm, setObjForm] = useState({ user_id: '', product_type: ALL_PRODUCTS_VALUE, brand: ALL_BRANDS_VALUE, target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
 
   useEffect(() => {
     if (!user || !isAdmin) return;
