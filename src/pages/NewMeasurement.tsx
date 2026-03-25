@@ -1311,7 +1311,7 @@ export default function NewMeasurement() {
               <div className="space-y-4">
                 <CardTitle className="font-heading">Accessori</CardTitle>
                 <CardDescription>
-                  {form.product_type === 'porta'
+                  {isDoorType(form.product_type)
                     ? 'La sezione accessori per le porte verrà aggiornata prossimamente.'
                     : 'Seleziona gli accessori e configurali'}
                 </CardDescription>
