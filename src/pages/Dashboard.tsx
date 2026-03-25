@@ -392,8 +392,8 @@ export default function Dashboard() {
                 <SelectContent>
                   <SelectItem value="all">Tutti gli stati</SelectItem>
                   <SelectItem value="bozza">Bozze</SelectItem>
-                  <SelectItem value="inviata">Inviate</SelectItem>
-                  <SelectItem value="quoted">Preventivate</SelectItem>
+                  <SelectItem value="quoted">Preventivi</SelectItem>
+                  <SelectItem value="ordered">Ordini</SelectItem>
                   <SelectItem value="completed">Completate</SelectItem>
                 </SelectContent>
               </Select>
