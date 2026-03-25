@@ -1272,7 +1272,35 @@ export default function NewMeasurement() {
                         })()}
                       </div>
 
-                      {/* Handle model selection */}
+                      {/* No-handle option */}
+                      <div className="space-y-2">
+                        <Label>Maniglia</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                          {[
+                            { value: 'none', label: '🔩 Con maniglia', desc: 'Seleziona modello e finitura' },
+                            { value: 'foro_maniglia', label: '🕳️ Solo foro maniglia', desc: 'Senza maniglia, solo predisposizione' },
+                            { value: 'foro_chiave', label: '🔑 Solo foro chiave', desc: 'Senza maniglia, solo serratura' },
+                            { value: 'foro_maniglia_chiave', label: '🕳️🔑 Foro maniglia + chiave', desc: 'Predisposizione maniglia e serratura' },
+                          ].map(opt => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => setAccessoriesConfig(prev => ({ ...prev, no_handle_mode: opt.value as any }))}
+                              className={`flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-sm transition-all text-left ${
+                                noHandleMode === opt.value
+                                  ? 'border-accent bg-accent/10'
+                                  : 'border-border hover:border-muted-foreground/30'
+                              }`}
+                            >
+                              <span className="font-medium">{opt.label}</span>
+                              <span className="text-xs text-muted-foreground">{opt.desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Handle model selection - only when handle is selected */}
+                      {!hasNoHandleSelection && (
                       <div className="space-y-2">
                         <Label>Tipo maniglia</Label>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1294,6 +1322,7 @@ export default function NewMeasurement() {
                           ))}
                         </div>
                       </div>
+                      )}
 
                       {/* Handle finish selection */}
                       <div className="space-y-2">
