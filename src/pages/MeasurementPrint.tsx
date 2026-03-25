@@ -227,9 +227,10 @@ export default function MeasurementPrint() {
             </div>
           )}
 
-          {/* Footer with Pratelli logo */}
-          <div className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-3">
-            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-12 object-contain" />
+          {/* Footer with logos side by side */}
+          <div className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-6">
+            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-10 object-contain" />
+            <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-8 object-contain" />
           </div>
         </div>
       </div>
