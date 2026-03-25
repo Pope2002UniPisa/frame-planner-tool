@@ -5,19 +5,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Printer, Edit3 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, Printer, Edit3, ThumbsUp, MessageSquare } from 'lucide-react';
 import ProductDiagram from '@/components/ProductDiagram';
 import { getColorLabel } from '@/data/doorCatalog';
+import { toast } from 'sonner';
 
 const statusLabels: Record<string, string> = {
   bozza: 'Bozza', ricevuto: 'Preventivo', submitted: 'Preventivo', in_review: 'In revisione',
   quoted: 'Preventivo', quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
-  ordered: 'Ordinata', in_production: 'In produzione', delivering: 'In consegna', completed: 'Completata',
+  ordered: 'Ordine confermato', in_production: 'In produzione', delivering: 'In consegna', completed: 'Completata',
 };
 const productLabels: Record<string, string> = {
   finestra: 'Finestra', porta_finestra: 'Porta Finestra', basculante: 'Basculante',
-  zanzariera: 'Zanzariera', persiana: 'Persiana',
+  zanzariera: 'Zanzariera', persiana: 'Persiana', porta: 'Porta',
+  porta_finestrata: 'Porta Finestrata', porta_filomuro: 'Porta Filomuro',
 };
+
+const isQuoteStatus = (status: string) => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(status);
 
 export default function MeasurementView() {
   const { id } = useParams();
@@ -25,6 +31,8 @@ export default function MeasurementView() {
   const { user } = useAuth();
   const [m, setM] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [modDialog, setModDialog] = useState(false);
+  const [modNotes, setModNotes] = useState('');
 
   useEffect(() => {
     if (!user || !id) return;
@@ -34,10 +42,33 @@ export default function MeasurementView() {
     });
   }, [user, id]);
 
+  const handleAcceptQuote = async () => {
+    const { error } = await supabase.from('measurements').update({ status: 'quote_accepted' }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    setM((prev: any) => ({ ...prev, status: 'quote_accepted' }));
+    toast.success('Preventivo accettato! L\'ordine verrà confermato a breve.');
+  };
+
+  const handleRequestModifications = async () => {
+    const { error } = await supabase.from('measurements').update({ 
+      status: 'quote_modifications', 
+      modification_notes: modNotes, 
+      has_modification: true 
+    }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    setM((prev: any) => ({ ...prev, status: 'quote_modifications', modification_notes: modNotes }));
+    setModDialog(false);
+    setModNotes('');
+    toast.success('Richiesta di modifiche inviata.');
+  };
+
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!m) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Misurazione non trovata</div>;
 
-  // Extract door-specific data from accessories_config if stored there
+  const isQuote = isQuoteStatus(m.status);
+  const isOrder = ['ordered', 'in_production', 'delivering', 'completed'].includes(m.status);
+  const pageTitle = isOrder ? 'Dettaglio Ordine' : isQuote ? 'Dettaglio Preventivo' : 'Dettaglio Misurazione';
+
   const acc = m.accessories_config as any;
   const doorHandleModel = acc?.door_handle_model_id || '';
   const doorHandleFinish = acc?.door_handle_finish_id || '';
@@ -50,6 +81,10 @@ export default function MeasurementView() {
     cromo_satinato: 'Cromo Satinato', cromo_lucido: 'Cromo Lucido',
     bianco_optical: 'Bianco Optical', nero: 'Nero', grigio_alluminio: 'Grigio Alluminio',
   };
+
+  const price = Number(m.estimated_price) || 0;
+  const iva = Math.round(price * 0.22 * 100) / 100;
+  const totalWithIva = Math.round((price + iva) * 100) / 100;
 
   const fields: [string, any, any?][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
@@ -81,10 +116,7 @@ export default function MeasurementView() {
     if (!colorInfo) return <span className="text-sm font-medium text-foreground">{value}</span>;
     return (
       <div className="flex items-center gap-2">
-        <div
-          className="w-5 h-5 rounded-md border border-border shadow-sm shrink-0"
-          style={{ backgroundColor: colorInfo.hex }}
-        />
+        <div className="w-5 h-5 rounded-md border border-border shadow-sm shrink-0" style={{ backgroundColor: colorInfo.hex }} />
         <span className="text-sm font-medium text-foreground">{colorInfo.name}</span>
       </div>
     );
@@ -95,7 +127,7 @@ export default function MeasurementView() {
       <header className="border-b border-border bg-card shadow-card">
         <div className="container flex h-16 items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}><ArrowLeft className="h-5 w-5" /></Button>
-          <h1 className="text-lg font-bold font-heading text-foreground">Dettaglio Misurazione</h1>
+          <h1 className="text-lg font-bold font-heading text-foreground">{pageTitle}</h1>
           <div className="ml-auto flex gap-2">
             {m.status === 'bozza' && (
               <Button variant="outline" size="sm" onClick={() => navigate(`/misurazione/${id}/modifica`)} className="gap-1">
@@ -113,13 +145,51 @@ export default function MeasurementView() {
           <Badge>{statusLabels[m.status] || m.status}</Badge>
           <span className="text-sm text-muted-foreground">{new Date(m.created_at).toLocaleDateString('it-IT')}</span>
         </div>
+
+        {/* Accept/Reject quote buttons */}
+        {m.status === 'quoted' && (
+          <Card className="border-2 border-accent/30 bg-accent/5">
+            <CardContent className="py-5 space-y-3">
+              <p className="text-sm font-semibold text-foreground">Vuoi accettare questo preventivo?</p>
+              <p className="text-xs text-muted-foreground">Accettando il preventivo, verrà generato un ordine che dovrà essere confermato con firma.</p>
+              <div className="flex gap-3">
+                <Button className="gap-1.5" onClick={handleAcceptQuote}>
+                  <ThumbsUp className="h-4 w-4" /> Accetta preventivo
+                </Button>
+                <Button variant="outline" className="gap-1.5" onClick={() => setModDialog(true)}>
+                  <MessageSquare className="h-4 w-4" /> Richiedi modifiche
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {m.status === 'quote_accepted' && (
+          <Card className="border-2 border-green-500/30 bg-green-500/5">
+            <CardContent className="py-4">
+              <p className="text-sm font-semibold text-foreground">✅ Preventivo accettato</p>
+              <p className="text-xs text-muted-foreground mt-1">L'ordine verrà confermato a breve dall'amministratore.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {m.status === 'quote_modifications' && (
+          <Card className="border-2 border-destructive/30 bg-destructive/5">
+            <CardContent className="py-4">
+              <p className="text-sm font-semibold text-foreground">📝 Modifiche richieste</p>
+              {m.modification_notes && <p className="text-xs text-muted-foreground mt-1">{m.modification_notes}</p>}
+              <p className="text-xs text-muted-foreground mt-1">Il team sta valutando le modifiche richieste.</p>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="py-4">
             <ProductDiagram productType={m.product_type} widthMm={String(m.width_mm)} heightMm={String(m.height_mm)} depthMm={String(m.depth_mm || 70)} numPanels={String(m.num_panels || 1)} panelType={m.panel_type || ''} openingDirection={m.opening_direction || ''} handleType={m.handle_type || ''} glassType={m.glass_type || ''} frameType={m.frame_type || 'standard'} colorInternal={m.color_internal || ''} colorExternal={m.color_external || ''} />
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="font-heading">Dati misurazione</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="font-heading">Dati {isQuote ? 'preventivo' : isOrder ? 'ordine' : 'misurazione'}</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
              {fields.map(([label, value, colorInfo]) => (
@@ -134,6 +204,34 @@ export default function MeasurementView() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Price with IVA */}
+        {price > 0 && (isQuote || isOrder) && (
+          <Card>
+            <CardHeader><CardTitle className="font-heading">Riepilogo economico</CardTitle></CardHeader>
+            <CardContent>
+              <div className="rounded-lg border border-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <tbody>
+                    <tr className="bg-muted/30">
+                      <td className="py-2.5 px-4 font-medium text-muted-foreground">Imponibile</td>
+                      <td className="py-2.5 px-4 text-right font-medium text-foreground">€ {price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 px-4 font-medium text-muted-foreground">IVA (22%)</td>
+                      <td className="py-2.5 px-4 text-right font-medium text-foreground">€ {iva.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr className="bg-primary/5 border-t-2 border-primary/20">
+                      <td className="py-3 px-4 font-bold text-foreground text-base">Totale IVA inclusa</td>
+                      <td className="py-3 px-4 text-right font-bold text-foreground text-base">€ {totalWithIva.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {m.photo_urls && m.photo_urls.length > 0 && (
           <Card>
             <CardHeader><CardTitle className="font-heading">Foto</CardTitle></CardHeader>
@@ -147,6 +245,23 @@ export default function MeasurementView() {
           </Card>
         )}
       </main>
+
+      {/* Modification request dialog */}
+      <Dialog open={modDialog} onOpenChange={setModDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Richiedi modifiche al preventivo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Descrivi le modifiche che desideri. Il team le valuterà e invierà un nuovo preventivo aggiornato.</p>
+            <Textarea value={modNotes} onChange={e => setModNotes(e.target.value)} placeholder="Descrivi le modifiche richieste..." rows={4} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setModDialog(false); setModNotes(''); }}>Annulla</Button>
+            <Button onClick={handleRequestModifications} disabled={!modNotes.trim()}>Invia richiesta</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

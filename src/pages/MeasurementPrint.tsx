@@ -3,16 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, Download } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 
 const productLabels: Record<string, string> = {
   finestra: 'Finestra', porta_finestra: 'Porta Finestra', basculante: 'Basculante',
-  zanzariera: 'Zanzariera', persiana: 'Persiana',
+  zanzariera: 'Zanzariera', persiana: 'Persiana', porta: 'Porta',
+  porta_finestrata: 'Porta Finestrata', porta_filomuro: 'Porta Filomuro',
 };
 const surveyLabels: Record<string, string> = {
   foro_muro: 'Foro muro', luce_netta: 'Luce netta', controtelaio: 'Controtelaio', vecchio_infisso: 'Vecchio infisso',
 };
+
+const statusLabels: Record<string, string> = {
+  bozza: 'Bozza', ricevuto: 'Preventivo', submitted: 'Preventivo', quoted: 'Preventivo',
+  quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
+  ordered: 'Ordine confermato', in_production: 'In produzione', delivering: 'In consegna', completed: 'Completata',
+};
+
+const isQuoteStatus = (status: string) => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(status);
 
 export default function MeasurementPrint() {
   const { id } = useParams();
@@ -34,6 +43,14 @@ export default function MeasurementPrint() {
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!m) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Misurazione non trovata</div>;
+
+  const isQuote = isQuoteStatus(m.status);
+  const isOrder = ['ordered', 'in_production', 'delivering', 'completed'].includes(m.status);
+  const docTitle = isOrder ? 'Conferma d\'Ordine' : isQuote ? 'Preventivo' : 'Scheda Misurazione';
+
+  const price = Number(m.estimated_price) || 0;
+  const iva = Math.round(price * 0.22 * 100) / 100;
+  const totalWithIva = Math.round((price + iva) * 100) / 100;
 
   const rows: [string, string][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
@@ -69,7 +86,6 @@ export default function MeasurementPrint() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Non-printable toolbar */}
       <div className="print:hidden border-b border-border bg-card shadow-card">
         <div className="container flex h-16 items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5" /></Button>
@@ -80,17 +96,16 @@ export default function MeasurementPrint() {
         </div>
       </div>
 
-      {/* Printable content */}
       <div ref={printRef} className="container max-w-3xl py-8 print:py-4 print:max-w-full">
         <div className="border border-border rounded-lg p-6 print:border-0 print:p-0 bg-card">
           <div className="flex items-center justify-between mb-6 border-b border-border pb-4">
             <div>
-              <h2 className="text-2xl font-bold font-heading text-foreground">Scheda Misurazione</h2>
+              <h2 className="text-2xl font-bold font-heading text-foreground">{docTitle}</h2>
               <p className="text-sm text-muted-foreground mt-1">{m.client_name} — {m.client_address}</p>
             </div>
             <div className="text-right text-sm text-muted-foreground">
               <p>Data: {new Date(m.created_at).toLocaleDateString('it-IT')}</p>
-              <p>Stato: {m.status === 'bozza' ? 'Bozza' : m.status === 'ricevuto' ? 'Inviata' : m.status}</p>
+              <p>Stato: {statusLabels[m.status] || m.status}</p>
             </div>
           </div>
 
@@ -123,6 +138,31 @@ export default function MeasurementPrint() {
               ))}
             </tbody>
           </table>
+
+          {/* Price section with IVA */}
+          {price > 0 && (isQuote || isOrder) && (
+            <div className="mt-6 border-t border-border pt-4">
+              <h3 className="font-heading font-bold text-foreground mb-3">Riepilogo economico</h3>
+              <div className="rounded-lg border border-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <tbody>
+                    <tr className="bg-muted/30">
+                      <td className="py-2.5 px-4 font-medium text-muted-foreground">Imponibile</td>
+                      <td className="py-2.5 px-4 text-right font-medium text-foreground">€ {price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 px-4 font-medium text-muted-foreground">IVA (22%)</td>
+                      <td className="py-2.5 px-4 text-right font-medium text-foreground">€ {iva.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr className="bg-primary/5 border-t-2 border-primary/20">
+                      <td className="py-3 px-4 font-bold text-foreground text-base">Totale IVA inclusa</td>
+                      <td className="py-3 px-4 text-right font-bold text-foreground text-base">€ {totalWithIva.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {m.photo_urls && m.photo_urls.length > 0 && (
             <div className="mt-6 border-t border-border pt-4">
