@@ -652,8 +652,9 @@ export default function NewMeasurement() {
                     </div>
                     {(() => {
                       // Group models by family prefix, sorted alphabetically
-                      const familyMap = new Map<string, typeof DOOR_MODELS>();
-                      const sortedModels = [...DOOR_MODELS].sort((a, b) => a.name.localeCompare(b.name));
+                       const currentModels = getModelsForProductType(form.product_type);
+                      const familyMap = new Map<string, typeof currentModels>();
+                      const sortedModels = [...currentModels].sort((a, b) => a.name.localeCompare(b.name));
                       sortedModels.forEach(model => {
                         const family = model.name.split(/[\s\/]/)[0]; // e.g. "Yncisa", "Equa", "Suite"
                         if (!familyMap.has(family)) familyMap.set(family, []);
