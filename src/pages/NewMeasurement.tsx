@@ -1305,12 +1305,55 @@ export default function NewMeasurement() {
                 <CardTitle className="font-heading">Accessori</CardTitle>
                 <CardDescription>
                   {isDoorType(form.product_type)
-                    ? 'La sezione accessori per le porte verrà aggiornata prossimamente.'
+                    ? 'Seleziona gli accessori per la porta (battiscopa, ecc.)'
                     : 'Seleziona gli accessori e configurali'}
                 </CardDescription>
                 {isDoorType(form.product_type) ? (
-                  <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
-                    <p className="text-sm text-muted-foreground">Nessun accessorio disponibile per il momento</p>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="has_battiscopa" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${(accessoriesConfig as any).has_battiscopa ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_battiscopa" checked={(accessoriesConfig as any).has_battiscopa || false} onCheckedChange={v => setAccessoriesConfig(prev => ({ ...prev, has_battiscopa: v }))} />
+                        <span className="text-lg">🪵 Battiscopa</span>
+                      </Label>
+                      {(accessoriesConfig as any).has_battiscopa && (
+                        <div className="mt-3 space-y-3 pl-4 border-l-2 border-accent/30">
+                          <div className="space-y-2">
+                            <Label>Materiale battiscopa</Label>
+                            <RadioGroup value={(accessoriesConfig as any).battiscopa_materiale || ''} onValueChange={v => setAccessoriesConfig(prev => ({ ...prev, battiscopa_materiale: v }))} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              {[
+                                { value: 'legno_laccato', label: '🪵 Legno laccato' },
+                                { value: 'pvc', label: '🧱 PVC / Polimero' },
+                                { value: 'mdf', label: '📐 MDF rivestito' },
+                              ].map(opt => (
+                                <Label key={opt.value} htmlFor={`batt-mat-${opt.value}`} className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${(accessoriesConfig as any).battiscopa_materiale === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                                  <RadioGroupItem value={opt.value} id={`batt-mat-${opt.value}`} />
+                                  {opt.label}
+                                </Label>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Altezza battiscopa</Label>
+                            <RadioGroup value={(accessoriesConfig as any).battiscopa_altezza || ''} onValueChange={v => setAccessoriesConfig(prev => ({ ...prev, battiscopa_altezza: v }))} className="flex gap-3">
+                              {['6', '8', '10'].map(h => (
+                                <Label key={h} htmlFor={`batt-h-${h}`} className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm transition-all ${(accessoriesConfig as any).battiscopa_altezza === h ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                                  <RadioGroupItem value={h} id={`batt-h-${h}`} />
+                                  {h} cm
+                                </Label>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Colore/Finitura battiscopa</Label>
+                            <Input placeholder="Es: Bianco optical, Tortora..." value={(accessoriesConfig as any).battiscopa_colore || ''} onChange={e => setAccessoriesConfig(prev => ({ ...prev, battiscopa_colore: e.target.value }))} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Quantità (metri lineari)</Label>
+                            <Input type="number" placeholder="Es: 12" value={(accessoriesConfig as any).battiscopa_quantita || ''} onChange={e => setAccessoriesConfig(prev => ({ ...prev, battiscopa_quantita: e.target.value }))} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
