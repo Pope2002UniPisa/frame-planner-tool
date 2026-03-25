@@ -619,7 +619,9 @@ export default function NewMeasurement() {
                   {[
                     { value: 'finestra', label: '🪟 Finestra' },
                     { value: 'porta', label: '🚪 Porta' },
-                    { value: 'porta_finestra', label: '🚪 Porta Finestra' },
+                    { value: 'porta_finestrata', label: '🚪🪟 Porta Finestrata' },
+                    { value: 'porta_filomuro', label: '🚪 Porta Filomuro' },
+                    { value: 'porta_finestra', label: '🏠 Porta Finestra' },
                     { value: 'basculante', label: '🏗️ Basculante' },
                     { value: 'zanzariera', label: '🦟 Zanzariera' },
                     { value: 'persiana', label: '🪵 Persiana' },
