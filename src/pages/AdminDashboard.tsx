@@ -110,15 +110,21 @@ export default function AdminDashboard() {
   ].filter(d => d.value > 0), [stats]);
 
   const monthlyData = useMemo(() => {
-    const months: Record<string, Record<string, number>> = {};
+    const days: Record<string, Record<string, number>> = {};
     measurements.forEach(m => {
       const d = new Date(m.created_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = productLabels[m.product_type] || m.product_type;
-      if (!months[key]) months[key] = {};
-      months[key][label] = (months[key][label] || 0) + 1;
+      if (!days[key]) days[key] = {};
+      days[key][label] = (days[key][label] || 0) + 1;
     });
-    return Object.entries(months).sort(([a], [b]) => a.localeCompare(b)).map(([month, counts]) => ({ month, ...counts }));
+    // Sort by actual date
+    const sorted = Object.entries(days).sort(([a], [b]) => {
+      const [da, ma] = a.split('/').map(Number);
+      const [db, mb] = b.split('/').map(Number);
+      return ma !== mb ? ma - mb : da - db;
+    });
+    return sorted.map(([day, counts]) => ({ month: day, ...counts }));
   }, [measurements]);
 
   const productTypes = useMemo(() => {
