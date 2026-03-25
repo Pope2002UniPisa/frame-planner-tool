@@ -150,6 +150,37 @@ export default function NewMeasurement() {
   const currentWidth = isMultiProduct ? (activeItem?.width_mm || '') : form.width_mm;
   const currentHeight = isMultiProduct ? (activeItem?.height_mm || '') : form.height_mm;
 
+  const isStandaloneAccessory = form.product_type === 'battiscopa' || form.product_type === 'maniglia';
+
+  // Steps to skip for standalone accessories (battiscopa/maniglia)
+  // They only need: product(0), client(1), survey(2) → then jump to notes(9)
+  // For maniglia, we show config step(4) for handle selection
+  const getStepsForProduct = () => {
+    if (form.product_type === 'battiscopa') return [0, 1, 2, 7, 9]; // product, client, survey, accessories (battiscopa config), notes
+    if (form.product_type === 'maniglia') return [0, 1, 2, 4, 5, 9]; // product, client, survey, config (handle model), finishes (handle finish), notes
+    return STEPS.map((_, i) => i);
+  };
+
+  const activeSteps = getStepsForProduct();
+
+  const goNextStep = () => {
+    const currentIdx = activeSteps.indexOf(step);
+    if (currentIdx < activeSteps.length - 1) {
+      setStep(activeSteps[currentIdx + 1]);
+    }
+  };
+
+  const goPrevStep = () => {
+    const currentIdx = activeSteps.indexOf(step);
+    if (currentIdx > 0) {
+      setStep(activeSteps[currentIdx - 1]);
+    }
+  };
+
+  const isFirstStep = activeSteps.indexOf(step) === 0;
+  const isLastStep = activeSteps.indexOf(step) === activeSteps.length - 1;
+  const currentStepIndex = activeSteps.indexOf(step);
+
   const canGoNext = (): boolean => {
     switch (step) {
       case 0: return !!form.product_type;
@@ -176,6 +207,8 @@ export default function NewMeasurement() {
     const basePrices: Record<string, [number, number]> = {
       finestra: [280, 650], porta_finestra: [450, 950], porta: [350, 1200],
       basculante: [400, 900], zanzariera: [80, 250], persiana: [200, 500],
+      porta_finestrata: [400, 1400], porta_filomuro: [500, 1500],
+      battiscopa: [5, 25], maniglia: [30, 250],
     };
     const [min, max] = basePrices[form.product_type] || [200, 600];
     const width = parseInt(widthStr || form.width_mm) || 1000;
@@ -355,8 +388,8 @@ export default function NewMeasurement() {
     }
   };
 
-  const showDiagram = step >= 3 && step <= 6 && !!form.product_type;
-  const showDualDiagram = step === 5;
+  const showDiagram = step >= 3 && step <= 6 && !!form.product_type && !isStandaloneAccessory;
+  const showDualDiagram = step === 5 && !isStandaloneAccessory;
 
   const ColorSelectField = ({ label, value, field }: { label: string; value: string; field: string }) => (
     <div className="space-y-2">
@@ -581,14 +614,14 @@ export default function NewMeasurement() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">
-              Passo {step + 1} di {STEPS.length}: {STEPS[step].label}
+              Passo {currentStepIndex + 1} di {activeSteps.length}: {STEPS[step].label}
             </span>
-            <span className="text-sm text-muted-foreground">{Math.round(((step + 1) / STEPS.length) * 100)}%</span>
+            <span className="text-sm text-muted-foreground">{Math.round(((currentStepIndex + 1) / activeSteps.length) * 100)}%</span>
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full gradient-accent transition-all duration-300"
-              style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+              style={{ width: `${((currentStepIndex + 1) / activeSteps.length) * 100}%` }}
             />
           </div>
         </div>
@@ -625,6 +658,8 @@ export default function NewMeasurement() {
                     { value: 'basculante', label: '🏗️ Basculante' },
                     { value: 'zanzariera', label: '🦟 Zanzariera' },
                     { value: 'persiana', label: '🪵 Persiana' },
+                    { value: 'battiscopa', label: '🪵 Battiscopa' },
+                    { value: 'maniglia', label: '🔩 Maniglia' },
                   ].map(opt => (
                     <Label
                       key={opt.value}
@@ -944,7 +979,33 @@ export default function NewMeasurement() {
             )}
 
             {/* Step 4: Configuration */}
-            {step === 4 && (
+            {step === 4 && form.product_type === 'maniglia' ? (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Seleziona Maniglia</CardTitle>
+                <CardDescription>Scegli il modello di maniglia desiderato</CardDescription>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[400px] overflow-y-auto">
+                  {ALL_HANDLE_MODELS.map(h => (
+                    <Label
+                      key={h.id}
+                      htmlFor={`mh-${h.id}`}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-all ${
+                        form.door_handle_model_id === h.id ? 'border-accent bg-accent/10' : 'border-border'
+                      }`}
+                    >
+                      <RadioGroupItem value={h.id} id={`mh-${h.id}`} checked={form.door_handle_model_id === h.id} onClick={() => update('door_handle_model_id', h.id)} />
+                      <div>
+                        <span className="font-medium text-sm">{h.name}</span>
+                        {h.description && <p className="text-xs text-muted-foreground">{h.description}</p>}
+                      </div>
+                    </Label>
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  <Label>Quantità</Label>
+                  <Input type="number" placeholder="1" min="1" value={(form as any).maniglia_qty || '1'} onChange={e => update('maniglia_qty' as any, e.target.value)} />
+                </div>
+              </div>
+            ) : step === 4 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Configurazione</CardTitle>
                 <CardDescription>
@@ -1048,7 +1109,27 @@ export default function NewMeasurement() {
             )}
 
             {/* Step 5: Finishes */}
-            {step === 5 && (
+            {step === 5 && form.product_type === 'maniglia' ? (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Finitura Maniglia</CardTitle>
+                <CardDescription>Scegli la finitura per la maniglia selezionata</CardDescription>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ALL_HANDLE_FINISHES.map(f => (
+                    <Label
+                      key={f.id}
+                      htmlFor={`mhf-${f.id}`}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-all ${
+                        form.door_handle_finish_id === f.id ? 'border-accent bg-accent/10' : 'border-border'
+                      }`}
+                    >
+                      <RadioGroupItem value={f.id} id={`mhf-${f.id}`} checked={form.door_handle_finish_id === f.id} onClick={() => update('door_handle_finish_id', f.id)} />
+                      <div className="w-5 h-5 rounded-full border border-border shrink-0" style={{ backgroundColor: f.hex }} />
+                      <span className="text-sm">{f.name}</span>
+                    </Label>
+                  ))}
+                </div>
+              </div>
+            ) : step === 5 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Finiture</CardTitle>
                 <CardDescription>
@@ -1269,7 +1350,6 @@ export default function NewMeasurement() {
                         ...(form.product_type !== 'porta_finestrata' ? [{ value: 'cieca', label: '🚪 Porta cieca (no vetro)' }] : []),
                         { value: 'trasparente', label: '🔍 Vetro trasparente' },
                         { value: 'satinato', label: '🌫️ Vetro satinato' },
-                        { value: 'a_quadri', label: '🔲 Vetro a quadri' },
                       ].map(opt => (
                         <Label key={opt.value} htmlFor={`glass-${opt.value}`} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
                           <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />
@@ -1304,12 +1384,55 @@ export default function NewMeasurement() {
                 <CardTitle className="font-heading">Accessori</CardTitle>
                 <CardDescription>
                   {isDoorType(form.product_type)
-                    ? 'La sezione accessori per le porte verrà aggiornata prossimamente.'
+                    ? 'Seleziona gli accessori per la porta (battiscopa, ecc.)'
                     : 'Seleziona gli accessori e configurali'}
                 </CardDescription>
                 {isDoorType(form.product_type) ? (
-                  <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
-                    <p className="text-sm text-muted-foreground">Nessun accessorio disponibile per il momento</p>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="has_battiscopa" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${(accessoriesConfig as any).has_battiscopa ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_battiscopa" checked={(accessoriesConfig as any).has_battiscopa || false} onCheckedChange={v => setAccessoriesConfig(prev => ({ ...prev, has_battiscopa: v }))} />
+                        <span className="text-lg">🪵 Battiscopa</span>
+                      </Label>
+                      {(accessoriesConfig as any).has_battiscopa && (
+                        <div className="mt-3 space-y-3 pl-4 border-l-2 border-accent/30">
+                          <div className="space-y-2">
+                            <Label>Materiale battiscopa</Label>
+                            <RadioGroup value={(accessoriesConfig as any).battiscopa_materiale || ''} onValueChange={v => setAccessoriesConfig(prev => ({ ...prev, battiscopa_materiale: v }))} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              {[
+                                { value: 'legno_laccato', label: '🪵 Legno laccato' },
+                                { value: 'pvc', label: '🧱 PVC / Polimero' },
+                                { value: 'mdf', label: '📐 MDF rivestito' },
+                              ].map(opt => (
+                                <Label key={opt.value} htmlFor={`batt-mat-${opt.value}`} className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${(accessoriesConfig as any).battiscopa_materiale === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                                  <RadioGroupItem value={opt.value} id={`batt-mat-${opt.value}`} />
+                                  {opt.label}
+                                </Label>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Altezza battiscopa</Label>
+                            <RadioGroup value={(accessoriesConfig as any).battiscopa_altezza || ''} onValueChange={v => setAccessoriesConfig(prev => ({ ...prev, battiscopa_altezza: v }))} className="flex gap-3">
+                              {['6', '8', '10'].map(h => (
+                                <Label key={h} htmlFor={`batt-h-${h}`} className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm transition-all ${(accessoriesConfig as any).battiscopa_altezza === h ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                                  <RadioGroupItem value={h} id={`batt-h-${h}`} />
+                                  {h} cm
+                                </Label>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Colore/Finitura battiscopa</Label>
+                            <Input placeholder="Es: Bianco optical, Tortora..." value={(accessoriesConfig as any).battiscopa_colore || ''} onChange={e => setAccessoriesConfig(prev => ({ ...prev, battiscopa_colore: e.target.value }))} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Quantità (metri lineari)</Label>
+                            <Input type="number" placeholder="Es: 12" value={(accessoriesConfig as any).battiscopa_quantita || ''} onChange={e => setAccessoriesConfig(prev => ({ ...prev, battiscopa_quantita: e.target.value }))} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1521,24 +1644,24 @@ export default function NewMeasurement() {
 
         {/* Navigation */}
         <div className="mt-6 flex flex-wrap justify-between gap-3">
-          <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 0}>
+          <Button variant="outline" onClick={goPrevStep} disabled={isFirstStep}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Indietro
           </Button>
           <div className="flex gap-3">
-            {step === STEPS.length - 1 && (
+            {isLastStep && (
               <Button variant="outline" onClick={handleSaveDraft} disabled={savingDraft || submitting} className="gap-2">
                 <Save className="h-4 w-4" />
                 {savingDraft ? 'Salvataggio...' : 'Salva Bozza'}
               </Button>
             )}
-            {step < STEPS.length - 1 ? (
-              <Button onClick={() => setStep(s => s + 1)} disabled={!canGoNext()}>
+            {!isLastStep ? (
+              <Button onClick={goNextStep} disabled={!canGoNext()}>
                 Avanti <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
               <Button onClick={handleSubmit} disabled={submitting || savingDraft} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
                 <Check className="h-4 w-4" />
-                {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Misurazioni` : 'Misurazione'}`}
+                {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Misurazioni` : 'Ordine'}`}
               </Button>
             )}
           </div>

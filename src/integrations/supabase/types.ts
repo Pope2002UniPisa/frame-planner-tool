@@ -56,6 +56,7 @@ export type Database = {
           order_total_items: number | null
           out_of_square_mm: number | null
           panel_type: string | null
+          payment_method: string | null
           payment_status: string | null
           photo_urls: string[] | null
           product_type: string
@@ -107,6 +108,7 @@ export type Database = {
           order_total_items?: number | null
           out_of_square_mm?: number | null
           panel_type?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           photo_urls?: string[] | null
           product_type: string
@@ -158,6 +160,7 @@ export type Database = {
           order_total_items?: number | null
           out_of_square_mm?: number | null
           panel_type?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           photo_urls?: string[] | null
           product_type?: string
@@ -208,6 +211,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_number: string | null
+          measurement_id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          reference_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_number?: string | null
+          measurement_id: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_number?: string | null
+          measurement_id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "measurements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       portfolio_images: {
         Row: {

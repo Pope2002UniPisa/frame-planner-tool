@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Truck, Search, Filter, Eye, MapPin, Clock, AlertTriangle, CheckCircle2, Package } from 'lucide-react';
+import { ArrowLeft, Truck, Search, Filter, Eye, MapPin, Clock, AlertTriangle, CheckCircle2, Package, CreditCard } from 'lucide-react';
+import PaymentSummary from '@/components/PaymentSummary';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   ordered: { label: 'Ordinata', variant: 'default' },
@@ -19,9 +20,13 @@ const productLabels: Record<string, string> = {
   finestra: 'Finestra',
   porta_finestra: 'Porta Finestra',
   porta: 'Porta',
+  porta_finestrata: 'Porta Finestrata',
+  porta_filomuro: 'Porta Filomuro',
   basculante: 'Basculante',
   zanzariera: 'Zanzariera',
   persiana: 'Persiana',
+  battiscopa: 'Battiscopa',
+  maniglia: 'Maniglia',
 };
 
 function getDaysRemaining(dateStr: string | null): number | null {
@@ -252,6 +257,20 @@ export default function DeliverySummary() {
         <p className="text-xs text-muted-foreground text-center pt-2">
           Totale: {sorted.length} consegne visualizzate su {measurements.length}
         </p>
+
+        {/* Payment Summary Section */}
+        <div className="pt-8 border-t border-border mt-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="rounded-lg bg-green-500/10 p-2.5">
+              <CreditCard className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold font-heading text-foreground">Riepilogo Pagamenti</h2>
+              <p className="text-sm text-muted-foreground">Stato pagamenti, metodi e ricevute</p>
+            </div>
+          </div>
+          <PaymentSummary userId={user.id} />
+        </div>
       </main>
     </div>
   );

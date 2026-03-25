@@ -39,18 +39,26 @@ const productLabels: Record<string, string> = {
   finestra: 'Finestra',
   porta_finestra: 'Porta Finestra',
   porta: 'Porta',
+  porta_finestrata: 'Porta Finestrata',
+  porta_filomuro: 'Porta Filomuro',
   basculante: 'Basculante',
   zanzariera: 'Zanzariera',
   persiana: 'Persiana',
+  battiscopa: 'Battiscopa',
+  maniglia: 'Maniglia',
 };
 
 const productIcons: Record<string, { emoji: string; color: string }> = {
   finestra: { emoji: '🪟', color: '#3b82f6' },
   porta_finestra: { emoji: '🚪', color: '#8b5cf6' },
   porta: { emoji: '🚪', color: '#a855f7' },
+  porta_finestrata: { emoji: '🚪', color: '#7c3aed' },
+  porta_filomuro: { emoji: '🚪', color: '#6d28d9' },
   basculante: { emoji: '🏗️', color: '#f97316' },
   zanzariera: { emoji: '🦟', color: '#10b981' },
   persiana: { emoji: '🪵', color: '#f59e0b' },
+  battiscopa: { emoji: '🪵', color: '#a16207' },
+  maniglia: { emoji: '🔩', color: '#64748b' },
 };
 
 interface NewsItem {

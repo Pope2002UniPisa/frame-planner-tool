@@ -113,7 +113,7 @@ export const ALL_HANDLE_FINISHES: DoorHandleFinish[] = [
   { id: 'grigio_alluminio', name: 'Grigio Alluminio', hex: '#A0A0A0' },
   { id: 'grafite_satinato', name: 'Grafite Satinato', hex: '#6A6A6A' },
   { id: 'oro_satinato', name: 'Oro Satinato', hex: '#C5A55A' },
-  { id: 'oro_24k', name: 'Oro 24K', hex: '#D4A017' },
+  
   { id: 'oro_antico_lucido', name: 'Oro Antico Lucido', hex: '#C8A070' },
   { id: 'ottone_lucido', name: 'Ottone Lucido', hex: '#C8A040' },
   { id: 'nikel_lucido', name: 'Nikel Lucido', hex: '#D0C8C0' },
