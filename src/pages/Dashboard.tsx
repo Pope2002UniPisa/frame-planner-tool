@@ -127,9 +127,9 @@ export default function Dashboard() {
   const stats = useMemo(() => ({
     total: measurements.length,
     drafts: measurements.filter(m => m.status === 'bozza').length,
-    sent: measurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted' || m.status === 'in_review').length,
-    quoted: measurements.filter(m => m.status === 'quoted').length,
-    completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
+    quoted: measurements.filter(m => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)).length,
+    ordered: measurements.filter(m => ['ordered', 'in_production', 'delivering'].includes(m.status)).length,
+    completed: measurements.filter(m => m.status === 'completed').length,
   }), [measurements]);
 
   const clientSummaryCount = useMemo(() => {
