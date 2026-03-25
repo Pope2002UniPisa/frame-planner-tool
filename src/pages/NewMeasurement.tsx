@@ -1268,7 +1268,7 @@ export default function NewMeasurement() {
                     : 'Seleziona la tipologia di vetro'}
                 </CardDescription>
                 <RadioGroup value={form.glass_type} onValueChange={v => update('glass_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {(form.product_type === 'porta_finestra' || form.product_type === 'porta') ? (
+                  {(form.product_type === 'porta_finestra' || isDoorType(form.product_type)) ? (
                     <>
                       {[
                         { value: 'cieca', label: '🚪 Porta cieca (no vetro)' },
