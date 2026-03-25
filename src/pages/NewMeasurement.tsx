@@ -625,6 +625,8 @@ export default function NewMeasurement() {
                     { value: 'basculante', label: '🏗️ Basculante' },
                     { value: 'zanzariera', label: '🦟 Zanzariera' },
                     { value: 'persiana', label: '🪵 Persiana' },
+                    { value: 'battiscopa', label: '🪵 Battiscopa' },
+                    { value: 'maniglia', label: '🔩 Maniglia' },
                   ].map(opt => (
                     <Label
                       key={opt.value}
