@@ -541,10 +541,10 @@ export default function Dashboard() {
             <div>
               <p className="font-semibold text-sm text-foreground mb-3">Informazioni legali</p>
               <div className="space-y-1.5 text-xs text-muted-foreground">
-                <p>Ragione Sociale SRL</p>
-                <p>P.IVA: IT00000000000</p>
-                <p>Sede: Via Esempio 1, 00100 Roma (RM)</p>
-                <p>PEC: info@pec.azienda.it</p>
+                <p>FAREWELL SRL</p>
+                <p>P. IVA: 02484510504</p>
+                <p>Sede: Via Livornese Ovest 22/A - 56035 - Casciana Terme Lari (PI)</p>
+                <p>PEC: farewellsrl@pec.cgn.it</p>
               </div>
             </div>
             <div>
@@ -567,7 +567,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="mt-6 pt-4 border-t border-border text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Measure Master — Tutti i diritti riservati
+            © {new Date().getFullYear()} FAREWELL SRL — Tutti i diritti riservati
           </div>
         </div>
       </footer>
