@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
-import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES } from '@/data/doorCatalog';
+import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel } from '@/data/doorCatalog';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 import ferreroLegnoLogo from '@/assets/ferrerolegno-logo.png';
 
