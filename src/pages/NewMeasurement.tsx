@@ -336,7 +336,7 @@ export default function NewMeasurement() {
         const groupId = crypto.randomUUID();
         for (let i = 0; i < multiItems.length; i++) {
           const { error } = await supabase.from('measurements').insert(
-            buildInsertData('ricevuto', photo_urls, multiItems[i], groupId, i + 1, multiItems.length)
+            buildInsertData('quoted', photo_urls, multiItems[i], groupId, i + 1, multiItems.length)
           );
           if (error) throw error;
         }
