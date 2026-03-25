@@ -645,34 +645,67 @@ export default function NewMeasurement() {
                       <Label className="text-base font-semibold">🏷️ Seleziona modello porta</Label>
                       <p className="text-sm text-muted-foreground mt-1">Scegli il modello dal catalogo per accedere a colori, telai e maniglie specifici</p>
                     </div>
-                    <RadioGroup value={form.door_model} onValueChange={v => { update('door_model', v); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_model_id', ''); update('door_handle_finish_id', ''); update('door_special_variant', ''); }} className="space-y-3">
-                      {DOOR_MODELS.map(model => (
-                        <Label
-                          key={model.id}
-                          htmlFor={`model-${model.id}`}
-                          className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${
-                            form.door_model === model.id ? 'border-accent bg-accent/10' : 'border-border hover:border-muted-foreground/30'
-                          }`}
-                        >
-                          <RadioGroupItem value={model.id} id={`model-${model.id}`} className="mt-1" />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-foreground">{model.name}</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{model.collection}</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1">
-                                <Leaf className="h-3 w-3" /> GREEN
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">{model.description}</p>
-                            <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
-                              <span>📐 {model.minWidth}–{model.maxWidth} × {model.minHeight}–{model.maxHeight} mm</span>
-                              <span>🎨 {model.colors.length} colori</span>
-                              <span>🖼️ {model.compatibleFrameIds.length} telai</span>
-                            </div>
-                          </div>
-                        </Label>
-                      ))}
-                    </RadioGroup>
+                    {(() => {
+                      // Group models by family prefix, sorted alphabetically
+                      const familyMap = new Map<string, typeof DOOR_MODELS>();
+                      const sortedModels = [...DOOR_MODELS].sort((a, b) => a.name.localeCompare(b.name));
+                      sortedModels.forEach(model => {
+                        const family = model.name.split(/[\s\/]/)[0]; // e.g. "Yncisa", "Equa", "Suite"
+                        if (!familyMap.has(family)) familyMap.set(family, []);
+                        familyMap.get(family)!.push(model);
+                      });
+                      const families = [...familyMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+                      // Find which family the selected model belongs to
+                      const selectedFamily = form.door_model ? sortedModels.find(m => m.id === form.door_model)?.name.split(/[\s\/]/)[0] : null;
+
+                      return (
+                        <Accordion type="single" collapsible value={selectedFamily || undefined} className="space-y-2">
+                          {families.map(([family, models]) => (
+                            <AccordionItem key={family} value={family} className="border rounded-lg overflow-hidden">
+                              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-foreground">{family}</span>
+                                  <span className="text-xs text-muted-foreground">({models.length} {models.length === 1 ? 'modello' : 'modelli'})</span>
+                                  {models.some(m => m.id === form.door_model) && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-accent/20 text-accent">✓ Selezionato</span>
+                                  )}
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent className="px-2 pb-2">
+                                <RadioGroup value={form.door_model} onValueChange={v => { update('door_model', v); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_model_id', ''); update('door_handle_finish_id', ''); update('door_special_variant', ''); }} className="space-y-2">
+                                  {models.map(model => (
+                                    <Label
+                                      key={model.id}
+                                      htmlFor={`model-${model.id}`}
+                                      className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-all ${
+                                        form.door_model === model.id ? 'border-accent bg-accent/10' : 'border-border hover:border-muted-foreground/30'
+                                      }`}
+                                    >
+                                      <RadioGroupItem value={model.id} id={`model-${model.id}`} className="mt-1" />
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="font-semibold text-foreground">{model.name}</span>
+                                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{model.collection}</span>
+                                          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1">
+                                            <Leaf className="h-3 w-3" /> GREEN
+                                          </span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mt-1">{model.description}</p>
+                                        <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                                          <span>📐 {model.minWidth}–{model.maxWidth} × {model.minHeight}–{model.maxHeight} mm</span>
+                                          <span>🎨 {model.colors.length} colori</span>
+                                          <span>🖼️ {model.compatibleFrameIds.length} telai</span>
+                                        </div>
+                                      </div>
+                                    </Label>
+                                  ))}
+                                </RadioGroup>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      );
+                    })()}
 
                     {/* Selected model details */}
                     {form.door_model && (() => {
