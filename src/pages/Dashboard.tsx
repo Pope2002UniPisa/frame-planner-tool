@@ -286,7 +286,24 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Measurements list with filters */}
+        {/* Riepilogo Consegne - pagina dedicata */}
+        <Card className="mb-6 border-dashed">
+          <CardContent className="flex items-center justify-between py-5 px-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-muted p-2.5">
+                <Truck className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground font-heading">Riepilogo Consegne</p>
+              </div>
+            </div>
+            <Button onClick={() => navigate('/dashboard/consegne')} className="gap-2">
+              Apri riepilogo
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+
         <div>
           <h2 className="mb-4 text-xl font-bold font-heading text-foreground">Le tue misurazioni</h2>
 
