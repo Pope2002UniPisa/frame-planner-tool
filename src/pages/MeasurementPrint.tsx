@@ -87,11 +87,15 @@ export default function MeasurementPrint() {
   const doorHandleModel = acc?.door_handle_model_id || '';
   const doorHandleFinish = acc?.door_handle_finish_id || '';
   const doorColorName = acc?.door_color_name || '';
+  const doorModelName = acc?.door_model_name || '';
 
   const resolveHandleModel = (id: string): string => {
     const model = ALL_HANDLE_MODELS.find(m => m.id === id);
     return model ? model.name : id;
   };
+
+  // For product name: use door model name if available, otherwise generic label
+  const productDisplayName = doorModelName || (productLabels[m.product_type] || m.product_type);
 
   const rows: [string, string][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
