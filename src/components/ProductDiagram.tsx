@@ -53,6 +53,8 @@ interface ProductDiagramProps {
   doorHandleModelId?: string;
   doorModelId?: string;
   doorSpecialVariant?: string;
+  hideHandle?: boolean;
+  handleHoleMode?: 'none' | 'foro_maniglia' | 'foro_chiave' | 'foro_maniglia_chiave';
 }
 
 export default function ProductDiagram({
@@ -76,6 +78,8 @@ export default function ProductDiagram({
   doorHandleModelId,
   doorModelId,
   doorSpecialVariant,
+  hideHandle = false,
+  handleHoleMode = 'none',
 }: ProductDiagramProps) {
   const w = parseInt(widthMm) || 1200;
   const h = parseInt(heightMm) || 1400;
@@ -298,6 +302,18 @@ export default function ProductDiagram({
     // Positions
     const handleX = effectiveHandleRight ? offsetX + drawW - 24 : offsetX + 20;
     const hingeX = effectiveHandleRight ? offsetX + 2 : offsetX + drawW - 6;
+    const shouldHideHandle = hideHandle || handleHoleMode !== 'none';
+
+    const renderHandleHoles = () => {
+      const showHandleHole = handleHoleMode === 'foro_maniglia' || handleHoleMode === 'foro_maniglia_chiave' || handleHoleMode === 'none';
+      const showKeyHole = handleHoleMode === 'foro_chiave' || handleHoleMode === 'foro_maniglia_chiave' || handleHoleMode === 'none';
+      return (
+        <g>
+          {showHandleHole && <circle cx={handleX + 2} cy={handleY} r={3.6} fill="none" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.55" />}
+          {showKeyHole && <circle cx={handleX + 2} cy={handleY + 22} r={3.1} fill="none" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.55" />}
+        </g>
+      );
+    };
     // Lever points INWARD (toward door center)
     const leverDir = effectiveHandleRight ? -1 : 1;
 
@@ -851,7 +867,7 @@ export default function ProductDiagram({
         })()}
 
         {/* Handle */}
-        {isScorrevole ? renderScorrevoleHandle() : renderBattenteHandle()}
+        {shouldHideHandle ? renderHandleHoles() : (isScorrevole ? renderScorrevoleHandle() : renderBattenteHandle())}
 
         {/* 3 hinges - only for battente */}
         {!isScorrevole && (
@@ -891,7 +907,7 @@ export default function ProductDiagram({
           </text>
         )}
 
-        {handleModelLabel && handleFinishLabel && (
+        {!shouldHideHandle && handleModelLabel && handleFinishLabel && (
           <text x={offsetX + drawW / 2} y={offsetY + drawH + (doorModelName ? (frameLabel ? 54 : 42) : (frameLabel ? 42 : 30))} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
             {handleModelLabel} — {handleFinishLabel}
           </text>
