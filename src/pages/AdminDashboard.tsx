@@ -629,7 +629,7 @@ export default function AdminDashboard() {
                       <Select value={objForm.product_type} onValueChange={v => setObjForm(f => ({ ...f, product_type: v }))}>
                         <SelectTrigger><SelectValue placeholder="Tutti..." /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Tutti i prodotti</SelectItem>
+                          <SelectItem value={ALL_PRODUCTS_VALUE}>Tutti i prodotti</SelectItem>
                           {Object.entries(productLabels).map(([v, l]) => (
                             <SelectItem key={v} value={v}>{l}</SelectItem>
                           ))}
@@ -641,7 +641,7 @@ export default function AdminDashboard() {
                       <Select value={objForm.brand} onValueChange={v => setObjForm(f => ({ ...f, brand: v }))}>
                         <SelectTrigger><SelectValue placeholder="Tutte..." /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Tutte le marche</SelectItem>
+                          <SelectItem value={ALL_BRANDS_VALUE}>Tutte le marche</SelectItem>
                           {BRANDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                         </SelectContent>
                       </Select>
