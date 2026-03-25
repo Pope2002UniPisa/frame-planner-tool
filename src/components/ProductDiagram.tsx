@@ -315,7 +315,6 @@ export default function ProductDiagram({
 
     // Product type label
     const productTypeLabel = productType === 'porta_finestrata' ? 'Porta finestrata' : productType === 'porta_filomuro' ? 'Porta filomuro' : 'Porta cieca';
-    })();
 
     // Opening direction label
     const openingLabel = (() => {
