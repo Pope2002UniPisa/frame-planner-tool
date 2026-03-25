@@ -752,19 +752,8 @@ export default function NewMeasurement() {
                             </div>
                           )}
 
-                          {/* Window version */}
-                          {model.hasWindowVersion && (
-                            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                              <Checkbox
-                                id="window-version"
-                                checked={form.door_is_window_version}
-                                onCheckedChange={v => update('door_is_window_version', v)}
-                              />
-                              <Label htmlFor="window-version" className="text-sm cursor-pointer">
-                                🪟 Versione finestra disponibile
-                              </Label>
-                            </div>
-                          )}
+
+
 
                           {/* Inline Avanti button after model selection */}
                           <div className="pt-3">
