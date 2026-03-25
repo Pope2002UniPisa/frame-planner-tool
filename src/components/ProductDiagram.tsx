@@ -912,8 +912,6 @@ export default function ProductDiagram({
     const doorGlassLabel = (() => {
       const map: Record<string, string> = {
         trasparente: 'Vetro trasparente', satinato: 'Vetro satinato',
-        a_quadri: 'Vetro a quadri', stondato: 'Vetro stondato',
-        doppio: 'Doppio vetro', triplo: 'Triplo vetro',
       };
       return map[glassType] || '';
     })();
