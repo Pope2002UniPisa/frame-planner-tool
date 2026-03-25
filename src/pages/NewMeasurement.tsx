@@ -1324,7 +1324,8 @@ export default function NewMeasurement() {
                       </div>
                       )}
 
-                      {/* Handle finish selection */}
+                      {/* Handle finish selection - only when handle is selected */}
+                      {!hasNoHandleSelection && (
                       <div className="space-y-2">
                         <Label>Finitura maniglia</Label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1346,6 +1347,7 @@ export default function NewMeasurement() {
                           ))}
                         </div>
                       </div>
+                      )}
                     </div>
                   );
                 })() : (
