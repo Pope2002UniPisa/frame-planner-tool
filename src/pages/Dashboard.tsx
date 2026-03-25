@@ -457,7 +457,7 @@ export default function Dashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pi.color }} />
-                          <span className="font-semibold text-foreground">{productLabels[m.product_type] || m.product_type}</span>
+                          <span className="font-semibold text-foreground">{m.client_name || 'Senza nome'}</span>
                           <Badge variant={statusLabels[m.status]?.variant || 'default'}>
                             {statusLabels[m.status]?.label || m.status}
                           </Badge>
