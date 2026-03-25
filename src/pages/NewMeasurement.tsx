@@ -1109,7 +1109,27 @@ export default function NewMeasurement() {
             )}
 
             {/* Step 5: Finishes */}
-            {step === 5 && (
+            {step === 5 && form.product_type === 'maniglia' ? (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Finitura Maniglia</CardTitle>
+                <CardDescription>Scegli la finitura per la maniglia selezionata</CardDescription>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ALL_HANDLE_FINISHES.map(f => (
+                    <Label
+                      key={f.id}
+                      htmlFor={`mhf-${f.id}`}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-all ${
+                        form.door_handle_finish_id === f.id ? 'border-accent bg-accent/10' : 'border-border'
+                      }`}
+                    >
+                      <RadioGroupItem value={f.id} id={`mhf-${f.id}`} checked={form.door_handle_finish_id === f.id} onClick={() => update('door_handle_finish_id', f.id)} />
+                      <div className="w-5 h-5 rounded-full border border-border shrink-0" style={{ backgroundColor: f.hex }} />
+                      <span className="text-sm">{f.name}</span>
+                    </Label>
+                  ))}
+                </div>
+              </div>
+            ) : step === 5 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Finiture</CardTitle>
                 <CardDescription>
