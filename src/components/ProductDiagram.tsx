@@ -417,13 +417,7 @@ export default function ProductDiagram({
         {/* Door body */}
         <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
 
-        {/* Model name centered on door instead of pantograph */}
-        {doorModelName && (
-          <text x={offsetX + drawW / 2} y={offsetY + drawH / 2} textAnchor="middle" dominantBaseline="central" 
-            fontSize="14" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace" opacity="0.35">
-            {doorModelName}
-          </text>
-        )}
+        {/* Model name removed from door panel - shown in labels below */}
 
         {/* Glass insert */}
         {hasGlass && (
@@ -448,28 +442,34 @@ export default function ProductDiagram({
         {/* Threshold */}
         <rect x={offsetX - 6} y={offsetY + drawH + 5} width={drawW + 12} height={3} fill="hsl(var(--muted-foreground))" opacity="0.4" rx={1} />
 
-        {/* Dimensions */}
-        <DimensionH x={offsetX} y={offsetY - 30} width={drawW} label={`${w}`} />
+        {/* Dimensions - moved higher to avoid overlap */}
+        <DimensionH x={offsetX} y={offsetY - 22} width={drawW} label={`${w}`} />
         <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
 
-        {/* Opening type label */}
-        <text x={offsetX + drawW / 2} y={offsetY - 44} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
+        {/* Opening type label - positioned above dimension line */}
+        <text x={offsetX + drawW / 2} y={offsetY - 40} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
           {isScorrevole ? '↔ Scorrevole' : '⟳ Battente'}
         </text>
 
         {/* Labels below door */}
-        <text x={offsetX + drawW / 2} y={offsetY + drawH + 24} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+        {doorModelName && (
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + 18} textAnchor="middle" fontSize="9" fontWeight="600" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+            {doorModelName}
+          </text>
+        )}
+
+        <text x={offsetX + drawW / 2} y={offsetY + drawH + (doorModelName ? 30 : 18)} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
           {hasGlass ? 'Porta con vetro' : 'Porta cieca'}
         </text>
 
         {frameLabel && (
-          <text x={offsetX + drawW / 2} y={offsetY + drawH + 36} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + (doorModelName ? 42 : 30)} textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
             Telaio: {frameLabel}
           </text>
         )}
 
         {doorHandleModelId && doorHandleFinishId && (
-          <text x={offsetX + drawW / 2} y={offsetY + drawH + (frameLabel ? 48 : 36)} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + (doorModelName ? (frameLabel ? 54 : 42) : (frameLabel ? 42 : 30))} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
             {doorHandleModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} — {doorHandleFinishId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
           </text>
         )}
