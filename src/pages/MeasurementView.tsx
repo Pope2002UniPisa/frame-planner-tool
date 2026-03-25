@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Printer, Edit3 } from 'lucide-react';
 import ProductDiagram from '@/components/ProductDiagram';
+import { getColorLabel } from '@/data/doorCatalog';
 
 const statusLabels: Record<string, string> = {
   bozza: 'Bozza', ricevuto: 'Inviata', submitted: 'Inviata', in_review: 'In revisione',
@@ -49,7 +50,7 @@ export default function MeasurementView() {
     bianco_optical: 'Bianco Optical', nero: 'Nero', grigio_alluminio: 'Grigio Alluminio',
   };
 
-  const fields: [string, any][] = [
+  const fields: [string, any, any?][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
     ['Cliente', m.client_name],
     ['Indirizzo', m.client_address],
@@ -62,8 +63,8 @@ export default function MeasurementView() {
     m.opening_direction && ['Direzione apertura', m.opening_direction],
     m.frame_type && ['Tipo telaio', m.frame_type],
     m.material && ['Materiale', m.material],
-    m.color_internal && ['Colore interno', m.color_internal],
-    m.color_external && ['Colore esterno', m.color_external],
+    m.color_internal && ['Colore interno', m.color_internal, getColorLabel(m.color_internal)],
+    m.color_external && ['Colore esterno', m.color_external, getColorLabel(m.color_external)],
     doorColorName && ['Colore porta', doorColorName],
     m.handle_type && ['Tipo maniglia', m.handle_type],
     doorHandleModel && ['Modello maniglia', handleModelLabels[doorHandleModel] || doorHandleModel],
@@ -73,7 +74,20 @@ export default function MeasurementView() {
     m.laying_type && ['Tipo posa', m.laying_type],
     m.remove_old && ['Rimozione vecchio', 'Sì'],
     m.notes && ['Note', m.notes],
-  ].filter(Boolean) as [string, any][];
+  ].filter(Boolean) as [string, any, any?][];
+
+  const renderColorValue = (value: any, colorInfo: any) => {
+    if (!colorInfo) return <span className="text-sm font-medium text-foreground">{value}</span>;
+    return (
+      <div className="flex items-center gap-2">
+        <div
+          className="w-5 h-5 rounded-md border border-border shadow-sm shrink-0"
+          style={{ backgroundColor: colorInfo.hex }}
+        />
+        <span className="text-sm font-medium text-foreground">{colorInfo.name}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,12 +121,15 @@ export default function MeasurementView() {
           <CardHeader><CardTitle className="font-heading">Dati misurazione</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {fields.map(([label, value]) => (
-                <div key={label} className="flex justify-between border-b border-border/50 py-2">
-                  <span className="text-sm text-muted-foreground">{label}</span>
-                  <span className="text-sm font-medium text-foreground">{value}</span>
-                </div>
-              ))}
+             {fields.map(([label, value, colorInfo]) => (
+                <div key={label} className="flex justify-between items-center border-b border-border/50 py-2">
+                   <span className="text-sm text-muted-foreground">{label}</span>
+                   {(label === 'Colore interno' || label === 'Colore esterno' || label === 'Colore porta') 
+                     ? renderColorValue(value, colorInfo)
+                     : <span className="text-sm font-medium text-foreground">{value}</span>
+                   }
+                 </div>
+               ))}
             </div>
           </CardContent>
         </Card>
