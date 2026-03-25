@@ -640,10 +640,19 @@ export default function Profile() {
                     <div key={s.id} onClick={() => setSelectedSupplier(selectedSupplier === s.id ? null : s.id)}
                       className={`rounded-xl border-2 p-5 cursor-pointer transition-all hover:shadow-card-hover ${selectedSupplier === s.id ? 'border-accent bg-accent/5' : 'border-border'}`}>
                       <div className="flex items-center gap-3 mb-2">
-                        {supplierLogos[s.id] ? (
-                          <img src={supplierLogos[s.id]} alt={s.name} className="h-10 w-10 rounded-lg object-contain border border-border" />
+                        {/* */}
+                        {/* Devo modificare per avere il logo permanente dei fornitori */}
+                        {/* */}
+                        {s.defaultLogo ? (
+                          <img 
+                            src={s.defaultLogo}
+                            alt={s.name} 
+                            className="h-10 w-10 rounded-lg object-contain border border-border" 
+                          />
                         ) : (
-                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center"><Building2 className="h-5 w-5 text-muted-foreground" /></div>
+                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                          </div>
                         )}
                         <div className="flex-1">
                           <p className="font-semibold text-foreground">{s.name}</p>
