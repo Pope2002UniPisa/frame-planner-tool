@@ -31,7 +31,9 @@ const LINE_COLORS: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   bozza: 'Bozza', ricevuto: 'Inviata', submitted: 'Inviata',
-  in_review: 'In revisione', quoted: 'Preventivata', ordered: 'Ordinata', completed: 'Completata',
+  in_review: 'In revisione', quoted: 'Preventivata', 
+  quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
+  ordered: 'Ordinata', completed: 'Completata',
 };
 
 const BRANDS = ['FerreroLegno SPA', 'AluK Group', 'Finstral SPA', 'Somfy Italia'];

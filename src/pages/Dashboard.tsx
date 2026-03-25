@@ -33,6 +33,8 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
   submitted: { label: 'Inviata', variant: 'default' },
   in_review: { label: 'In revisione', variant: 'secondary' },
   quoted: { label: 'Preventivata', variant: 'outline' },
+  quote_accepted: { label: 'Preventivo accettato', variant: 'default' },
+  quote_modifications: { label: 'Modifiche richieste', variant: 'destructive' },
   ordered: { label: 'Ordinata', variant: 'default' },
   completed: { label: 'Completata', variant: 'secondary' },
 };
