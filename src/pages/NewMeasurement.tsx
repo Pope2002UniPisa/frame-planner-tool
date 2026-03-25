@@ -614,14 +614,14 @@ export default function NewMeasurement() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">
-              Passo {step + 1} di {STEPS.length}: {STEPS[step].label}
+              Passo {currentStepIndex + 1} di {activeSteps.length}: {STEPS[step].label}
             </span>
-            <span className="text-sm text-muted-foreground">{Math.round(((step + 1) / STEPS.length) * 100)}%</span>
+            <span className="text-sm text-muted-foreground">{Math.round(((currentStepIndex + 1) / activeSteps.length) * 100)}%</span>
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full gradient-accent transition-all duration-300"
-              style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+              style={{ width: `${((currentStepIndex + 1) / activeSteps.length) * 100}%` }}
             />
           </div>
         </div>
