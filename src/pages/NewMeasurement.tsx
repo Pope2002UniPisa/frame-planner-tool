@@ -642,7 +642,7 @@ export default function NewMeasurement() {
                 </RadioGroup>
 
                 {/* Door model selection when porta is selected */}
-                {form.product_type === 'porta' && (
+                {isDoorType(form.product_type) && (
                   <div className="mt-6 space-y-4">
                     <div className="border-t border-border pt-4">
                       <Label className="text-base font-semibold">🏷️ Seleziona modello porta</Label>
