@@ -141,9 +141,9 @@ export default function Dashboard() {
     return measurements.filter(m => {
       if (filterStatus !== 'all') {
         if (filterStatus === 'bozza' && m.status !== 'bozza') return false;
-        if (filterStatus === 'inviata' && m.status !== 'ricevuto' && m.status !== 'submitted') return false;
-        if (filterStatus === 'quoted' && m.status !== 'quoted') return false;
-        if (filterStatus === 'completed' && m.status !== 'completed' && m.status !== 'ordered') return false;
+        if (filterStatus === 'quoted' && !['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)) return false;
+        if (filterStatus === 'ordered' && !['ordered', 'in_production', 'delivering'].includes(m.status)) return false;
+        if (filterStatus === 'completed' && m.status !== 'completed') return false;
       }
       if (filterProduct !== 'all' && m.product_type !== filterProduct) return false;
       if (searchText) {
