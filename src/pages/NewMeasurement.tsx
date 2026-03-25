@@ -1678,7 +1678,7 @@ export default function NewMeasurement() {
             ) : (
               <Button onClick={handleSubmit} disabled={submitting || savingDraft} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
                 <Check className="h-4 w-4" />
-                {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Misurazioni` : 'Ordine'}`}
+                {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Preventivi` : 'Preventivo'}`}
               </Button>
             )}
           </div>
