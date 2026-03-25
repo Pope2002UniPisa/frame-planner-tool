@@ -7,9 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard, ThumbsUp, MessageSquare } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { toast } from 'sonner';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 
 
@@ -18,12 +20,13 @@ const WORKFLOW_STEPS = [
   { key: 'ricevuto', label: 'Inviata', icon: '📤' },
   { key: 'in_review', label: 'In revisione', icon: '🔍' },
   { key: 'quoted', label: 'Preventivata', icon: '💰' },
+  { key: 'quote_accepted', label: 'Accettata', icon: '✅' },
   { key: 'ordered', label: 'Ordinata', icon: '📦' },
-  { key: 'completed', label: 'Completata', icon: '✅' },
+  { key: 'completed', label: 'Completata', icon: '🏁' },
 ];
 
 const getWorkflowIndex = (status: string): number => {
-  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, in_review: 2, quoted: 3, ordered: 4, completed: 5 };
+  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, in_review: 2, quoted: 3, quote_accepted: 4, quote_modifications: 3, ordered: 5, completed: 6 };
   return map[status] ?? 0;
 };
 
@@ -33,6 +36,8 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
   submitted: { label: 'Inviata', variant: 'default' },
   in_review: { label: 'In revisione', variant: 'secondary' },
   quoted: { label: 'Preventivata', variant: 'outline' },
+  quote_accepted: { label: 'Preventivo accettato', variant: 'default' },
+  quote_modifications: { label: 'Modifiche richieste', variant: 'destructive' },
   ordered: { label: 'Ordinata', variant: 'default' },
   completed: { label: 'Completata', variant: 'secondary' },
 };
@@ -97,6 +102,8 @@ export default function Dashboard() {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [quoteResponseDialog, setQuoteResponseDialog] = useState<any>(null);
+  const [modificationNotes, setModificationNotes] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -147,6 +154,21 @@ export default function Dashboard() {
       return true;
     });
   }, [measurements, filterStatus, filterProduct, searchText, filterDateFrom, filterDateTo]);
+
+  const handleQuoteResponse = async (measurementId: string, accept: boolean) => {
+    const newStatus = accept ? 'quote_accepted' : 'quote_modifications';
+    const updates: any = { status: newStatus };
+    if (!accept && modificationNotes) {
+      updates.modification_notes = modificationNotes;
+      updates.has_modification = true;
+    }
+    const { error } = await supabase.from('measurements').update(updates).eq('id', measurementId);
+    if (error) { toast.error(error.message); return; }
+    setMeasurements(prev => prev.map(m => m.id === measurementId ? { ...m, ...updates } : m));
+    setQuoteResponseDialog(null);
+    setModificationNotes('');
+    toast.success(accept ? 'Preventivo accettato! L\'ordine verrà confermato a breve.' : 'Richiesta di modifiche inviata.');
+  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -244,6 +266,30 @@ export default function Dashboard() {
             {selectedPhoto && (
               <img src={selectedPhoto} alt="Foto misurazione" className="w-full rounded-lg" />
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Quote modifications dialog */}
+        <Dialog open={!!quoteResponseDialog} onOpenChange={open => { if (!open) { setQuoteResponseDialog(null); setModificationNotes(''); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-heading">Richiedi modifiche al preventivo</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Descrivi le modifiche che desideri apportare al preventivo. Il team le valuterà e ti invierà un nuovo preventivo aggiornato.</p>
+              <Textarea
+                value={modificationNotes}
+                onChange={e => setModificationNotes(e.target.value)}
+                placeholder="Descrivi le modifiche richieste..."
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setQuoteResponseDialog(null); setModificationNotes(''); }}>Annulla</Button>
+              <Button onClick={() => quoteResponseDialog && handleQuoteResponse(quoteResponseDialog.id, false)} disabled={!modificationNotes.trim()}>
+                Invia richiesta
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
@@ -467,6 +513,17 @@ export default function Dashboard() {
                                 </div>
                               );
                             })}
+                          </div>
+                        )}
+                        {/* Quote response buttons */}
+                        {m.status === 'quoted' && (
+                          <div className="flex gap-2 mt-2">
+                            <Button size="sm" className="gap-1.5" onClick={(e) => { e.stopPropagation(); handleQuoteResponse(m.id, true); }}>
+                              <ThumbsUp className="h-3.5 w-3.5" /> Accetta preventivo
+                            </Button>
+                            <Button size="sm" variant="outline" className="gap-1.5" onClick={(e) => { e.stopPropagation(); setQuoteResponseDialog(m); }}>
+                              <MessageSquare className="h-3.5 w-3.5" /> Richiedi modifiche
+                            </Button>
                           </div>
                         )}
                       </div>

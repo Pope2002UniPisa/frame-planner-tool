@@ -31,7 +31,9 @@ const LINE_COLORS: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   bozza: 'Bozza', ricevuto: 'Inviata', submitted: 'Inviata',
-  in_review: 'In revisione', quoted: 'Preventivata', ordered: 'Ordinata', completed: 'Completata',
+  in_review: 'In revisione', quoted: 'Preventivata', 
+  quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
+  ordered: 'Ordinata', completed: 'Completata',
 };
 
 const BRANDS = ['FerreroLegno SPA', 'AluK Group', 'Finstral SPA', 'Somfy Italia'];
@@ -49,6 +51,12 @@ export default function AdminDashboard() {
   const [portfolio, setPortfolio] = useState<any[]>([]);
   const [salesObjectives, setSalesObjectives] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+
+  // Measurement management dialog
+  const [manageMeasurement, setManageMeasurement] = useState<any>(null);
+  const [managePrice, setManagePrice] = useState('');
+  const [manageDeliveryDate, setManageDeliveryDate] = useState('');
+  const [manageNotes, setManageNotes] = useState('');
 
   // News form
   const [newsDialog, setNewsDialog] = useState(false);
@@ -193,6 +201,28 @@ export default function AdminDashboard() {
         progressAmount: obj.target_amount > 0 ? Math.min(100, Math.round((currentAmount / obj.target_amount) * 100)) : 0,
       };
     });
+  };
+
+  const openManageDialog = (m: any) => {
+    setManageMeasurement(m);
+    setManagePrice(m.estimated_price ? String(m.estimated_price) : '');
+    setManageDeliveryDate(m.estimated_delivery_date || '');
+    setManageNotes(m.notes || '');
+  };
+
+  const handleUpdateMeasurementStatus = async (newStatus: string) => {
+    if (!manageMeasurement) return;
+    const updates: any = { status: newStatus };
+    if (managePrice) updates.estimated_price = parseFloat(managePrice);
+    if (manageDeliveryDate) updates.estimated_delivery_date = manageDeliveryDate;
+    if (manageNotes !== manageMeasurement.notes) updates.notes = manageNotes;
+    
+    const { error } = await supabase.from('measurements').update(updates).eq('id', manageMeasurement.id);
+    if (error) { toast.error(error.message); return; }
+    setMeasurements(prev => prev.map(m => m.id === manageMeasurement.id ? { ...m, ...updates } : m));
+    setManageMeasurement(null);
+    const labels: Record<string, string> = { quoted: 'Preventivo inviato', ordered: 'Ordine confermato', in_review: 'In revisione', completed: 'Completata' };
+    toast.success(labels[newStatus] || `Stato aggiornato a ${newStatus}`);
   };
 
   const handleApproveProfile = async (userId: string, approve: boolean) => {
@@ -403,7 +433,7 @@ export default function AdminDashboard() {
                   {measurements.filter(m => m.status !== 'bozza').slice(0, 10).map(m => {
                     const profile = profiles.find(p => p.user_id === m.user_id);
                     return (
-                      <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                      <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => openManageDialog(m)}>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-sm text-foreground">{productLabels[m.product_type] || m.product_type}</span>
@@ -854,6 +884,88 @@ export default function AdminDashboard() {
             </Dialog>
           </TabsContent>
         </Tabs>
+
+        {/* Measurement Management Dialog */}
+        <Dialog open={!!manageMeasurement} onOpenChange={open => !open && setManageMeasurement(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="font-heading">Gestione Misurazione</DialogTitle>
+            </DialogHeader>
+            {manageMeasurement && (() => {
+              const mp = profiles.find((p: any) => p.user_id === manageMeasurement.user_id);
+              const currentStatus = manageMeasurement.status;
+              return (
+                <div className="space-y-4">
+                  <div className="rounded-lg border border-border p-3 bg-muted/30 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground">{productLabels[manageMeasurement.product_type] || manageMeasurement.product_type}</span>
+                      <Badge variant="outline">{statusLabels[currentStatus] || currentStatus}</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{manageMeasurement.client_name} • {manageMeasurement.client_address}</p>
+                    <p className="text-xs text-muted-foreground">Dealer: {mp?.company_name || mp?.email || 'N/A'}</p>
+                    <p className="text-xs text-muted-foreground">{manageMeasurement.width_mm}×{manageMeasurement.height_mm} mm</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Prezzo preventivo (€)</Label>
+                      <Input type="number" value={managePrice} onChange={e => setManagePrice(e.target.value)} placeholder="Es. 1200" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Data consegna stimata</Label>
+                      <Input type="date" value={manageDeliveryDate} onChange={e => setManageDeliveryDate(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Note</Label>
+                    <Textarea value={manageNotes} onChange={e => setManageNotes(e.target.value)} rows={2} placeholder="Note aggiuntive..." />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/misurazione/${manageMeasurement.id}`)}>
+                      <Eye className="h-3.5 w-3.5" /> Dettaglio
+                    </Button>
+                  </div>
+
+                  <div className="border-t border-border pt-4 space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground">Azioni workflow</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(currentStatus === 'submitted' || currentStatus === 'ricevuto') && (
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
+                          <FileText className="h-3.5 w-3.5" /> Invia Preventivo
+                        </Button>
+                      )}
+                      {currentStatus === 'in_review' && (
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
+                          <FileText className="h-3.5 w-3.5" /> Invia Preventivo
+                        </Button>
+                      )}
+                      {currentStatus === 'quote_accepted' && (
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('ordered')}>
+                          <Package className="h-3.5 w-3.5" /> Conferma Ordine
+                        </Button>
+                      )}
+                      {currentStatus === 'quote_modifications' && (
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
+                          <FileText className="h-3.5 w-3.5" /> Invia Nuovo Preventivo
+                        </Button>
+                      )}
+                      {currentStatus === 'ordered' && (
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('completed')}>
+                          <CheckCircle className="h-3.5 w-3.5" /> Segna Completata
+                        </Button>
+                      )}
+                      {currentStatus === 'quoted' && (
+                        <p className="text-xs text-muted-foreground italic">In attesa di risposta dal cliente...</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
