@@ -567,7 +567,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="mt-6 pt-4 border-t border-border text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Measure Master — Tutti i diritti riservati
+            © {new Date().getFullYear()} FAREWELL SRL — Tutti i diritti riservati
           </div>
         </div>
       </footer>
