@@ -153,6 +153,21 @@ export default function Dashboard() {
     });
   }, [measurements, filterStatus, filterProduct, searchText, filterDateFrom, filterDateTo]);
 
+  const handleQuoteResponse = async (measurementId: string, accept: boolean) => {
+    const newStatus = accept ? 'quote_accepted' : 'quote_modifications';
+    const updates: any = { status: newStatus };
+    if (!accept && modificationNotes) {
+      updates.modification_notes = modificationNotes;
+      updates.has_modification = true;
+    }
+    const { error } = await supabase.from('measurements').update(updates).eq('id', measurementId);
+    if (error) { toast.error(error.message); return; }
+    setMeasurements(prev => prev.map(m => m.id === measurementId ? { ...m, ...updates } : m));
+    setQuoteResponseDialog(null);
+    setModificationNotes('');
+    toast.success(accept ? 'Preventivo accettato! L\'ordine verrà confermato a breve.' : 'Richiesta di modifiche inviata.');
+  };
+
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
 
