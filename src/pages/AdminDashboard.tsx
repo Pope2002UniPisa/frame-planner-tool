@@ -149,7 +149,7 @@ export default function AdminDashboard() {
     profiles.forEach(p => {
       map[p.user_id] = {
         user_id: p.user_id, name: p.company_name || p.email, email: p.email, approved: p.approved,
-        total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0, revenue: 0,
+        total: 0, drafts: 0, quoted: 0, ordered: 0, completed: 0, revenue: 0,
         realizedRevenue: 0, collectedRevenue: 0,
         byProduct: {} as Record<string, number>,
       };
@@ -161,9 +161,11 @@ export default function AdminDashboard() {
       const pt = productLabels[m.product_type] || m.product_type;
       map[m.user_id].byProduct[pt] = (map[m.user_id].byProduct[pt] || 0) + 1;
       if (m.status === 'bozza') map[m.user_id].drafts++;
-      else if (['ricevuto', 'submitted', 'in_review'].includes(m.status)) map[m.user_id].sent++;
-      else if (m.status === 'quoted') map[m.user_id].quoted++;
-      else if (['completed', 'ordered'].includes(m.status)) {
+      else if (['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)) map[m.user_id].quoted++;
+      else if (['ordered', 'in_production', 'delivering'].includes(m.status)) {
+        map[m.user_id].ordered++;
+        map[m.user_id].realizedRevenue += Number(m.estimated_price) || 0;
+      } else if (m.status === 'completed') {
         map[m.user_id].completed++;
         map[m.user_id].realizedRevenue += Number(m.estimated_price) || 0;
         if (m.payment_status === 'pagato') {
