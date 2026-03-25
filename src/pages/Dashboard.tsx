@@ -269,6 +269,30 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
+        {/* Quote modifications dialog */}
+        <Dialog open={!!quoteResponseDialog} onOpenChange={open => { if (!open) { setQuoteResponseDialog(null); setModificationNotes(''); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-heading">Richiedi modifiche al preventivo</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Descrivi le modifiche che desideri apportare al preventivo. Il team le valuterà e ti invierà un nuovo preventivo aggiornato.</p>
+              <Textarea
+                value={modificationNotes}
+                onChange={e => setModificationNotes(e.target.value)}
+                placeholder="Descrivi le modifiche richieste..."
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setQuoteResponseDialog(null); setModificationNotes(''); }}>Annulla</Button>
+              <Button onClick={() => quoteResponseDialog && handleQuoteResponse(quoteResponseDialog.id, false)} disabled={!modificationNotes.trim()}>
+                Invia richiesta
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Stats cards */}
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
           <StatCard icon={FileText} label="Totale" value={stats.total} />
