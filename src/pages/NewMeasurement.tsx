@@ -400,12 +400,14 @@ export default function NewMeasurement() {
               openingDirection={form.opening_direction}
               handleType={form.handle_type}
               glassType={form.glass_type}
-              frameType={form.frame_type}
+              frameType={form.product_type === 'porta' && form.door_frame_id ? form.door_frame_id : form.frame_type}
               colorInternal={form.color_internal}
               colorExternal={form.color_external}
               internalSpaceMm={isMultiProduct ? (activeItem?.internal_space_mm || '') : form.internal_space_mm}
               externalSpaceMm={isMultiProduct ? (activeItem?.external_space_mm || '') : form.external_space_mm}
               view={view}
+              doorColorHex={form.product_type === 'porta' && form.door_color_id ? (getDoorModel(form.door_model)?.colors.find(c => c.id === form.door_color_id)?.hex) : undefined}
+              doorHandleId={form.product_type === 'porta' ? form.door_handle_id : undefined}
             />
           </div>
         </div>
@@ -460,7 +462,7 @@ export default function NewMeasurement() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className={`grid grid-cols-1 gap-4 ${form.product_type === 'porta' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
           <div className="space-y-2">
             <Label>Larghezza (mm) *</Label>
             <Input type="number" value={multiItems[activeItemIndex].width_mm} onChange={e => updateItem(activeItemIndex, 'width_mm', e.target.value)} placeholder="1200" />
@@ -469,10 +471,12 @@ export default function NewMeasurement() {
             <Label>Altezza (mm) *</Label>
             <Input type="number" value={multiItems[activeItemIndex].height_mm} onChange={e => updateItem(activeItemIndex, 'height_mm', e.target.value)} placeholder="1400" />
           </div>
-          <div className="space-y-2">
-            <Label>Profondità muro (mm)</Label>
-            <Input type="number" value={multiItems[activeItemIndex].depth_mm} onChange={e => updateItem(activeItemIndex, 'depth_mm', e.target.value)} placeholder="300" />
-          </div>
+          {form.product_type !== 'porta' && (
+            <div className="space-y-2">
+              <Label>Profondità muro (mm)</Label>
+              <Input type="number" value={multiItems[activeItemIndex].depth_mm} onChange={e => updateItem(activeItemIndex, 'depth_mm', e.target.value)} placeholder="300" />
+            </div>
+          )}
         </div>
 
         <div className="space-y-3 pt-2">
@@ -499,16 +503,18 @@ export default function NewMeasurement() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 pt-2">
-          <div className="space-y-2">
-            <Label>Spazio interno (mm)</Label>
-            <Input type="number" value={multiItems[activeItemIndex].internal_space_mm} onChange={e => updateItem(activeItemIndex, 'internal_space_mm', e.target.value)} placeholder="100" />
+        {form.product_type !== 'porta' && (
+          <div className="grid grid-cols-2 gap-4 pt-2">
+            <div className="space-y-2">
+              <Label>Spazio interno (mm)</Label>
+              <Input type="number" value={multiItems[activeItemIndex].internal_space_mm} onChange={e => updateItem(activeItemIndex, 'internal_space_mm', e.target.value)} placeholder="100" />
+            </div>
+            <div className="space-y-2">
+              <Label>Spazio esterno (mm)</Label>
+              <Input type="number" value={multiItems[activeItemIndex].external_space_mm} onChange={e => updateItem(activeItemIndex, 'external_space_mm', e.target.value)} placeholder="50" />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Spazio esterno (mm)</Label>
-            <Input type="number" value={multiItems[activeItemIndex].external_space_mm} onChange={e => updateItem(activeItemIndex, 'external_space_mm', e.target.value)} placeholder="50" />
-          </div>
-        </div>
+        )}
 
         <div className="space-y-2">
           <Label>Note specifiche per questo prodotto</Label>
@@ -832,7 +838,7 @@ export default function NewMeasurement() {
                       </div>
                     );
                   })()}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className={`grid grid-cols-1 gap-4 ${form.product_type === 'porta' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                     <div className="space-y-2">
                       <Label>Larghezza (mm) *</Label>
                       <Input type="number" value={form.width_mm} onChange={e => update('width_mm', e.target.value)} placeholder="1200" />
@@ -841,10 +847,12 @@ export default function NewMeasurement() {
                       <Label>Altezza (mm) *</Label>
                       <Input type="number" value={form.height_mm} onChange={e => update('height_mm', e.target.value)} placeholder="1400" />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Profondità muro (mm)</Label>
-                      <Input type="number" value={form.depth_mm} onChange={e => update('depth_mm', e.target.value)} placeholder="300" />
-                    </div>
+                    {form.product_type !== 'porta' && (
+                      <div className="space-y-2">
+                        <Label>Profondità muro (mm)</Label>
+                        <Input type="number" value={form.depth_mm} onChange={e => update('depth_mm', e.target.value)} placeholder="300" />
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-3 pt-4">
@@ -871,16 +879,18 @@ export default function NewMeasurement() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-4">
-                    <div className="space-y-2">
-                      <Label>Spazio interno (mm)</Label>
-                      <Input type="number" value={form.internal_space_mm} onChange={e => update('internal_space_mm', e.target.value)} placeholder="100" />
+                  {form.product_type !== 'porta' && (
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                      <div className="space-y-2">
+                        <Label>Spazio interno (mm)</Label>
+                        <Input type="number" value={form.internal_space_mm} onChange={e => update('internal_space_mm', e.target.value)} placeholder="100" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Spazio esterno (mm)</Label>
+                        <Input type="number" value={form.external_space_mm} onChange={e => update('external_space_mm', e.target.value)} placeholder="50" />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Spazio esterno (mm)</Label>
-                      <Input type="number" value={form.external_space_mm} onChange={e => update('external_space_mm', e.target.value)} placeholder="50" />
-                    </div>
-                  </div>
+                  )}
                 </div>
               )
             )}
@@ -1217,37 +1227,47 @@ export default function NewMeasurement() {
             {step === 7 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Accessori</CardTitle>
-                <CardDescription>Seleziona gli accessori e configurali</CardDescription>
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="has_mosquito_net" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_mosquito_net ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                      <Checkbox id="has_mosquito_net" checked={form.has_mosquito_net} onCheckedChange={v => update('has_mosquito_net', v)} />
-                      <span className="text-lg">🦟 Zanzariera</span>
-                    </Label>
-                    {form.has_mosquito_net && <AccessoryConfig type="mosquito_net" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                <CardDescription>
+                  {form.product_type === 'porta'
+                    ? 'La sezione accessori per le porte verrà aggiornata prossimamente.'
+                    : 'Seleziona gli accessori e configurali'}
+                </CardDescription>
+                {form.product_type === 'porta' ? (
+                  <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
+                    <p className="text-sm text-muted-foreground">Nessun accessorio disponibile per il momento</p>
                   </div>
-                  <div>
-                    <Label htmlFor="has_shutter" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_shutter ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                      <Checkbox id="has_shutter" checked={form.has_shutter} onCheckedChange={v => update('has_shutter', v)} />
-                      <span className="text-lg">🪟 Tapparella</span>
-                    </Label>
-                    {form.has_shutter && <AccessoryConfig type="shutter" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="has_mosquito_net" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_mosquito_net ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_mosquito_net" checked={form.has_mosquito_net} onCheckedChange={v => update('has_mosquito_net', v)} />
+                        <span className="text-lg">🦟 Zanzariera</span>
+                      </Label>
+                      {form.has_mosquito_net && <AccessoryConfig type="mosquito_net" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                    </div>
+                    <div>
+                      <Label htmlFor="has_shutter" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_shutter ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_shutter" checked={form.has_shutter} onCheckedChange={v => update('has_shutter', v)} />
+                        <span className="text-lg">🪟 Tapparella</span>
+                      </Label>
+                      {form.has_shutter && <AccessoryConfig type="shutter" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                    </div>
+                    <div>
+                      <Label htmlFor="has_box" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_box ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_box" checked={form.has_box} onCheckedChange={v => update('has_box', v)} />
+                        <span className="text-lg">📦 Cassonetto</span>
+                      </Label>
+                      {form.has_box && <AccessoryConfig type="box" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                    </div>
+                    <div>
+                      <Label htmlFor="has_motorization" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_motorization ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_motorization" checked={form.has_motorization} onCheckedChange={v => update('has_motorization', v)} />
+                        <span className="text-lg">⚡ Motorizzazione</span>
+                      </Label>
+                      {form.has_motorization && <AccessoryConfig type="motorization" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="has_box" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_box ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                      <Checkbox id="has_box" checked={form.has_box} onCheckedChange={v => update('has_box', v)} />
-                      <span className="text-lg">📦 Cassonetto</span>
-                    </Label>
-                    {form.has_box && <AccessoryConfig type="box" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
-                  </div>
-                  <div>
-                    <Label htmlFor="has_motorization" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_motorization ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                      <Checkbox id="has_motorization" checked={form.has_motorization} onCheckedChange={v => update('has_motorization', v)} />
-                      <span className="text-lg">⚡ Motorizzazione</span>
-                    </Label>
-                    {form.has_motorization && <AccessoryConfig type="motorization" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
