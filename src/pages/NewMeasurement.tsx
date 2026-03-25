@@ -1270,9 +1270,6 @@ export default function NewMeasurement() {
                         { value: 'trasparente', label: '🔍 Vetro trasparente' },
                         { value: 'satinato', label: '🌫️ Vetro satinato' },
                         { value: 'a_quadri', label: '🔲 Vetro a quadri' },
-                        { value: 'stondato', label: '🔘 Vetro stondato' },
-                        { value: 'doppio', label: '📐 Doppio vetro' },
-                        { value: 'triplo', label: '📏 Triplo vetro' },
                       ].map(opt => (
                         <Label key={opt.value} htmlFor={`glass-${opt.value}`} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.glass_type === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
                           <RadioGroupItem value={opt.value} id={`glass-${opt.value}`} />

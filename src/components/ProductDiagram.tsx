@@ -837,16 +837,14 @@ export default function ProductDiagram({
         {hasGlass && (() => {
           // Suite/21 has a tall glass panel with external frame border
           const isSuite21 = doorModelId === 'f_suite_21' || doorModelId === 'fm_suite_21_zero';
-          const glassHeight = isSuite21 ? (drawH - 32) * 0.7 : (drawH - 32) * 0.3;
-          const glassY = isSuite21 ? offsetY + 16 : offsetY + 16;
+          const glassHeight = drawH - 32;
+          const glassY = offsetY + 16;
           const glassW = drawW - 32;
-          const frameInset = isSuite21 ? 4 : 0;
           return (
             <>
-              {isSuite21 && (
-                <rect x={offsetX + 12} y={glassY - 4} width={glassW + 8} height={glassHeight + 8} fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.2" rx={1} />
-              )}
-              <rect x={offsetX + 16} y={glassY} width={glassW} height={glassHeight} fill={GLASS_COLOR} stroke={GLASS_STROKE} strokeWidth="1" rx={glassType === 'stondato' ? 6 : 0} />
+              {/* Cornice esterna decorativa */}
+              <rect x={offsetX + 12} y={glassY - 4} width={glassW + 8} height={glassHeight + 8} fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.2" rx={1} />
+              <rect x={offsetX + 16} y={glassY} width={glassW} height={glassHeight} fill={GLASS_COLOR} stroke={GLASS_STROKE} strokeWidth="1" rx={0} />
               {glassType === 'satinato' && <rect x={offsetX + 16} y={glassY} width={glassW} height={glassHeight} fill="rgba(255,255,255,0.5)" />}
             </>
           );
