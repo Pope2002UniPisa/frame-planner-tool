@@ -448,6 +448,7 @@ export default function NewMeasurement() {
       </CardHeader>
       <CardContent>
         <div className="overflow-auto" style={{ maxHeight: zoom > 100 ? '500px' : undefined }}>
+          <div className="flex justify-center">
           <div style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
             <ProductDiagram
               productType={form.product_type}
@@ -470,7 +471,10 @@ export default function NewMeasurement() {
               doorHandleModelId={isDoorType(form.product_type) ? form.door_handle_model_id : undefined}
               doorModelId={isDoorType(form.product_type) ? form.door_model : undefined}
               doorSpecialVariant={isDoorType(form.product_type) ? form.door_special_variant : undefined}
+              hideHandle={hasNoHandleSelection}
+              handleHoleMode={noHandleMode}
             />
+          </div>
           </div>
         </div>
         <p className="text-xs text-center text-muted-foreground mt-2">Immagine a solo scopo illustrativo</p>
@@ -661,7 +665,7 @@ export default function NewMeasurement() {
               <div className="space-y-4">
                 <CardTitle className="font-heading">Seleziona il prodotto</CardTitle>
                 <CardDescription>Che tipo di prodotto devi misurare?</CardDescription>
-                <RadioGroup value={form.product_type} onValueChange={v => { update('product_type', v); update('door_model', ''); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_model_id', ''); update('door_handle_finish_id', ''); update('door_special_variant', ''); }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <RadioGroup value={form.product_type} onValueChange={v => { update('product_type', v); update('door_model', ''); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_model_id', ''); update('door_handle_finish_id', ''); update('door_special_variant', ''); update('glass_type', ''); setAccessoriesConfig({}); }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {[
                     { value: 'finestra', label: '🪟 Finestra' },
                     { value: 'porta', label: '🚪 Porta' },
@@ -1026,7 +1030,7 @@ export default function NewMeasurement() {
                     ? `Configurazione condivisa per tutti i ${multiItems.length} prodotti`
                     : "Definisci la configurazione dell'infisso"}
                 </CardDescription>
-                <div className="space-y-2">
+                {!isSingleLeafDoor && <div className="space-y-2">
                   <Label>Numero ante</Label>
                   <Select value={form.num_panels} onValueChange={v => update('num_panels', v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1036,7 +1040,7 @@ export default function NewMeasurement() {
                       <SelectItem value="3">3 ante</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div>}
                 <div className="space-y-2">
                   <Label>Tipologia apertura</Label>
                   {isDoorType(form.product_type) && form.door_model ? (
