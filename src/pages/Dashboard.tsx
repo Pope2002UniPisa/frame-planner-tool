@@ -18,12 +18,13 @@ const WORKFLOW_STEPS = [
   { key: 'ricevuto', label: 'Inviata', icon: '📤' },
   { key: 'in_review', label: 'In revisione', icon: '🔍' },
   { key: 'quoted', label: 'Preventivata', icon: '💰' },
+  { key: 'quote_accepted', label: 'Accettata', icon: '✅' },
   { key: 'ordered', label: 'Ordinata', icon: '📦' },
-  { key: 'completed', label: 'Completata', icon: '✅' },
+  { key: 'completed', label: 'Completata', icon: '🏁' },
 ];
 
 const getWorkflowIndex = (status: string): number => {
-  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, in_review: 2, quoted: 3, ordered: 4, completed: 5 };
+  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, in_review: 2, quoted: 3, quote_accepted: 4, quote_modifications: 3, ordered: 5, completed: 6 };
   return map[status] ?? 0;
 };
 
