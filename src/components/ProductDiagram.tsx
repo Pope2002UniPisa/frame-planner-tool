@@ -417,13 +417,7 @@ export default function ProductDiagram({
         {/* Door body */}
         <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
 
-        {/* Model name centered on door instead of pantograph */}
-        {doorModelName && (
-          <text x={offsetX + drawW / 2} y={offsetY + drawH / 2} textAnchor="middle" dominantBaseline="central" 
-            fontSize="14" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace" opacity="0.35">
-            {doorModelName}
-          </text>
-        )}
+        {/* Model name removed from door panel - shown in labels below */}
 
         {/* Glass insert */}
         {hasGlass && (
