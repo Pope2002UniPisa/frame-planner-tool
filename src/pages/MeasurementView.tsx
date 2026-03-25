@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Printer, Edit3, ThumbsUp, MessageSquare } from 'lucide-react';
-import ProductDiagram from '@/components/ProductDiagram';
-import { getColorLabel } from '@/data/doorCatalog';
+import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
+import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES } from '@/data/doorCatalog';
 import { toast } from 'sonner';
 
 const statusLabels: Record<string, string> = {
