@@ -23,8 +23,10 @@ export type Database = {
           color_external: string | null
           color_internal: string | null
           created_at: string
+          delivery_notes: string | null
           depth_mm: number | null
           dispute_notes: string | null
+          estimated_delivery_date: string | null
           estimated_price: number | null
           external_space_mm: number | null
           frame_type: string | null
@@ -72,8 +74,10 @@ export type Database = {
           color_external?: string | null
           color_internal?: string | null
           created_at?: string
+          delivery_notes?: string | null
           depth_mm?: number | null
           dispute_notes?: string | null
+          estimated_delivery_date?: string | null
           estimated_price?: number | null
           external_space_mm?: number | null
           frame_type?: string | null
@@ -121,8 +125,10 @@ export type Database = {
           color_external?: string | null
           color_internal?: string | null
           created_at?: string
+          delivery_notes?: string | null
           depth_mm?: number | null
           dispute_notes?: string | null
+          estimated_delivery_date?: string | null
           estimated_price?: number | null
           external_space_mm?: number | null
           frame_type?: string | null

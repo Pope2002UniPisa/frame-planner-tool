@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import ClientSummary from "./pages/ClientSummary";
+import DeliverySummary from "./pages/DeliverySummary";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/clienti" element={<ClientSummary />} />
+            <Route path="/dashboard/consegne" element={<DeliverySummary />} />
             <Route path="/nuova-misurazione" element={<NewMeasurement />} />
             <Route path="/misurazione/:id" element={<MeasurementView />} />
             <Route path="/misurazione/:id/stampa" element={<MeasurementPrint />} />
