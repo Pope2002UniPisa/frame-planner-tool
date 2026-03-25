@@ -116,9 +116,10 @@ export default function MeasurementView() {
     return finish ? finish.name : id;
   };
 
-  const doorModelDisplayName = acc?.door_model_name || '';
+  const doorModelId = acc?.door_model || '';
+  const doorModelResolved = doorModelId ? getDoorModel(doorModelId) : null;
   const fields: [string, any, any?][] = [
-    ['Prodotto', doorModelDisplayName || (productLabels[m.product_type] || m.product_type)],
+    ['Prodotto', doorModelResolved?.name || (productLabels[m.product_type] || m.product_type)],
     ['Cliente', m.client_name],
     ['Indirizzo', m.client_address],
     ['Tipo rilievo', m.survey_type],
