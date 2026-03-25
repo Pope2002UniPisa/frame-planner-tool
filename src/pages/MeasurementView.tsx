@@ -50,7 +50,7 @@ export default function MeasurementView() {
     bianco_optical: 'Bianco Optical', nero: 'Nero', grigio_alluminio: 'Grigio Alluminio',
   };
 
-  const fields: [string, any][] = [
+  const fields: [string, any, any?][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
     ['Cliente', m.client_name],
     ['Indirizzo', m.client_address],
