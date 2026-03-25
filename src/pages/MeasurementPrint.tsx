@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
-import { getColorLabel, ALL_HANDLE_FINISHES, ALL_FRAMES } from '@/data/doorCatalog';
+import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES } from '@/data/doorCatalog';
+import pratelliLogo from '@/assets/pratelli-logo.png';
 
 const productLabels: Record<string, string> = {
   finestra: 'Finestra', porta_finestra: 'Porta Finestra', basculante: 'Basculante',
@@ -71,6 +72,16 @@ export default function MeasurementPrint() {
     return frame ? frame.name : id;
   };
 
+  const acc = m.accessories_config as any;
+  const doorHandleModel = acc?.door_handle_model_id || '';
+  const doorHandleFinish = acc?.door_handle_finish_id || '';
+  const doorColorName = acc?.door_color_name || '';
+
+  const resolveHandleModel = (id: string): string => {
+    const model = ALL_HANDLE_MODELS.find(m => m.id === id);
+    return model ? model.name : id;
+  };
+
   const rows: [string, string][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
     ['Cliente', m.client_name || '-'],
@@ -86,7 +97,10 @@ export default function MeasurementPrint() {
     ...(m.material ? [['Materiale', m.material] as [string, string]] : []),
     ...(m.color_internal ? [['Colore interno', resolveColor(m.color_internal)] as [string, string]] : []),
     ...(m.color_external ? [['Colore esterno', resolveColor(m.color_external)] as [string, string]] : []),
+    ...(doorColorName ? [['Colore porta', doorColorName] as [string, string]] : []),
     ...(m.handle_type ? [['Tipo maniglia', resolveHandleType(m.handle_type)] as [string, string]] : []),
+    ...(doorHandleModel ? [['Modello maniglia', resolveHandleModel(doorHandleModel)] as [string, string]] : []),
+    ...(doorHandleFinish ? [['Finitura maniglia', resolveHandleType(doorHandleFinish)] as [string, string]] : []),
     ...(m.glass_type ? [['Tipo vetro', m.glass_type] as [string, string]] : []),
     ...(m.is_square === false ? [['Fuori squadro', `${m.out_of_square_mm || 0} mm`] as [string, string]] : []),
     ...(m.is_plumb === false ? [['A piombo', 'No'] as [string, string]] : []),
@@ -193,6 +207,11 @@ export default function MeasurementPrint() {
               </div>
             </div>
           )}
+
+          {/* Footer with Pratelli logo */}
+          <div className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-3">
+            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-12 object-contain" />
+          </div>
         </div>
       </div>
     </div>
