@@ -208,7 +208,7 @@ export default function MeasurementView() {
         {/* Price with IVA */}
         {price > 0 && (isQuote || isOrder) && (
           <Card>
-            <CardHeader><CardTitle className="font-heading">Riepilogo economico</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="font-heading">Riepilogo</CardTitle></CardHeader>
             <CardContent>
               <div className="rounded-lg border border-border overflow-hidden">
                 <table className="w-full text-sm">

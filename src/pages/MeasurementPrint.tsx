@@ -142,7 +142,7 @@ export default function MeasurementPrint() {
           {/* Price section with IVA */}
           {price > 0 && (isQuote || isOrder) && (
             <div className="mt-6 border-t border-border pt-4">
-              <h3 className="font-heading font-bold text-foreground mb-3">Riepilogo economico</h3>
+              <h3 className="font-heading font-bold text-foreground mb-3">Riepilogo</h3>
               <div className="rounded-lg border border-border overflow-hidden">
                 <table className="w-full text-sm">
                   <tbody>
