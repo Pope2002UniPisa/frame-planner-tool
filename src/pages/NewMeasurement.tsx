@@ -151,6 +151,17 @@ export default function NewMeasurement() {
   const currentHeight = isMultiProduct ? (activeItem?.height_mm || '') : form.height_mm;
 
   const isStandaloneAccessory = form.product_type === 'battiscopa' || form.product_type === 'maniglia';
+  const isSingleLeafDoor = isDoorType(form.product_type);
+  const noHandleMode = ((accessoriesConfig as any).no_handle_mode || 'none') as 'none' | 'foro_maniglia' | 'foro_chiave' | 'foro_maniglia_chiave';
+  const hasNoHandleSelection = noHandleMode !== 'none';
+
+  const normalizeOpeningDirectionForDb = (value: string): 'destra' | 'sinistra' | null => {
+    if (!value) return null;
+    if (value.includes('destra')) return 'destra';
+    if (value.includes('sinistra')) return 'sinistra';
+    if (value === 'destra' || value === 'sinistra') return value;
+    return null;
+  };
 
   // Steps to skip for standalone accessories (battiscopa/maniglia)
   // They only need: product(0), client(1), survey(2) → then jump to notes(9)
@@ -235,15 +246,15 @@ export default function NewMeasurement() {
     is_level: itemOverrides?.is_level ?? form.is_level,
     internal_space_mm: (itemOverrides?.internal_space_mm || form.internal_space_mm) ? parseInt(itemOverrides?.internal_space_mm || form.internal_space_mm) : null,
     external_space_mm: (itemOverrides?.external_space_mm || form.external_space_mm) ? parseInt(itemOverrides?.external_space_mm || form.external_space_mm) : null,
-    num_panels: parseInt(form.num_panels),
+    num_panels: isSingleLeafDoor ? 1 : (parseInt(form.num_panels) || 1),
     panel_type: form.panel_type || null,
-    opening_direction: form.opening_direction || null,
+    opening_direction: normalizeOpeningDirectionForDb(form.opening_direction),
     frame_type: form.frame_type || null,
     material: form.material || null,
     color_internal: form.color_internal || null,
     color_external: form.color_external || null,
-    handle_type: form.handle_type || null,
-    glass_type: form.glass_type || null,
+    handle_type: hasNoHandleSelection ? null : (form.handle_type || null),
+    glass_type: form.product_type === 'porta' ? 'cieca' : (form.glass_type || null),
     has_mosquito_net: form.has_mosquito_net,
     has_shutter: form.has_shutter,
     has_box: form.has_box,
@@ -258,12 +269,14 @@ export default function NewMeasurement() {
       ...accessoriesConfig,
       ...(isDoorType(form.product_type) ? {
         door_model: form.door_model,
-        door_handle_model_id: form.door_handle_model_id,
-        door_handle_finish_id: form.door_handle_finish_id,
+        door_model_name: getDoorModel(form.door_model)?.name || '',
+        door_handle_model_id: hasNoHandleSelection ? '' : form.door_handle_model_id,
+        door_handle_finish_id: hasNoHandleSelection ? '' : form.door_handle_finish_id,
         door_color_id: form.door_color_id,
         door_color_name: getDoorModel(form.door_model)?.colors.find(c => c.id === form.door_color_id)?.name || '',
         door_frame_id: form.door_frame_id,
         door_special_variant: form.door_special_variant,
+        no_handle_mode: noHandleMode,
       } : {}),
     } as any,
     estimated_price: status !== 'bozza' ? getEstimatedPrice(itemOverrides?.width_mm, itemOverrides?.height_mm) : null,
