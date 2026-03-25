@@ -199,10 +199,16 @@ export default function AdminDashboard() {
   // Sales objective CRUD
   const handleSaveObjective = async () => {
     try {
-      const { data, error } = await supabase.from('sales_objectives').insert(objForm as any).select().single();
+      const payload = {
+        ...objForm,
+        product_type: objForm.product_type === ALL_PRODUCTS_VALUE ? null : objForm.product_type,
+        brand: objForm.brand === ALL_BRANDS_VALUE ? null : objForm.brand,
+      };
+      const { data, error } = await supabase.from('sales_objectives').insert(payload as any).select().single();
       if (error) throw error;
       setSalesObjectives(prev => [data, ...prev]);
       setObjectiveDialog(false);
+      setObjForm({ user_id: '', product_type: ALL_PRODUCTS_VALUE, brand: ALL_BRANDS_VALUE, target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
       toast.success('Obiettivo di vendita creato!');
     } catch (err: any) { toast.error(err.message); }
   };
