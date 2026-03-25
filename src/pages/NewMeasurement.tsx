@@ -411,6 +411,7 @@ export default function NewMeasurement() {
               doorHandleFinishId={form.product_type === 'porta' ? form.door_handle_finish_id : undefined}
               doorHandleModelId={form.product_type === 'porta' ? form.door_handle_model_id : undefined}
               doorModelId={form.product_type === 'porta' ? form.door_model : undefined}
+              doorSpecialVariant={form.product_type === 'porta' ? form.door_special_variant : undefined}
             />
           </div>
         </div>
