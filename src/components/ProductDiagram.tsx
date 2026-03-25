@@ -679,7 +679,7 @@ export default function ProductDiagram({
         )}
 
         <text x={offsetX + drawW / 2} y={offsetY + drawH + (doorModelName ? 30 : 18)} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-          {hasGlass ? 'Porta con vetro' : 'Porta cieca'}
+          {hasGlass ? 'Porta con vetro' : productTypeLabel}
         </text>
 
         {frameLabel && (
