@@ -266,11 +266,13 @@ export default function ProductDiagram({
     const doorColor = doorColorHex || frontColor;
     const isScorrevole = panelType === 'scorrevole';
     
-    // Handle/hinge side logic - works for all directions and views
+    // "Apertura sinistra" = hinges LEFT, handle RIGHT (external view)
+    // "Apertura destra" = hinges RIGHT, handle LEFT (external view)
     const isInternal = view === 'internal';
-    const handleOnLeft = openingDirection === 'sinistra';
-    // Internal view mirrors the door
-    const effectiveHandleLeft = isInternal ? !handleOnLeft : handleOnLeft;
+    // External: sinistra => handle RIGHT, destra => handle LEFT
+    const handleOnRight_ext = openingDirection === 'sinistra';
+    // Internal view mirrors everything
+    const effectiveHandleRight = isInternal ? !handleOnRight_ext : handleOnRight_ext;
     
     // Handle finish color
     const getHandleColor = () => {
@@ -286,9 +288,10 @@ export default function ProductDiagram({
     const handleColor = getHandleColor();
 
     // Door panel positions
-    const handleX = effectiveHandleLeft ? offsetX + 18 : offsetX + drawW - 22;
-    const hingeX = effectiveHandleLeft ? offsetX + drawW - 6 : offsetX + 2;
-    const leverDir = effectiveHandleLeft ? -1 : 1;
+    const handleX = effectiveHandleRight ? offsetX + drawW - 22 : offsetX + 18;
+    const hingeX = effectiveHandleRight ? offsetX + 2 : offsetX + drawW - 6;
+    // Lever points OUTWARD from the door edge (away from center)
+    const leverDir = effectiveHandleRight ? 1 : -1;
 
     // Yncisa 70 specific pantograph pattern
     const renderYncisa70Pattern = () => {
