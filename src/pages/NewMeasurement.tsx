@@ -858,29 +858,31 @@ export default function NewMeasurement() {
                     )}
                   </div>
 
-                  <div className="space-y-3 pt-4">
-                    <Label className="text-base font-semibold">Controlli tecnici</Label>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v)} />
-                        <Label htmlFor="square">Squadrato</Label>
-                      </div>
-                      {!form.is_square && (
-                        <div className="ml-8 space-y-2">
-                          <Label>Fuori squadro (mm)</Label>
-                          <Input type="number" value={form.out_of_square_mm} onChange={e => update('out_of_square_mm', e.target.value)} placeholder="5" />
+                  {form.product_type !== 'porta' && (
+                    <div className="space-y-3 pt-4">
+                      <Label className="text-base font-semibold">Controlli tecnici</Label>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v)} />
+                          <Label htmlFor="square">Squadrato</Label>
                         </div>
-                      )}
-                      <div className="flex items-center gap-3">
-                        <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} />
-                        <Label htmlFor="plumb">A piombo</Label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v)} />
-                        <Label htmlFor="level">Livellato</Label>
+                        {!form.is_square && (
+                          <div className="ml-8 space-y-2">
+                            <Label>Fuori squadro (mm)</Label>
+                            <Input type="number" value={form.out_of_square_mm} onChange={e => update('out_of_square_mm', e.target.value)} placeholder="5" />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3">
+                          <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} />
+                          <Label htmlFor="plumb">A piombo</Label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v)} />
+                          <Label htmlFor="level">Livellato</Label>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {form.product_type !== 'porta' && (
                     <div className="grid grid-cols-2 gap-4 pt-4">
