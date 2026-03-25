@@ -1598,24 +1598,24 @@ export default function NewMeasurement() {
 
         {/* Navigation */}
         <div className="mt-6 flex flex-wrap justify-between gap-3">
-          <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 0}>
+          <Button variant="outline" onClick={goPrevStep} disabled={isFirstStep}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Indietro
           </Button>
           <div className="flex gap-3">
-            {step === STEPS.length - 1 && (
+            {isLastStep && (
               <Button variant="outline" onClick={handleSaveDraft} disabled={savingDraft || submitting} className="gap-2">
                 <Save className="h-4 w-4" />
                 {savingDraft ? 'Salvataggio...' : 'Salva Bozza'}
               </Button>
             )}
-            {step < STEPS.length - 1 ? (
-              <Button onClick={() => setStep(s => s + 1)} disabled={!canGoNext()}>
+            {!isLastStep ? (
+              <Button onClick={goNextStep} disabled={!canGoNext()}>
                 Avanti <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
               <Button onClick={handleSubmit} disabled={submitting || savingDraft} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
                 <Check className="h-4 w-4" />
-                {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Misurazioni` : 'Misurazione'}`}
+                {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Misurazioni` : 'Ordine'}`}
               </Button>
             )}
           </div>
