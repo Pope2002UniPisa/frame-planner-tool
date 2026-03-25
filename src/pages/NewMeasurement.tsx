@@ -400,12 +400,14 @@ export default function NewMeasurement() {
               openingDirection={form.opening_direction}
               handleType={form.handle_type}
               glassType={form.glass_type}
-              frameType={form.frame_type}
+              frameType={form.product_type === 'porta' && form.door_frame_id ? form.door_frame_id : form.frame_type}
               colorInternal={form.color_internal}
               colorExternal={form.color_external}
               internalSpaceMm={isMultiProduct ? (activeItem?.internal_space_mm || '') : form.internal_space_mm}
               externalSpaceMm={isMultiProduct ? (activeItem?.external_space_mm || '') : form.external_space_mm}
               view={view}
+              doorColorHex={form.product_type === 'porta' && form.door_color_id ? (getDoorModel(form.door_model)?.colors.find(c => c.id === form.door_color_id)?.hex) : undefined}
+              doorHandleId={form.product_type === 'porta' ? form.door_handle_id : undefined}
             />
           </div>
         </div>
