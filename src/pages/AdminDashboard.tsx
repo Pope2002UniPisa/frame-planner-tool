@@ -377,6 +377,25 @@ export default function AdminDashboard() {
               </div>
             )}
 
+            {/* Riepilogo Pagamenti */}
+            <Card className="border-2 border-green-500/20 bg-green-500/5 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/dashboard/pagamenti')}>
+              <CardContent className="flex items-center justify-between py-5 px-6">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-green-500/10 p-2.5">
+                    <CreditCard className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground font-heading">Riepilogo Pagamenti</p>
+                    <p className="text-xs text-muted-foreground">Tutti i pagamenti dei clienti</p>
+                  </div>
+                </div>
+                <Button variant="default" className="gap-2">
+                  Apri riepilogo
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader><CardTitle className="text-sm font-heading">Ultime misurazioni ricevute</CardTitle></CardHeader>
               <CardContent>
