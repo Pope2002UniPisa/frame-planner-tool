@@ -31,13 +31,15 @@ const getWorkflowIndex = (status: string): number => {
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   bozza: { label: 'Bozza', variant: 'outline' },
-  ricevuto: { label: 'Inviata', variant: 'default' },
-  submitted: { label: 'Inviata', variant: 'default' },
+  ricevuto: { label: 'Preventivo', variant: 'default' },
+  submitted: { label: 'Preventivo', variant: 'default' },
   in_review: { label: 'In revisione', variant: 'secondary' },
-  quoted: { label: 'Preventivata', variant: 'outline' },
+  quoted: { label: 'Preventivo', variant: 'default' },
   quote_accepted: { label: 'Preventivo accettato', variant: 'default' },
   quote_modifications: { label: 'Modifiche richieste', variant: 'destructive' },
-  ordered: { label: 'Ordinata', variant: 'default' },
+  ordered: { label: 'Ordinata', variant: 'secondary' },
+  in_production: { label: 'In produzione', variant: 'default' },
+  delivering: { label: 'In consegna', variant: 'default' },
   completed: { label: 'Completata', variant: 'secondary' },
 };
 
