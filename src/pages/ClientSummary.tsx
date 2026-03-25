@@ -23,9 +23,13 @@ const productLabels: Record<string, string> = {
   finestra: 'Finestra',
   porta_finestra: 'Porta Finestra',
   porta: 'Porta',
+  porta_finestrata: 'Porta Finestrata',
+  porta_filomuro: 'Porta Filomuro',
   basculante: 'Basculante',
   zanzariera: 'Zanzariera',
   persiana: 'Persiana',
+  battiscopa: 'Battiscopa',
+  maniglia: 'Maniglia',
 };
 
 export default function ClientSummary() {
