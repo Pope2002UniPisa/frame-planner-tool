@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
-import PaymentSummary from '@/components/PaymentSummary';
+
 
 const WORKFLOW_STEPS = [
   { key: 'bozza', label: 'Bozza', icon: '📝' },
@@ -312,19 +312,21 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Riepilogo Pagamenti */}
+        {/* Riepilogo Pagamenti - pagina dedicata */}
         <Card className="mb-6 border-2 border-green-500/20 bg-green-500/5 shadow-md">
-          <CardContent className="py-5 px-6">
-            <div className="flex items-center gap-3 mb-4">
+          <CardContent className="flex items-center justify-between py-5 px-6">
+            <div className="flex items-center gap-3">
               <div className="rounded-lg bg-green-500/10 p-2.5">
                 <CreditCard className="h-5 w-5 text-green-600" />
               </div>
               <div>
                 <p className="font-semibold text-foreground font-heading">Riepilogo Pagamenti</p>
-                <p className="text-xs text-muted-foreground">Stato pagamenti, metodi e ricevute</p>
               </div>
             </div>
-            <PaymentSummary userId={user.id} />
+            <Button onClick={() => navigate('/dashboard/pagamenti')} className="gap-2">
+              Apri riepilogo
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </CardContent>
         </Card>
 
