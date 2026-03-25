@@ -248,90 +248,147 @@ export default function ProductDiagram({
     );
   }
 
-  // PORTA - solid interior door, tall proportions, proper door look
   if (productType === 'porta') {
     const hasGlass = !!glassType && glassType !== 'cieca';
-    const doorGlassLabel = (() => {
-      const map: Record<string, string> = {
-        trasparente: 'Vetro trasparente', satinato: 'Vetro satinato',
-        a_quadri: 'Vetro a quadri', stondato: 'Vetro stondato',
-        doppio: 'Doppio vetro', triplo: 'Triplo vetro',
-      };
-      return map[glassType] || '';
-    })();
+    const doorColor = doorColorHex || frontColor;
+    const isScorrevole = panelType === 'scorrevole';
+    
+    // For doors: handle side and hinge side swap between internal/external view
+    // External view: handle on the selected side, hinges on opposite
+    // Internal view: handle and hinges swap (mirror)
+    const isInternal = view === 'internal';
+    const handleOnLeft = openingDirection === 'sinistra';
+    // Internal view mirrors the door
+    const effectiveHandleLeft = isInternal ? !handleOnLeft : handleOnLeft;
+    
+    // Handle colors based on doorHandleId
+    const getHandleColor = () => {
+      switch (doorHandleId) {
+        case 'cromo_satinato': return '#B8B8B8';
+        case 'cromo_lucido': return '#E0E0E0';
+        case 'bianco_optical': return '#F0F0EC';
+        case 'nero': return '#2A2A2A';
+        case 'grigio_alluminio': return '#A0A0A0';
+        default: return '#B8B8B8';
+      }
+    };
+    const handleColor = getHandleColor();
 
-    // Door-specific drawing - taller, with threshold
+    // Door handle - lever style with proper color
+    const drawDoorHandleStyled = (hx: number, hy: number, mirrorX: boolean) => {
+      const leverDir = mirrorX ? -1 : 1;
+      return (
+        <g>
+          {/* Rosetta (back plate) */}
+          <rect x={hx - 3} y={hy - 25} width={10} height={50} rx={3} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" opacity="0.9" />
+          {/* Lever handle */}
+          <rect x={hx} y={hy - 2} width={leverDir * 20} height={4} rx={2} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+          {/* Lever tip */}
+          <circle cx={hx + leverDir * 20} cy={hy} r={2.5} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+          {/* Keyhole */}
+          <circle cx={hx + 2} cy={hy + 15} r={2} fill="hsl(var(--foreground))" opacity="0.4" />
+        </g>
+      );
+    };
+
+    // Sliding door track
+    const drawSlidingTrack = () => (
+      <g>
+        {/* Top track */}
+        <rect x={offsetX - 10} y={offsetY - 8} width={drawW + 20} height={4} rx={1} fill="hsl(var(--muted-foreground))" opacity="0.6" />
+        {/* Bottom track */}
+        <rect x={offsetX - 10} y={offsetY + drawH + 4} width={drawW + 20} height={3} rx={1} fill="hsl(var(--muted-foreground))" opacity="0.5" />
+        {/* Arrow indicating sliding direction */}
+        <line x1={offsetX + drawW / 2 - 20} y1={offsetY - 14} x2={offsetX + drawW / 2 + 20} y2={offsetY - 14} stroke="hsl(var(--accent))" strokeWidth="1" markerEnd="url(#arrowhead)" />
+      </g>
+    );
+
+    const handleX = effectiveHandleLeft ? offsetX + 16 : offsetX + drawW - 20;
+    const hingeX = effectiveHandleLeft ? offsetX + drawW - 6 : offsetX + 2;
+
     return (
       <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full max-w-sm mx-auto">
-        {topFace(offsetX, offsetY, drawW, dxOff, dyOff, frontColor)}
-        {rightFace(offsetX + drawW, offsetY, drawH, dxOff, dyOff, sideColor)}
+        <defs>
+          <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+            <polygon points="0 0, 6 2, 0 4" fill="hsl(var(--accent))" />
+          </marker>
+        </defs>
 
-        {/* Door frame (architrave) */}
-        <rect x={offsetX - 4} y={offsetY - 4} width={drawW + 8} height={drawH + 8} fill="none" stroke="hsl(var(--foreground))" strokeWidth="3" />
+        {/* Sliding track if scorrevole */}
+        {isScorrevole && drawSlidingTrack()}
+
+        {/* Door frame (stipite) */}
+        <rect x={offsetX - 5} y={offsetY - 5} width={drawW + 10} height={drawH + 10} fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" />
         
-        {/* Door body */}
-        <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={frontColor} stroke="hsl(var(--foreground))" strokeWidth="2" />
+        {/* Door body - uses selected color */}
+        <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
 
-        {/* Inner frame line */}
-        <rect x={offsetX + frameThickness} y={offsetY + frameThickness} width={drawW - frameThickness * 2} height={drawH - frameThickness * 2} fill="none" stroke="hsl(var(--foreground))" strokeWidth="1" />
+        {/* Yncisa 70 pantograph decorations - the characteristic soft curved lines */}
+        <rect x={offsetX + 12} y={offsetY + 12} width={drawW - 24} height={(drawH - 24) * 0.28} rx={2} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.8" opacity="0.25" />
+        <rect x={offsetX + 12} y={offsetY + 12 + (drawH - 24) * 0.32} width={drawW - 24} height={(drawH - 24) * 0.63} rx={2} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.8" opacity="0.25" />
+        
+        {/* Subtle inner decorative lines (pantografature morbide) */}
+        <rect x={offsetX + 18} y={offsetY + 18} width={drawW - 36} height={(drawH - 24) * 0.25} rx={1} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" opacity="0.15" />
+        <rect x={offsetX + 18} y={offsetY + 18 + (drawH - 24) * 0.33} width={drawW - 36} height={(drawH - 24) * 0.58} rx={1} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" opacity="0.15" />
 
-        {hasGlass ? (
+        {hasGlass && (
           <>
-            {/* Upper glass panel */}
-            <rect x={offsetX + 14} y={offsetY + 14} width={drawW - 28} height={(drawH - 28) * 0.35} fill={GLASS_COLOR} stroke={GLASS_STROKE} strokeWidth="1" rx={glassType === 'stondato' ? 8 : 0} />
-            {glassType === 'satinato' && <rect x={offsetX + 14} y={offsetY + 14} width={drawW - 28} height={(drawH - 28) * 0.35} fill="rgba(255,255,255,0.5)" rx={0} />}
+            <rect x={offsetX + 16} y={offsetY + 16} width={drawW - 32} height={(drawH - 32) * 0.3} fill={GLASS_COLOR} stroke={GLASS_STROKE} strokeWidth="1" rx={glassType === 'stondato' ? 6 : 0} />
+            {glassType === 'satinato' && <rect x={offsetX + 16} y={offsetY + 16} width={drawW - 32} height={(drawH - 32) * 0.3} fill="rgba(255,255,255,0.5)" />}
             {glassType === 'a_quadri' && (
               <>
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <line key={`v${i}`} x1={offsetX + 14 + (i + 1) * ((drawW - 28) / 4)} y1={offsetY + 14} x2={offsetX + 14 + (i + 1) * ((drawW - 28) / 4)} y2={offsetY + 14 + (drawH - 28) * 0.35} stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" />
+                  <line key={`v${i}`} x1={offsetX + 16 + (i + 1) * ((drawW - 32) / 4)} y1={offsetY + 16} x2={offsetX + 16 + (i + 1) * ((drawW - 32) / 4)} y2={offsetY + 16 + (drawH - 32) * 0.3} stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" />
                 ))}
                 {Array.from({ length: 2 }).map((_, i) => (
-                  <line key={`h${i}`} x1={offsetX + 14} y1={offsetY + 14 + (i + 1) * ((drawH - 28) * 0.35 / 3)} x2={offsetX + drawW - 14} y2={offsetY + 14 + (i + 1) * ((drawH - 28) * 0.35 / 3)} stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" />
+                  <line key={`h${i}`} x1={offsetX + 16} y1={offsetY + 16 + (i + 1) * ((drawH - 32) * 0.3 / 3)} x2={offsetX + drawW - 16} y2={offsetY + 16 + (i + 1) * ((drawH - 32) * 0.3 / 3)} stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" />
                 ))}
               </>
             )}
-            {doorGlassLabel && (
-              <text x={offsetX + drawW / 2} y={offsetY + 14 + (drawH - 28) * 0.35 + 14} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">{doorGlassLabel}</text>
-            )}
-            {/* Lower solid panel */}
-            <rect x={offsetX + 14} y={offsetY + (drawH - 28) * 0.4 + 14} width={drawW - 28} height={(drawH - 28) * 0.56} fill={frontColor} stroke="hsl(var(--muted-foreground))" strokeWidth="0.8" />
-            {/* Wood grain */}
-            {Array.from({ length: 3 }).map((_, i) => (
-              <line key={i} x1={offsetX + 20} y1={offsetY + (drawH - 28) * 0.45 + 14 + i * 30} x2={offsetX + drawW - 20} y2={offsetY + (drawH - 28) * 0.45 + 14 + i * 30} stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.15" />
-            ))}
-          </>
-        ) : (
-          <>
-            {/* Solid door - two decorative panels */}
-            <rect x={offsetX + 14} y={offsetY + 14} width={drawW - 28} height={(drawH - 28) * 0.3} fill={frontColor} stroke="hsl(var(--muted-foreground))" strokeWidth="1" />
-            <rect x={offsetX + 14} y={offsetY + (drawH - 28) * 0.35 + 14} width={drawW - 28} height={(drawH - 28) * 0.6} fill={frontColor} stroke="hsl(var(--muted-foreground))" strokeWidth="1" />
-            {/* Wood grain lines */}
-            {Array.from({ length: 6 }).map((_, i) => (
-              <line key={i} x1={offsetX + 20} y1={offsetY + 20 + i * ((drawH - 40) / 7)} x2={offsetX + drawW - 20} y2={offsetY + 20 + i * ((drawH - 40) / 7)} stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.12" />
-            ))}
-            <text x={offsetX + drawW / 2} y={offsetY + drawH - 12} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">Porta cieca</text>
           </>
         )}
 
-        {/* Door handle - lever style */}
-        {drawDoorHandle(
-          openingDirection === 'sinistra' ? offsetX + 18 : offsetX + drawW - 22,
-          handleY
+        {/* Door handle with proper style and color */}
+        {!isScorrevole && drawDoorHandleStyled(handleX, handleY, effectiveHandleLeft)}
+        
+        {/* Sliding handle (recessed) */}
+        {isScorrevole && (
+          <g>
+            <rect x={handleX - 1} y={handleY - 18} width={6} height={36} rx={3} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+          </g>
+        )}
+
+        {/* 3 hinges on hinge side */}
+        {!isScorrevole && (
+          <>
+            <rect x={hingeX} y={offsetY + drawH * 0.12} width={4} height={14} rx={2} fill="hsl(var(--foreground))" opacity="0.6" />
+            <rect x={hingeX} y={offsetY + drawH * 0.48} width={4} height={14} rx={2} fill="hsl(var(--foreground))" opacity="0.6" />
+            <rect x={hingeX} y={offsetY + drawH * 0.82} width={4} height={14} rx={2} fill="hsl(var(--foreground))" opacity="0.6" />
+          </>
         )}
 
         {/* Threshold */}
-        <rect x={offsetX - 6} y={offsetY + drawH + 4} width={drawW + 12} height={4} fill="hsl(var(--muted-foreground))" opacity="0.4" rx={1} />
+        <rect x={offsetX - 6} y={offsetY + drawH + 5} width={drawW + 12} height={3} fill="hsl(var(--muted-foreground))" opacity="0.4" rx={1} />
 
-        {/* Hinges */}
-        <rect x={openingDirection === 'sinistra' ? offsetX + drawW - 6 : offsetX + 2} y={offsetY + drawH * 0.15} width={4} height={12} rx={2} fill="hsl(var(--foreground))" opacity="0.5" />
-        <rect x={openingDirection === 'sinistra' ? offsetX + drawW - 6 : offsetX + 2} y={offsetY + drawH * 0.75} width={4} height={12} rx={2} fill="hsl(var(--foreground))" opacity="0.5" />
-
-        <DimensionH x={offsetX} y={offsetY - dyOff - 28} width={drawW} label={`${w}`} />
+        {/* Dimensions */}
+        <DimensionH x={offsetX} y={offsetY - 28} width={drawW} label={`${w}`} />
         <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
-        <DepthDimLabel x={offsetX + drawW + 8} y={offsetY - 8} dx={dxOff} dy={dyOff} label={`${d}`} />
 
-        <text x={offsetX + drawW / 2} y={offsetY + drawH + 28} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-          Telaio {frameType === 'ridotto' ? 'ridotto' : frameType === 'maggiorato' ? 'maggiorato' : 'standard'}
+        {/* Label */}
+        <text x={offsetX + drawW / 2} y={offsetY + drawH + 26} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+          {hasGlass ? 'Porta con vetro' : 'Porta cieca'}
+        </text>
+
+        {/* Frame name */}
+        {frameType && frameType !== 'standard' && (
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + 36} textAnchor="middle" fontSize="6" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+            Telaio: {frameType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          </text>
+        )}
+
+        {/* Opening type label */}
+        <text x={offsetX + drawW / 2} y={offsetY - 36} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
+          {isScorrevole ? '↔ Scorrevole' : '⟳ Battente'}
         </text>
 
         {view && (
@@ -339,13 +396,13 @@ export default function ProductDiagram({
             {view === 'internal' ? '🏠 Vista Interna' : '🌳 Vista Esterna'}
           </text>
         )}
-        {view && (
-          <text x={offsetX + drawW + dxOff + 18} y={offsetY + drawH / 2} fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace" textAnchor="start">
-            {view === 'internal' ? `Int: ${COLOR_OPTIONS.find(c => c.value === colorInternal)?.label || ''}` : `Est: ${COLOR_OPTIONS.find(c => c.value === colorExternal)?.label || ''}`}
+
+        {/* Handle type label */}
+        {doorHandleId && (
+          <text x={offsetX + drawW / 2} y={svgH - 4} textAnchor="middle" fontSize="6" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+            Maniglia: {doorHandleId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
           </text>
         )}
-
-        {spaceLabels()}
       </svg>
     );
   }
