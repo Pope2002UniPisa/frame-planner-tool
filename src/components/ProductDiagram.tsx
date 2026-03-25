@@ -22,6 +22,15 @@ export function getColorHex(value: string): string {
 const GLASS_COLOR = 'rgba(200, 230, 255, 0.25)';
 const GLASS_STROKE = 'rgba(160, 200, 230, 0.5)';
 
+// Helper to darken/lighten a hex color for pantograph grooves
+function adjustColor(hex: string, amount: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.max(0, Math.min(255, ((num >> 16) & 0xFF) + amount));
+  const g = Math.max(0, Math.min(255, ((num >> 8) & 0xFF) + amount));
+  const b = Math.max(0, Math.min(255, (num & 0xFF) + amount));
+  return `rgb(${r},${g},${b})`;
+}
+
 interface ProductDiagramProps {
   productType: string;
   widthMm: string;

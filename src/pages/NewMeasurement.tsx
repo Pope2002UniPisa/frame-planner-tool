@@ -1123,24 +1123,47 @@ export default function NewMeasurement() {
                         })()}
                       </div>
 
-                      {/* Handle selection from catalog */}
+                      {/* Handle model selection */}
                       <div className="space-y-2">
-                        <Label>Maniglia</Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {getCompatibleHandles(form.door_model).map(handle => (
+                        <Label>Tipo maniglia</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          {getCompatibleHandleModels(form.door_model).map(hm => (
                             <button
-                              key={handle.id}
+                              key={hm.id}
                               type="button"
-                              onClick={() => { update('door_handle_id', handle.id); update('handle_type', handle.id); }}
-                              className={`flex items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${
-                                form.door_handle_id === handle.id
+                              onClick={() => update('door_handle_model_id', hm.id)}
+                              className={`flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-sm transition-all ${
+                                form.door_handle_model_id === hm.id
                                   ? 'border-accent bg-accent/10'
                                   : 'border-border hover:border-muted-foreground/30'
                               }`}
                             >
-                              <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
-                              <span className="font-medium">{handle.name}</span>
-                              {form.door_handle_id === handle.id && <Check className="h-4 w-4 text-accent ml-auto" />}
+                              <span className="font-medium">{hm.name}</span>
+                              {hm.description && <span className="text-xs text-muted-foreground">{hm.description}</span>}
+                              {form.door_handle_model_id === hm.id && <Check className="h-4 w-4 text-accent" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Handle finish selection */}
+                      <div className="space-y-2">
+                        <Label>Finitura maniglia</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {getCompatibleHandleFinishes(form.door_model).map(hf => (
+                            <button
+                              key={hf.id}
+                              type="button"
+                              onClick={() => { update('door_handle_finish_id', hf.id); update('handle_type', hf.id); }}
+                              className={`flex items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${
+                                form.door_handle_finish_id === hf.id
+                                  ? 'border-accent bg-accent/10'
+                                  : 'border-border hover:border-muted-foreground/30'
+                              }`}
+                            >
+                              <div className="w-5 h-5 rounded-full border border-border shadow-inner" style={{ backgroundColor: hf.hex }} />
+                              <span className="font-medium">{hf.name}</span>
+                              {form.door_handle_finish_id === hf.id && <Check className="h-4 w-4 text-accent ml-auto" />}
                             </button>
                           ))}
                         </div>
