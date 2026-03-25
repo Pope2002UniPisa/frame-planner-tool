@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp, HelpCircle } from 'lucide-react';
+import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp, HelpCircle, CreditCard, ArrowRight } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 
@@ -376,6 +376,25 @@ export default function AdminDashboard() {
                 </Card>
               </div>
             )}
+
+            {/* Riepilogo Pagamenti */}
+            <Card className="border-2 border-green-500/20 bg-green-500/5 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/dashboard/pagamenti')}>
+              <CardContent className="flex items-center justify-between py-5 px-6">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-green-500/10 p-2.5">
+                    <CreditCard className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground font-heading">Riepilogo Pagamenti</p>
+                    <p className="text-xs text-muted-foreground">Tutti i pagamenti dei clienti</p>
+                  </div>
+                </div>
+                <Button variant="default" className="gap-2">
+                  Apri riepilogo
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader><CardTitle className="text-sm font-heading">Ultime misurazioni ricevute</CardTitle></CardHeader>
