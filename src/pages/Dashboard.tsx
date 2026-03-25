@@ -17,16 +17,15 @@ import pratelliLogo from '@/assets/pratelli-logo.png';
 
 const WORKFLOW_STEPS = [
   { key: 'bozza', label: 'Bozza', icon: '📝' },
-  { key: 'ricevuto', label: 'Inviata', icon: '📤' },
-  { key: 'in_review', label: 'In revisione', icon: '🔍' },
-  { key: 'quoted', label: 'Preventivata', icon: '💰' },
-  { key: 'quote_accepted', label: 'Accettata', icon: '✅' },
-  { key: 'ordered', label: 'Ordinata', icon: '📦' },
+  { key: 'quoted', label: 'Preventivo', icon: '💰' },
+  { key: 'ordered', label: 'Ordine', icon: '📋' },
+  { key: 'in_production', label: 'Produzione', icon: '✅' },
+  { key: 'delivering', label: 'Consegna', icon: '📦' },
   { key: 'completed', label: 'Completata', icon: '🏁' },
 ];
 
 const getWorkflowIndex = (status: string): number => {
-  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, in_review: 2, quoted: 3, quote_accepted: 4, quote_modifications: 3, ordered: 5, completed: 6 };
+  const map: Record<string, number> = { bozza: 0, ricevuto: 1, submitted: 1, quoted: 1, quote_accepted: 1, quote_modifications: 1, ordered: 2, in_production: 3, delivering: 4, completed: 5 };
   return map[status] ?? 0;
 };
 
