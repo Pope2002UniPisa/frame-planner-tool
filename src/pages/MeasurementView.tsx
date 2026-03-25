@@ -86,6 +86,36 @@ export default function MeasurementView() {
   const iva = Math.round(price * 0.22 * 100) / 100;
   const totalWithIva = Math.round((price + iva) * 100) / 100;
 
+  // Resolve color to full label: try door catalog first, then window COLOR_OPTIONS
+  const resolveColor = (colorId: string): { name: string; hex: string } | null => {
+    const doorColor = getColorLabel(colorId);
+    if (doorColor) return doorColor;
+    const windowColor = COLOR_OPTIONS.find(c => c.value === colorId);
+    if (windowColor) return { name: windowColor.label, hex: windowColor.hex };
+    return null;
+  };
+
+  const resolveHandleType = (id: string): string => {
+    const finish = ALL_HANDLE_FINISHES.find(f => f.id === id);
+    if (finish) return finish.name;
+    return id;
+  };
+
+  const resolveFrame = (id: string): string => {
+    const frame = ALL_FRAMES.find(f => f.id === id);
+    return frame ? frame.name : id;
+  };
+
+  const resolveHandleModel = (id: string): string => {
+    const model = ALL_HANDLE_MODELS.find(m => m.id === id);
+    return model ? model.name : id;
+  };
+
+  const resolveHandleFinish = (id: string): string => {
+    const finish = ALL_HANDLE_FINISHES.find(f => f.id === id);
+    return finish ? finish.name : id;
+  };
+
   const fields: [string, any, any?][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
     ['Cliente', m.client_name],
@@ -97,14 +127,14 @@ export default function MeasurementView() {
     m.num_panels && ['Numero ante', m.num_panels],
     m.panel_type && ['Tipologia apertura', m.panel_type],
     m.opening_direction && ['Direzione apertura', m.opening_direction],
-    m.frame_type && ['Tipo telaio', m.frame_type],
+    m.frame_type && ['Tipo telaio', resolveFrame(m.frame_type)],
     m.material && ['Materiale', m.material],
-    m.color_internal && ['Colore interno', m.color_internal, getColorLabel(m.color_internal)],
-    m.color_external && ['Colore esterno', m.color_external, getColorLabel(m.color_external)],
+    m.color_internal && ['Colore interno', m.color_internal, resolveColor(m.color_internal)],
+    m.color_external && ['Colore esterno', m.color_external, resolveColor(m.color_external)],
     doorColorName && ['Colore porta', doorColorName],
-    m.handle_type && ['Tipo maniglia', m.handle_type],
-    doorHandleModel && ['Modello maniglia', handleModelLabels[doorHandleModel] || doorHandleModel],
-    doorHandleFinish && ['Finitura maniglia', handleFinishLabels[doorHandleFinish] || doorHandleFinish],
+    m.handle_type && ['Tipo maniglia', resolveHandleType(m.handle_type)],
+    doorHandleModel && ['Modello maniglia', resolveHandleModel(doorHandleModel)],
+    doorHandleFinish && ['Finitura maniglia', resolveHandleFinish(doorHandleFinish)],
     m.glass_type && ['Tipo vetro', m.glass_type],
     m.installation_type && ['Tipo fornitura', m.installation_type],
     m.laying_type && ['Tipo posa', m.laying_type],
