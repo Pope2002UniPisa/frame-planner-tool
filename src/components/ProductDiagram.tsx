@@ -283,14 +283,15 @@ export default function ProductDiagram({
     const effectiveHandleRight = isInternal ? !isRight : isRight;
     
     const getHandleColor = () => {
-      switch (doorHandleFinishId) {
-        case 'cromo_satinato': return '#B8B8B8';
-        case 'cromo_lucido': return '#E0E0E0';
-        case 'bianco_optical': return '#F0F0EC';
-        case 'nero': return '#2A2A2A';
-        case 'grigio_alluminio': return '#A0A0A0';
-        default: return '#B8B8B8';
-      }
+      const finishMap: Record<string, string> = {
+        'cromo_satinato': '#B8B8B8', 'cromo_lucido': '#E0E0E0', 'bianco_optical': '#F0F0EC',
+        'nero': '#2A2A2A', 'grigio_alluminio': '#A0A0A0', 'grafite_satinato': '#6A6A6A',
+        'oro_satinato': '#C5A55A', 'oro_24k': '#D4A017', 'oro_antico_lucido': '#C8A070',
+        'ottone_lucido': '#C8A040', 'nikel_lucido': '#D0C8C0', 'bronzo_satinato': '#8B6E50',
+        'cromo_lucido_satinato': '#D0D0D0', 'cromo_lucido_bianco': '#E8E8E4',
+        'cromo_lucido_nero': '#808080', 'bianco': '#FAFAF5',
+      };
+      return finishMap[doorHandleFinishId || ''] || '#B8B8B8';
     };
     const handleColor = getHandleColor();
 
