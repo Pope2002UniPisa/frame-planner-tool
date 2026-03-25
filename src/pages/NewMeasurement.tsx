@@ -388,8 +388,8 @@ export default function NewMeasurement() {
     }
   };
 
-  const showDiagram = step >= 3 && step <= 6 && !!form.product_type;
-  const showDualDiagram = step === 5;
+  const showDiagram = step >= 3 && step <= 6 && !!form.product_type && !isStandaloneAccessory;
+  const showDualDiagram = step === 5 && !isStandaloneAccessory;
 
   const ColorSelectField = ({ label, value, field }: { label: string; value: string; field: string }) => (
     <div className="space-y-2">
