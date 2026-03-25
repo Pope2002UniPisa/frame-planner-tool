@@ -60,6 +60,13 @@ const emptyItem: ProductItem = {
 
 const initialForm = {
   product_type: '',
+  door_model: '',
+  door_color_id: '',
+  door_finish_type: '',
+  door_frame_id: '',
+  door_handle_id: '',
+  door_special_variant: '',
+  door_is_window_version: false,
   client_name: '',
   client_address: '',
   survey_type: '',
