@@ -11,10 +11,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn, ZoomOut, Copy, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn, ZoomOut, Copy, Plus, Trash2, Info, Leaf } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import AccessoryConfig, { type AccessoriesConfig } from '@/components/AccessoryConfig';
 import { Switch } from '@/components/ui/switch';
+import { DOOR_MODELS, getDoorModel, getCompatibleFrames, getCompatibleHandles, getColorsByFinish, ALL_FRAMES, ALL_HANDLES, type DoorColor } from '@/data/doorCatalog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const STEPS = [
   { id: 'product', label: 'Prodotto' },
@@ -58,6 +60,13 @@ const emptyItem: ProductItem = {
 
 const initialForm = {
   product_type: '',
+  door_model: '',
+  door_color_id: '',
+  door_finish_type: '',
+  door_frame_id: '',
+  door_handle_id: '',
+  door_special_variant: '',
+  door_is_window_version: false,
   client_name: '',
   client_address: '',
   survey_type: '',
@@ -582,7 +591,7 @@ export default function NewMeasurement() {
               <div className="space-y-4">
                 <CardTitle className="font-heading">Seleziona il prodotto</CardTitle>
                 <CardDescription>Che tipo di prodotto devi misurare?</CardDescription>
-                <RadioGroup value={form.product_type} onValueChange={v => update('product_type', v)} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <RadioGroup value={form.product_type} onValueChange={v => { update('product_type', v); update('door_model', ''); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_id', ''); update('door_special_variant', ''); }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {[
                     { value: 'finestra', label: '🪟 Finestra' },
                     { value: 'porta', label: '🚪 Porta' },
@@ -605,6 +614,100 @@ export default function NewMeasurement() {
                     </Label>
                   ))}
                 </RadioGroup>
+
+                {/* Door model selection when porta is selected */}
+                {form.product_type === 'porta' && (
+                  <div className="mt-6 space-y-4">
+                    <div className="border-t border-border pt-4">
+                      <Label className="text-base font-semibold">🏷️ Seleziona modello porta</Label>
+                      <p className="text-sm text-muted-foreground mt-1">Scegli il modello dal catalogo per accedere a colori, telai e maniglie specifici</p>
+                    </div>
+                    <RadioGroup value={form.door_model} onValueChange={v => { update('door_model', v); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_id', ''); update('door_special_variant', ''); }} className="space-y-3">
+                      {DOOR_MODELS.map(model => (
+                        <Label
+                          key={model.id}
+                          htmlFor={`model-${model.id}`}
+                          className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${
+                            form.door_model === model.id ? 'border-accent bg-accent/10' : 'border-border hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <RadioGroupItem value={model.id} id={`model-${model.id}`} className="mt-1" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-foreground">{model.name}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{model.collection}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1">
+                                <Leaf className="h-3 w-3" /> GREEN
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{model.description}</p>
+                            <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                              <span>📐 {model.minWidth}–{model.maxWidth} × {model.minHeight}–{model.maxHeight} mm</span>
+                              <span>🎨 {model.colors.length} colori</span>
+                              <span>🖼️ {model.compatibleFrameIds.length} telai</span>
+                            </div>
+                          </div>
+                        </Label>
+                      ))}
+                    </RadioGroup>
+
+                    {/* Selected model details */}
+                    {form.door_model && (() => {
+                      const model = getDoorModel(form.door_model);
+                      if (!model) return null;
+                      return (
+                        <div className="space-y-3">
+                          {/* Special variants */}
+                          {model.specialVariants.length > 0 && (
+                            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                              <Label className="text-sm font-semibold">✨ Soluzioni speciali (opzionale)</Label>
+                              <RadioGroup value={form.door_special_variant} onValueChange={v => update('door_special_variant', v === form.door_special_variant ? '' : v)} className="space-y-2">
+                                <Label
+                                  htmlFor="variant-none"
+                                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition-all ${
+                                    !form.door_special_variant ? 'border-accent bg-accent/10' : 'border-border'
+                                  }`}
+                                >
+                                  <RadioGroupItem value="" id="variant-none" />
+                                  <span>Standard (nessuna soluzione speciale)</span>
+                                </Label>
+                                {model.specialVariants.map(v => (
+                                  <Label
+                                    key={v.id}
+                                    htmlFor={`variant-${v.id}`}
+                                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-all ${
+                                      form.door_special_variant === v.id ? 'border-accent bg-accent/10' : 'border-border'
+                                    }`}
+                                  >
+                                    <RadioGroupItem value={v.id} id={`variant-${v.id}`} className="mt-0.5" />
+                                    <div>
+                                      <span className="font-medium">{v.name}</span>
+                                      <p className="text-xs text-muted-foreground mt-0.5">{v.description}</p>
+                                    </div>
+                                  </Label>
+                                ))}
+                              </RadioGroup>
+                            </div>
+                          )}
+
+                          {/* Window version */}
+                          {model.hasWindowVersion && (
+                            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                              <Checkbox
+                                id="window-version"
+                                checked={form.door_is_window_version}
+                                onCheckedChange={v => update('door_is_window_version', v)}
+                              />
+                              <Label htmlFor="window-version" className="text-sm cursor-pointer">
+                                🪟 Versione finestra disponibile
+                              </Label>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
 
                 {/* Multi-product toggle */}
                 {form.product_type && (
@@ -713,6 +816,22 @@ export default function NewMeasurement() {
                 <div className="space-y-4">
                   <CardTitle className="font-heading">Misure (in mm)</CardTitle>
                   <CardDescription>Inserisci le dimensioni rilevate</CardDescription>
+                  {/* Door model dimension limits */}
+                  {form.product_type === 'porta' && form.door_model && (() => {
+                    const model = getDoorModel(form.door_model);
+                    if (!model) return null;
+                    return (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex items-start gap-2">
+                        <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <div className="text-sm">
+                          <p className="font-medium text-foreground">{model.name} — Dimensioni ammesse</p>
+                          <p className="text-muted-foreground">
+                            Larghezza: {model.minWidth}–{model.maxWidth} mm &nbsp;|&nbsp; Altezza: {model.minHeight}–{model.maxHeight} mm
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="space-y-2">
                       <Label>Larghezza (mm) *</Label>
@@ -788,15 +907,26 @@ export default function NewMeasurement() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tipologia apertura</Label>
-                  <Select value={form.panel_type} onValueChange={v => update('panel_type', v)}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="battente">Battente</SelectItem>
-                      <SelectItem value="anta_ribalta">Anta-Ribalta</SelectItem>
-                      <SelectItem value="vasistas">Vasistas</SelectItem>
-                      <SelectItem value="scorrevole">Scorrevole</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {form.product_type === 'porta' && form.door_model ? (
+                    <Select value={form.panel_type} onValueChange={v => update('panel_type', v)}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                      <SelectContent>
+                        {(getDoorModel(form.door_model)?.openingTypes || []).map(t => (
+                          <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Select value={form.panel_type} onValueChange={v => update('panel_type', v)}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="battente">Battente</SelectItem>
+                        <SelectItem value="anta_ribalta">Anta-Ribalta</SelectItem>
+                        <SelectItem value="vasistas">Vasistas</SelectItem>
+                        <SelectItem value="scorrevole">Scorrevole</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Direzione apertura</Label>
@@ -811,14 +941,35 @@ export default function NewMeasurement() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo telaio</Label>
-                  <Select value={form.frame_type} onValueChange={v => update('frame_type', v)}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="ridotto">Ridotto</SelectItem>
-                      <SelectItem value="maggiorato">Maggiorato</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {form.product_type === 'porta' && form.door_model ? (
+                    <>
+                      <Select value={form.door_frame_id} onValueChange={v => { update('door_frame_id', v); update('frame_type', v); }}>
+                        <SelectTrigger><SelectValue placeholder="Seleziona telaio..." /></SelectTrigger>
+                        <SelectContent>
+                          {getCompatibleFrames(form.door_model).map(f => (
+                            <SelectItem key={f.id} value={f.id}>
+                              {f.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {form.door_frame_id && (() => {
+                        const frame = getCompatibleFrames(form.door_model).find(f => f.id === form.door_frame_id);
+                        return frame?.description ? (
+                          <p className="text-xs text-muted-foreground mt-1">{frame.description}</p>
+                        ) : null;
+                      })()}
+                    </>
+                  ) : (
+                    <Select value={form.frame_type} onValueChange={v => update('frame_type', v)}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">Standard</SelectItem>
+                        <SelectItem value="ridotto">Ridotto</SelectItem>
+                        <SelectItem value="maggiorato">Maggiorato</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 {isMultiProduct && (
@@ -839,44 +990,169 @@ export default function NewMeasurement() {
                 <CardDescription>
                   {isMultiProduct
                     ? `Finiture condivise per tutti i ${multiItems.length} prodotti`
-                    : 'Materiale, colori e maniglie'}
+                    : form.product_type === 'porta' && form.door_model
+                      ? `Colori e maniglie per ${getDoorModel(form.door_model)?.name || 'porta'}`
+                      : 'Materiale, colori e maniglie'}
                 </CardDescription>
-                <div className="space-y-2">
-                  <Label>Materiale</Label>
-                  <RadioGroup value={form.material} onValueChange={v => update('material', v)} className="flex flex-wrap gap-3">
-                    {[
-                      { value: 'pvc', label: 'PVC' },
-                      { value: 'alluminio', label: 'Alluminio' },
-                      { value: 'legno', label: 'Legno' },
-                    ].map(opt => (
-                      <Label
-                        key={opt.value}
-                        htmlFor={`mat-${opt.value}`}
-                        className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 transition-all ${
-                          form.material === opt.value ? 'border-accent bg-accent/10' : 'border-border'
-                        }`}
-                      >
-                        <RadioGroupItem value={opt.value} id={`mat-${opt.value}`} />
-                        {opt.label}
-                      </Label>
-                    ))}
-                  </RadioGroup>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <ColorSelectField label="Colore interno" value={form.color_internal} field="color_internal" />
-                  <ColorSelectField label="Colore esterno" value={form.color_external} field="color_external" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tipo maniglia</Label>
-                  <Select value={form.handle_type} onValueChange={v => update('handle_type', v)}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="design">Design</SelectItem>
-                      <SelectItem value="con_chiave">Con chiave</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                {/* Material - only for non-catalog doors */}
+                {!(form.product_type === 'porta' && form.door_model) && (
+                  <div className="space-y-2">
+                    <Label>Materiale</Label>
+                    <RadioGroup value={form.material} onValueChange={v => update('material', v)} className="flex flex-wrap gap-3">
+                      {[
+                        { value: 'pvc', label: 'PVC' },
+                        { value: 'alluminio', label: 'Alluminio' },
+                        { value: 'legno', label: 'Legno' },
+                      ].map(opt => (
+                        <Label
+                          key={opt.value}
+                          htmlFor={`mat-${opt.value}`}
+                          className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 transition-all ${
+                            form.material === opt.value ? 'border-accent bg-accent/10' : 'border-border'
+                          }`}
+                        >
+                          <RadioGroupItem value={opt.value} id={`mat-${opt.value}`} />
+                          {opt.label}
+                        </Label>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                )}
+
+                {/* Door catalog colors */}
+                {form.product_type === 'porta' && form.door_model ? (() => {
+                  const model = getDoorModel(form.door_model);
+                  if (!model) return null;
+                  const finishTypes = [...new Set(model.colors.map(c => c.finish))];
+                  const filteredColors = form.door_finish_type
+                    ? getColorsByFinish(model.colors, form.door_finish_type)
+                    : model.colors;
+
+                  return (
+                    <div className="space-y-4">
+                      {/* Finish type filter */}
+                      <div className="space-y-2">
+                        <Label>Finitura</Label>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant={!form.door_finish_type ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => update('door_finish_type', '')}
+                          >
+                            Tutti ({model.colors.length})
+                          </Button>
+                          {finishTypes.map(ft => (
+                            <Button
+                              key={ft}
+                              type="button"
+                              variant={form.door_finish_type === ft ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => { update('door_finish_type', ft); update('door_color_id', ''); }}
+                            >
+                              {ft === 'laccato_opaco' ? 'Laccato Opaco' : 'Laccato ULTRA Opaco'}
+                              {' '}({getColorsByFinish(model.colors, ft).length})
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Color grid */}
+                      <div className="space-y-2">
+                        <Label>Colore porta</Label>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                          {filteredColors.map(color => (
+                            <button
+                              key={color.id}
+                              type="button"
+                              onClick={() => { update('door_color_id', color.id); update('color_internal', color.id); update('color_external', color.id); }}
+                              className={`relative flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 transition-all hover:shadow-md ${
+                                form.door_color_id === color.id
+                                  ? 'border-accent bg-accent/10 shadow-md'
+                                  : 'border-border hover:border-muted-foreground/30'
+                              }`}
+                            >
+                              <div
+                                className="w-10 h-10 rounded-full border-2 border-border shadow-inner"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              <span className="text-xs text-center font-medium leading-tight">{color.name}</span>
+                              {color.green && (
+                                <span className="absolute top-1 right-1">
+                                  <Leaf className="h-3 w-3 text-emerald-500" />
+                                </span>
+                              )}
+                              {form.door_color_id === color.id && (
+                                <div className="absolute top-1 left-1">
+                                  <Check className="h-3.5 w-3.5 text-accent" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        {form.door_color_id && (() => {
+                          const selectedColor = model.colors.find(c => c.id === form.door_color_id);
+                          return selectedColor ? (
+                            <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-muted/50">
+                              <div className="w-6 h-6 rounded-full border border-border" style={{ backgroundColor: selectedColor.hex }} />
+                              <span className="text-sm font-medium">{selectedColor.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                — {selectedColor.finish === 'laccato_opaco' ? 'Laccato Opaco' : 'Laccato ULTRA Opaco'}
+                              </span>
+                              {selectedColor.green && (
+                                <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-0.5">
+                                  <Leaf className="h-3 w-3" /> GREEN
+                                </span>
+                              )}
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+
+                      {/* Handle selection from catalog */}
+                      <div className="space-y-2">
+                        <Label>Maniglia</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {getCompatibleHandles(form.door_model).map(handle => (
+                            <button
+                              key={handle.id}
+                              type="button"
+                              onClick={() => { update('door_handle_id', handle.id); update('handle_type', handle.id); }}
+                              className={`flex items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${
+                                form.door_handle_id === handle.id
+                                  ? 'border-accent bg-accent/10'
+                                  : 'border-border hover:border-muted-foreground/30'
+                              }`}
+                            >
+                              <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
+                              <span className="font-medium">{handle.name}</span>
+                              {form.door_handle_id === handle.id && <Check className="h-4 w-4 text-accent ml-auto" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <ColorSelectField label="Colore interno" value={form.color_internal} field="color_internal" />
+                      <ColorSelectField label="Colore esterno" value={form.color_external} field="color_external" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tipo maniglia</Label>
+                      <Select value={form.handle_type} onValueChange={v => update('handle_type', v)}>
+                        <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="standard">Standard</SelectItem>
+                          <SelectItem value="design">Design</SelectItem>
+                          <SelectItem value="con_chiave">Con chiave</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
 
                 {isMultiProduct && (
                   <div className="rounded-lg bg-accent/5 border border-accent/20 p-3 mt-2">
