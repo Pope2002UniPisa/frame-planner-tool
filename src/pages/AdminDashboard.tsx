@@ -931,15 +931,8 @@ export default function AdminDashboard() {
                   <div className="border-t border-border pt-4 space-y-2">
                     <p className="text-xs font-semibold text-muted-foreground">Azioni workflow</p>
                     <div className="flex flex-wrap gap-2">
-                      {(currentStatus === 'submitted' || currentStatus === 'ricevuto') && (
-                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
-                          <FileText className="h-3.5 w-3.5" /> Invia Preventivo
-                        </Button>
-                      )}
-                      {currentStatus === 'in_review' && (
-                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
-                          <FileText className="h-3.5 w-3.5" /> Invia Preventivo
-                        </Button>
+                      {(currentStatus === 'submitted' || currentStatus === 'ricevuto' || currentStatus === 'quoted') && (
+                        <p className="text-xs text-muted-foreground italic">In attesa di risposta dal cliente...</p>
                       )}
                       {currentStatus === 'quote_accepted' && (
                         <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('ordered')}>
@@ -947,17 +940,30 @@ export default function AdminDashboard() {
                         </Button>
                       )}
                       {currentStatus === 'quote_modifications' && (
-                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
-                          <FileText className="h-3.5 w-3.5" /> Invia Nuovo Preventivo
-                        </Button>
+                        <>
+                          <div className="w-full rounded-lg bg-destructive/10 border border-destructive/20 p-3 mb-2">
+                            <p className="text-xs font-semibold text-destructive">Modifiche richieste dal cliente:</p>
+                            <p className="text-xs text-foreground mt-1">{manageMeasurement.modification_notes || 'Nessuna nota'}</p>
+                          </div>
+                          <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('quoted')} disabled={!managePrice}>
+                            <FileText className="h-3.5 w-3.5" /> Invia Nuovo Preventivo
+                          </Button>
+                        </>
                       )}
                       {currentStatus === 'ordered' && (
-                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('completed')}>
-                          <CheckCircle className="h-3.5 w-3.5" /> Segna Completata
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('in_production')}>
+                          <CheckCircle className="h-3.5 w-3.5" /> Invia in Produzione
                         </Button>
                       )}
-                      {currentStatus === 'quoted' && (
-                        <p className="text-xs text-muted-foreground italic">In attesa di risposta dal cliente...</p>
+                      {currentStatus === 'in_production' && (
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('delivering')}>
+                          <Package className="h-3.5 w-3.5" /> Pronta per Consegna
+                        </Button>
+                      )}
+                      {currentStatus === 'delivering' && (
+                        <Button className="gap-1.5" onClick={() => handleUpdateMeasurementStatus('completed')}>
+                          <CheckCircle className="h-3.5 w-3.5" /> Bolla Firmata - Completa
+                        </Button>
                       )}
                     </div>
                   </div>
