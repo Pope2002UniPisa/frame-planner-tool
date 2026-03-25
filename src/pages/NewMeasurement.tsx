@@ -816,6 +816,22 @@ export default function NewMeasurement() {
                 <div className="space-y-4">
                   <CardTitle className="font-heading">Misure (in mm)</CardTitle>
                   <CardDescription>Inserisci le dimensioni rilevate</CardDescription>
+                  {/* Door model dimension limits */}
+                  {form.product_type === 'porta' && form.door_model && (() => {
+                    const model = getDoorModel(form.door_model);
+                    if (!model) return null;
+                    return (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex items-start gap-2">
+                        <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <div className="text-sm">
+                          <p className="font-medium text-foreground">{model.name} — Dimensioni ammesse</p>
+                          <p className="text-muted-foreground">
+                            Larghezza: {model.minWidth}–{model.maxWidth} mm &nbsp;|&nbsp; Altezza: {model.minHeight}–{model.maxHeight} mm
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="space-y-2">
                       <Label>Larghezza (mm) *</Label>
