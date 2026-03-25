@@ -428,48 +428,66 @@ export default function ProductDiagram({
       );
     };
 
-    // Lever handle for battente
-    const renderBattenteHandle = () => (
-      <g>
-        {/* Rosetta / back plate */}
-        <rect 
-          x={handleX - 4} y={handleY - 20} width={12} height={40} rx={2} 
-          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" opacity="0.9" 
-        />
-        {/* Lever */}
-        <rect 
-          x={handleX + 2} y={handleY - 2} width={leverDir * 22} height={3.5} rx={1.5} 
-          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
-        />
-        {/* Lever tip curve */}
-        <circle 
-          cx={handleX + 2 + leverDir * 22} cy={handleY} r={2} 
-          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.3" 
-        />
-        {/* Keyhole */}
-        <circle cx={handleX + 2} cy={handleY + 28} r={3} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.6" opacity="0.5" />
-        <rect x={handleX + 1} y={handleY + 26} width={2} height={4} fill="hsl(var(--foreground))" opacity="0.3" />
-      </g>
-    );
+    // Lever handle for battente - with visible back plate
+    const renderBattenteHandle = () => {
+      const plateW = 14;
+      const plateH = 50;
+      const plateCX = handleX + 2;
+      const plateX = plateCX - plateW / 2;
+      const plateY = handleY - plateH / 2;
+      return (
+        <g>
+          {/* Back plate (placca) */}
+          <rect 
+            x={plateX} y={plateY} width={plateW} height={plateH} rx={3} 
+            fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.6" opacity="0.95" 
+          />
+          {/* Lever - extends OUTWARD from door edge */}
+          <rect 
+            x={leverDir > 0 ? plateCX : plateCX + leverDir * 24} 
+            y={handleY - 2} 
+            width={24} height={4} rx={2} 
+            fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" 
+          />
+          {/* Lever tip curve */}
+          <circle 
+            cx={plateCX + leverDir * 24} cy={handleY} r={2.5} 
+            fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
+          />
+          {/* Keyhole below */}
+          <circle cx={plateCX} cy={handleY + 18} r={3.5} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.7" opacity="0.5" />
+          <rect x={plateCX - 1} y={handleY + 16} width={2} height={4} fill="hsl(var(--foreground))" opacity="0.3" />
+        </g>
+      );
+    };
 
     // Sliding handle (recessed/pomello)
     const renderScorrevoleHandle = () => (
       <g>
-        {/* Recessed oval grip */}
         <ellipse 
-          cx={handleX + 4} cy={handleY} rx={5} ry={16} 
-          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" opacity="0.85"
+          cx={handleX + 4} cy={handleY} rx={6} ry={18} 
+          fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.6" opacity="0.9"
         />
-        {/* Inner recess */}
         <ellipse 
-          cx={handleX + 4} cy={handleY} rx={3} ry={12} 
-          fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.4"
+          cx={handleX + 4} cy={handleY} rx={3.5} ry={13} 
+          fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" opacity="0.4"
         />
       </g>
     );
 
+    // Frame type label
+    const frameLabel = (() => {
+      const frames: Record<string, string> = {
+        'evoluto_eleva': 'Evoluto Eleva', 'minimal_eleva': 'Minimal Eleva',
+        'quality_eleva': 'Quality Eleva', 'dorico': 'Dorico', 'flat': 'Flat',
+        'genius_eleva': 'Genius Eleva', 'oval_eleva': 'Oval Eleva',
+        'a_filo': 'A Filo', 'concept': 'Concept',
+      };
+      return frameType ? (frames[frameType] || frameType) : '';
+    })();
+
     return (
-      <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full max-w-sm mx-auto">
+      <svg viewBox={`0 0 ${svgW} ${svgH + 30}`} className="w-full max-w-sm mx-auto">
         {/* Sliding track if scorrevole */}
         {isScorrevole && (
           <g>
@@ -487,13 +505,13 @@ export default function ProductDiagram({
         {/* Door frame (stipite) */}
         <rect x={offsetX - 5} y={offsetY - 5} width={drawW + 10} height={drawH + 10} fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" />
         
-        {/* Door body - uses selected color */}
+        {/* Door body */}
         <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
 
-        {/* Model-specific pantograph pattern */}
+        {/* Pantograph pattern */}
         {renderYncisa70Pattern()}
 
-        {/* Glass insert if selected */}
+        {/* Glass insert */}
         {hasGlass && (
           <>
             <rect x={offsetX + 16} y={offsetY + 16} width={drawW - 32} height={(drawH - 32) * 0.3} fill={GLASS_COLOR} stroke={GLASS_STROKE} strokeWidth="1" rx={glassType === 'stondato' ? 6 : 0} />
@@ -501,10 +519,10 @@ export default function ProductDiagram({
           </>
         )}
 
-        {/* Handle - ALWAYS visible for both battente and scorrevole */}
+        {/* Handle */}
         {isScorrevole ? renderScorrevoleHandle() : renderBattenteHandle()}
 
-        {/* 3 hinges on hinge side - only for battente */}
+        {/* 3 hinges - only for battente */}
         {!isScorrevole && (
           <>
             <rect x={hingeX} y={offsetY + drawH * 0.12} width={4} height={14} rx={2} fill="hsl(var(--foreground))" opacity="0.5" />
@@ -516,28 +534,35 @@ export default function ProductDiagram({
         {/* Threshold */}
         <rect x={offsetX - 6} y={offsetY + drawH + 5} width={drawW + 12} height={3} fill="hsl(var(--muted-foreground))" opacity="0.4" rx={1} />
 
-        {/* Dimensions */}
-        <DimensionH x={offsetX} y={offsetY - 28} width={drawW} label={`${w}`} />
+        {/* Dimensions - moved up to avoid overlap */}
+        <DimensionH x={offsetX} y={offsetY - 30} width={drawW} label={`${w}`} />
         <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
 
-        {/* Labels */}
-        <text x={offsetX + drawW / 2} y={offsetY + drawH + 26} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-          {hasGlass ? 'Porta con vetro' : 'Porta cieca'}
-        </text>
-
-        <text x={offsetX + drawW / 2} y={offsetY - 36} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
+        {/* Opening type label - above dimensions */}
+        <text x={offsetX + drawW / 2} y={offsetY - 44} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
           {isScorrevole ? '↔ Scorrevole' : '⟳ Battente'}
         </text>
 
-        {view && (
-          <text x={8} y={16} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
-            {view === 'internal' ? '🏠 Vista Interna' : '🌳 Vista Esterna'}
+        {/* Labels below door: porta cieca → frame type → handle info */}
+        <text x={offsetX + drawW / 2} y={offsetY + drawH + 24} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+          {hasGlass ? 'Porta con vetro' : 'Porta cieca'}
+        </text>
+
+        {frameLabel && (
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + 36} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+            Telaio: {frameLabel}
           </text>
         )}
 
         {doorHandleModelId && doorHandleFinishId && (
-          <text x={offsetX + drawW / 2} y={svgH - 4} textAnchor="middle" fontSize="6" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + (frameLabel ? 48 : 36)} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
             {doorHandleModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} — {doorHandleFinishId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          </text>
+        )}
+
+        {view && (
+          <text x={8} y={16} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
+            {view === 'internal' ? '🏠 Vista Interna' : '🌳 Vista Esterna'}
           </text>
         )}
       </svg>
