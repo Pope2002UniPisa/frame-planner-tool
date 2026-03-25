@@ -585,14 +585,18 @@ export default function Dashboard() {
       <footer className="border-t border-border bg-card mt-8">
         <div className="container py-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            {/* Company info and logo */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-10 object-contain" />
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Portale professionale per la gestione delle misurazioni e configurazione di infissi.
-              </p>
+              <div className="flex items-center justify-start gap-2 mb-3">
+                <img src={pratelliLogo} 
+                alt="Pratelli Rappresentanze" 
+                className="h-12 object-contain" 
+              />
             </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Portale professionale per la gestione delle misurazioni e configurazione di infissi.
+            </p>
+          </div>
             <div>
               <p className="font-semibold text-sm text-foreground mb-3">Informazioni legali</p>
               <div className="space-y-1.5 text-xs text-muted-foreground">
