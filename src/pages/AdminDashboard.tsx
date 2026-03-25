@@ -354,8 +354,8 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
               {[
                 { icon: Edit3, label: 'Bozze totali', value: stats.drafts },
-                { icon: Send, label: 'Inviate', value: stats.sent },
-                { icon: Package, label: 'Preventivate', value: stats.quoted },
+                { icon: Send, label: 'Preventivi', value: stats.quoted },
+                { icon: Package, label: 'Ordini', value: stats.ordered },
                 { icon: CheckCircle, label: 'Completate', value: stats.completed },
                 { icon: TrendingUp, label: 'Fatt. stimato', value: `€${Math.round(stats.totalRevenue).toLocaleString('it-IT')}` },
                 { icon: TrendingUp, label: 'Fatt. realizzato', value: `€${Math.round(stats.realizedRevenue).toLocaleString('it-IT')}` },
