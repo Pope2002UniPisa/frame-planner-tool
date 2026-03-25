@@ -598,7 +598,7 @@ export default function NewMeasurement() {
               <div className="space-y-4">
                 <CardTitle className="font-heading">Seleziona il prodotto</CardTitle>
                 <CardDescription>Che tipo di prodotto devi misurare?</CardDescription>
-                <RadioGroup value={form.product_type} onValueChange={v => { update('product_type', v); update('door_model', ''); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_id', ''); update('door_special_variant', ''); }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <RadioGroup value={form.product_type} onValueChange={v => { update('product_type', v); update('door_model', ''); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_model_id', ''); update('door_handle_finish_id', ''); update('door_special_variant', ''); }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {[
                     { value: 'finestra', label: '🪟 Finestra' },
                     { value: 'porta', label: '🚪 Porta' },
