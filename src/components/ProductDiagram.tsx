@@ -509,7 +509,7 @@ export default function ProductDiagram({
             </text>
           )}
           <text x={offsetX + drawW / 2} y={offsetY + drawH + 40} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-            Porta cieca — {variantLabel}
+            {productTypeLabel} — {variantLabel}
           </text>
           {frameLabel && (
             <text x={offsetX + drawW / 2} y={offsetY + drawH + 52} textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
