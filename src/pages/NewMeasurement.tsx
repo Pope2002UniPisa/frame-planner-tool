@@ -629,7 +629,7 @@ export default function NewMeasurement() {
                       <Label className="text-base font-semibold">🏷️ Seleziona modello porta</Label>
                       <p className="text-sm text-muted-foreground mt-1">Scegli il modello dal catalogo per accedere a colori, telai e maniglie specifici</p>
                     </div>
-                    <RadioGroup value={form.door_model} onValueChange={v => { update('door_model', v); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_id', ''); update('door_special_variant', ''); }} className="space-y-3">
+                    <RadioGroup value={form.door_model} onValueChange={v => { update('door_model', v); update('door_color_id', ''); update('door_finish_type', ''); update('door_frame_id', ''); update('door_handle_model_id', ''); update('door_handle_finish_id', ''); update('door_special_variant', ''); }} className="space-y-3">
                       {DOOR_MODELS.map(model => (
                         <Label
                           key={model.id}
