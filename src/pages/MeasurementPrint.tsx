@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
-import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES } from '@/data/doorCatalog';
+import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel } from '@/data/doorCatalog';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 import ferreroLegnoLogo from '@/assets/ferrerolegno-logo.png';
 
@@ -87,20 +87,19 @@ export default function MeasurementPrint() {
   const doorHandleModel = acc?.door_handle_model_id || '';
   const doorHandleFinish = acc?.door_handle_finish_id || '';
   const doorColorName = acc?.door_color_name || '';
-  const doorModelName = acc?.door_model_name || '';
+  const doorModelId = acc?.door_model || '';
 
   const resolveHandleModel = (id: string): string => {
     const model = ALL_HANDLE_MODELS.find(m => m.id === id);
     return model ? model.name : id;
   };
 
-  // For product name: use door model name if available, otherwise generic label
-  const productDisplayName = doorModelName || (productLabels[m.product_type] || m.product_type);
+  // Resolve door model name from catalog
+  const doorModel = doorModelId ? getDoorModel(doorModelId) : null;
+  const productDisplayName = doorModel?.name || doorColorName ? (doorModel?.name || productLabels[m.product_type] || m.product_type) : (productLabels[m.product_type] || m.product_type);
 
   const rows: [string, string][] = [
-    ['Prodotto', productDisplayName],
-    ['Cliente', m.client_name || '-'],
-    ['Indirizzo', m.client_address || '-'],
+    ['Prodotto', doorModel?.name || (productLabels[m.product_type] || m.product_type)],
     ['Tipo rilievo', surveyLabels[m.survey_type] || m.survey_type],
     ['Larghezza', `${m.width_mm} mm`],
     ['Altezza', `${m.height_mm} mm`],
@@ -144,13 +143,13 @@ export default function MeasurementPrint() {
         </div>
       </div>
 
-      <div ref={printRef} className="container max-w-3xl py-8 print:py-0 print:max-w-full">
+      <div ref={printRef} className="container max-w-4xl py-8 print:py-0 print:max-w-full">
         <div className="border border-border rounded-lg p-6 print:border-0 print:p-0 bg-card">
-          {/* Header with logos */}
+          {/* Header with logos - same height, centered */}
           <div className="flex items-start justify-between mb-6 border-b border-border pb-4">
-            <div className="flex flex-col gap-2">
-              <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-10 object-contain object-left" />
-              <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-8 object-contain object-left" />
+            <div className="flex items-center gap-4">
+              <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-9 object-contain" />
+              <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-9 object-contain" />
             </div>
             <div className="text-center flex-1 px-4">
               <h2 className="text-2xl font-bold font-heading text-foreground">{docTitle}</h2>
@@ -161,35 +160,58 @@ export default function MeasurementPrint() {
             </div>
           </div>
 
-          <div className="mb-6">
-            <ProductDiagram
-              productType={m.product_type}
-              widthMm={String(m.width_mm)}
-              heightMm={String(m.height_mm)}
-              depthMm={String(m.depth_mm || 70)}
-              numPanels={String(m.num_panels || 1)}
-              panelType={m.panel_type || ''}
-              openingDirection={m.opening_direction || ''}
-              handleType={m.handle_type || ''}
-              glassType={m.glass_type || ''}
-              frameType={m.frame_type || 'standard'}
-              colorInternal={m.color_internal || ''}
-              colorExternal={m.color_external || ''}
-              internalSpaceMm={String(m.internal_space_mm || '')}
-              externalSpaceMm={String(m.external_space_mm || '')}
-            />
+          {/* Centered diagram */}
+          <div className="mb-6 flex justify-center">
+            <div className="w-full max-w-md">
+              <ProductDiagram
+                productType={m.product_type}
+                widthMm={String(m.width_mm)}
+                heightMm={String(m.height_mm)}
+                depthMm={String(m.depth_mm || 70)}
+                numPanels={String(m.num_panels || 1)}
+                panelType={m.panel_type || ''}
+                openingDirection={m.opening_direction || ''}
+                handleType={m.handle_type || ''}
+                glassType={m.glass_type || ''}
+                frameType={m.frame_type || 'standard'}
+                colorInternal={m.color_internal || ''}
+                colorExternal={m.color_external || ''}
+                internalSpaceMm={String(m.internal_space_mm || '')}
+                externalSpaceMm={String(m.external_space_mm || '')}
+              />
+            </div>
           </div>
 
-          <table className="w-full text-sm">
-            <tbody>
-              {rows.map(([label, value], i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-muted/30' : ''}>
-                  <td className="py-2 px-3 font-medium text-muted-foreground w-1/3">{label}</td>
-                  <td className="py-2 px-3 text-foreground">{value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Two-column details layout */}
+          {(() => {
+            const midpoint = Math.ceil(rows.length / 2);
+            const leftRows = rows.slice(0, midpoint);
+            const rightRows = rows.slice(midpoint);
+            return (
+              <div className="grid grid-cols-2 gap-x-6 text-sm">
+                <table className="w-full">
+                  <tbody>
+                    {leftRows.map(([label, value], i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-muted/30' : ''}>
+                        <td className="py-1.5 px-3 font-medium text-muted-foreground w-2/5">{label}</td>
+                        <td className="py-1.5 px-3 text-foreground">{value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <table className="w-full">
+                  <tbody>
+                    {rightRows.map(([label, value], i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-muted/30' : ''}>
+                        <td className="py-1.5 px-3 font-medium text-muted-foreground w-2/5">{label}</td>
+                        <td className="py-1.5 px-3 text-foreground">{value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
 
           {/* Price section with IVA */}
           {price > 0 && (isQuote || isOrder) && (
@@ -227,10 +249,10 @@ export default function MeasurementPrint() {
             </div>
           )}
 
-          {/* Footer with logos side by side */}
+          {/* Footer with logos side by side, same size */}
           <div className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-6">
-            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-10 object-contain" />
-            <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-8 object-contain" />
+            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-9 object-contain" />
+            <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-9 object-contain" />
           </div>
         </div>
       </div>

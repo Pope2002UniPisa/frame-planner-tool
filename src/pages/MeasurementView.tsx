@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Printer, Edit3, ThumbsUp, MessageSquare } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
-import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES } from '@/data/doorCatalog';
+import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel } from '@/data/doorCatalog';
 import { toast } from 'sonner';
 
 const statusLabels: Record<string, string> = {
@@ -116,9 +116,10 @@ export default function MeasurementView() {
     return finish ? finish.name : id;
   };
 
-  const doorModelDisplayName = acc?.door_model_name || '';
+  const doorModelId = acc?.door_model || '';
+  const doorModelResolved = doorModelId ? getDoorModel(doorModelId) : null;
   const fields: [string, any, any?][] = [
-    ['Prodotto', doorModelDisplayName || (productLabels[m.product_type] || m.product_type)],
+    ['Prodotto', doorModelResolved?.name || (productLabels[m.product_type] || m.product_type)],
     ['Cliente', m.client_name],
     ['Indirizzo', m.client_address],
     ['Tipo rilievo', m.survey_type],
