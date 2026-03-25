@@ -20,6 +20,7 @@ export interface AccessoriesConfig {
   motor_brand?: string;
   motor_remote?: boolean;
   motor_sensor?: boolean;
+  no_handle_mode?: 'none' | 'foro_maniglia' | 'foro_chiave' | 'foro_maniglia_chiave';
 }
 
 interface AccessoryConfigProps {
