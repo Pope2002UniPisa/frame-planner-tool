@@ -72,6 +72,16 @@ export default function MeasurementPrint() {
     return frame ? frame.name : id;
   };
 
+  const acc = m.accessories_config as any;
+  const doorHandleModel = acc?.door_handle_model_id || '';
+  const doorHandleFinish = acc?.door_handle_finish_id || '';
+  const doorColorName = acc?.door_color_name || '';
+
+  const resolveHandleModel = (id: string): string => {
+    const model = ALL_HANDLE_MODELS.find(m => m.id === id);
+    return model ? model.name : id;
+  };
+
   const rows: [string, string][] = [
     ['Prodotto', productLabels[m.product_type] || m.product_type],
     ['Cliente', m.client_name || '-'],
@@ -87,7 +97,10 @@ export default function MeasurementPrint() {
     ...(m.material ? [['Materiale', m.material] as [string, string]] : []),
     ...(m.color_internal ? [['Colore interno', resolveColor(m.color_internal)] as [string, string]] : []),
     ...(m.color_external ? [['Colore esterno', resolveColor(m.color_external)] as [string, string]] : []),
+    ...(doorColorName ? [['Colore porta', doorColorName] as [string, string]] : []),
     ...(m.handle_type ? [['Tipo maniglia', resolveHandleType(m.handle_type)] as [string, string]] : []),
+    ...(doorHandleModel ? [['Modello maniglia', resolveHandleModel(doorHandleModel)] as [string, string]] : []),
+    ...(doorHandleFinish ? [['Finitura maniglia', resolveHandleType(doorHandleFinish)] as [string, string]] : []),
     ...(m.glass_type ? [['Tipo vetro', m.glass_type] as [string, string]] : []),
     ...(m.is_square === false ? [['Fuori squadro', `${m.out_of_square_mm || 0} mm`] as [string, string]] : []),
     ...(m.is_plumb === false ? [['A piombo', 'No'] as [string, string]] : []),
