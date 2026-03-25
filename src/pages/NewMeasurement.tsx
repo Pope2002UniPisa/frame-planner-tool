@@ -150,6 +150,37 @@ export default function NewMeasurement() {
   const currentWidth = isMultiProduct ? (activeItem?.width_mm || '') : form.width_mm;
   const currentHeight = isMultiProduct ? (activeItem?.height_mm || '') : form.height_mm;
 
+  const isStandaloneAccessory = form.product_type === 'battiscopa' || form.product_type === 'maniglia';
+
+  // Steps to skip for standalone accessories (battiscopa/maniglia)
+  // They only need: product(0), client(1), survey(2) → then jump to notes(9)
+  // For maniglia, we show config step(4) for handle selection
+  const getStepsForProduct = () => {
+    if (form.product_type === 'battiscopa') return [0, 1, 2, 7, 9]; // product, client, survey, accessories (battiscopa config), notes
+    if (form.product_type === 'maniglia') return [0, 1, 2, 4, 5, 9]; // product, client, survey, config (handle model), finishes (handle finish), notes
+    return STEPS.map((_, i) => i);
+  };
+
+  const activeSteps = getStepsForProduct();
+
+  const goNextStep = () => {
+    const currentIdx = activeSteps.indexOf(step);
+    if (currentIdx < activeSteps.length - 1) {
+      setStep(activeSteps[currentIdx + 1]);
+    }
+  };
+
+  const goPrevStep = () => {
+    const currentIdx = activeSteps.indexOf(step);
+    if (currentIdx > 0) {
+      setStep(activeSteps[currentIdx - 1]);
+    }
+  };
+
+  const isFirstStep = activeSteps.indexOf(step) === 0;
+  const isLastStep = activeSteps.indexOf(step) === activeSteps.length - 1;
+  const currentStepIndex = activeSteps.indexOf(step);
+
   const canGoNext = (): boolean => {
     switch (step) {
       case 0: return !!form.product_type;
