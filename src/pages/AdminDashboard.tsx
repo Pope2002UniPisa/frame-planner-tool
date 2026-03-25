@@ -516,8 +516,8 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-7 gap-2">
                         {[
                           { label: 'Bozze', value: c.drafts },
-                          { label: 'Inviate', value: c.sent },
-                          { label: 'Preventivate', value: c.quoted },
+                          { label: 'Preventivi', value: c.quoted },
+                          { label: 'Ordini', value: c.ordered },
                           { label: 'Completate', value: c.completed },
                           { label: 'Fatt. stimato', value: `€${Math.round(c.revenue).toLocaleString('it-IT')}` },
                           { label: 'Fatt. realizzato', value: `€${Math.round(c.realizedRevenue).toLocaleString('it-IT')}` },
