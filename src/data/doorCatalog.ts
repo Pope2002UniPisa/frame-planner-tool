@@ -321,7 +321,7 @@ export const FINESTRATA_MODELS: DoorModel[] = [
 
 // ========== PORTE FILOMURO (telaio a scomparsa) ==========
 export const FILOMURO_MODELS: DoorModel[] = [
-  makeDoorModel('fm_yncisa_70_zero', 'Yncisa 70 Zero', "Porta filomuro con pantografature del 70° anniversario.", { compatibleFrameIds: ['a_filo', 'concept'] }),
+  makeDoorModel('fm_yncisa_70_zero', 'Yncisa 70 Zero', "Porta filomuro con pantografature del 70° anniversario.", { compatibleFrameIds: ['a_filo', 'concept'], minWidth: 600, maxWidth: 1000, minHeight: 1400, maxHeight: 2700 }),
   makeDoorModel('fm_yncisa_segni_zero', 'Yncisa Segni Zero', "Porta filomuro con incisioni lineari.", { compatibleFrameIds: ['a_filo', 'concept'] }),
   makeDoorModel('fm_yncisa_styla_zero', 'Yncisa Styla Zero', "Porta filomuro con pantografature stilizzate.", { compatibleFrameIds: ['a_filo', 'concept'] }),
   makeDoorModel('fm_yncisa_tartan_zero', 'Yncisa Tartan Zero', "Porta filomuro con motivo tartan.", { compatibleFrameIds: ['a_filo', 'concept'] }),
