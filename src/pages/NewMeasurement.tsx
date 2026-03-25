@@ -411,6 +411,7 @@ export default function NewMeasurement() {
               doorHandleFinishId={form.product_type === 'porta' ? form.door_handle_finish_id : undefined}
               doorHandleModelId={form.product_type === 'porta' ? form.door_handle_model_id : undefined}
               doorModelId={form.product_type === 'porta' ? form.door_model : undefined}
+              doorSpecialVariant={form.product_type === 'porta' ? form.door_special_variant : undefined}
             />
           </div>
         </div>
@@ -946,13 +947,19 @@ export default function NewMeasurement() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Direzione apertura</Label>
-                  <RadioGroup value={form.opening_direction} onValueChange={v => update('opening_direction', v)} className="flex gap-4">
-                    <Label htmlFor="dir-dx" className="flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="destra" id="dir-dx" /> Destra
+                  <Label>Senso di apertura</Label>
+                  <RadioGroup value={form.opening_direction} onValueChange={v => update('opening_direction', v)} className="grid grid-cols-2 gap-2">
+                    <Label htmlFor="dir-sp-dx" className="flex items-center gap-2 cursor-pointer text-sm">
+                      <RadioGroupItem value="spingere_destra" id="dir-sp-dx" /> Spingere destra
                     </Label>
-                    <Label htmlFor="dir-sx" className="flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="sinistra" id="dir-sx" /> Sinistra
+                    <Label htmlFor="dir-sp-sx" className="flex items-center gap-2 cursor-pointer text-sm">
+                      <RadioGroupItem value="spingere_sinistra" id="dir-sp-sx" /> Spingere sinistra
+                    </Label>
+                    <Label htmlFor="dir-ti-dx" className="flex items-center gap-2 cursor-pointer text-sm">
+                      <RadioGroupItem value="tirare_destra" id="dir-ti-dx" /> Tirare destra
+                    </Label>
+                    <Label htmlFor="dir-ti-sx" className="flex items-center gap-2 cursor-pointer text-sm">
+                      <RadioGroupItem value="tirare_sinistra" id="dir-ti-sx" /> Tirare sinistra
                     </Label>
                   </RadioGroup>
                 </div>

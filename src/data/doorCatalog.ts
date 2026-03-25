@@ -144,6 +144,21 @@ export const DOOR_MODELS: DoorModel[] = [
         name: 'Sistema InDue',
         description: "Anta pieghevole composta da due ante simmetriche. Consente l'ottimizzazione degli spazi dimezzando l'ingombro dell'apertura della porta.",
       },
+      {
+        id: 'rolling_scrighi',
+        name: 'Rolling Scrighi',
+        description: "Il sistema rolling Scrighi è scorrevole interno muro ed è disponibile per tutti i modelli di porta.",
+      },
+      {
+        id: 'rolling_magic',
+        name: 'Rolling Magic',
+        description: "Il sistema rolling Magic è scorrevole esterno muro: chiedete al vostro rivenditore di fiducia per quali modelli è disponibile.",
+      },
+      {
+        id: 'rolling_prima',
+        name: 'Rolling Prima',
+        description: "Il sistema rolling Prima è scorrevole esterno muro ed è disponibile per tutti i modelli di porta.",
+      },
     ],
     hasWindowVersion: true,
     openingTypes: ['battente', 'scorrevole'],

@@ -383,10 +383,12 @@ export default function EditMeasurement() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Direzione apertura</Label>
-                  <RadioGroup value={form.opening_direction} onValueChange={v => update('opening_direction', v)} className="flex gap-4">
-                    <Label htmlFor="ed-dx" className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="destra" id="ed-dx" /> Destra</Label>
-                    <Label htmlFor="ed-sx" className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="sinistra" id="ed-sx" /> Sinistra</Label>
+                  <Label>Senso di apertura</Label>
+                  <RadioGroup value={form.opening_direction} onValueChange={v => update('opening_direction', v)} className="grid grid-cols-2 gap-2">
+                    <Label htmlFor="ed-sp-dx" className="flex items-center gap-2 cursor-pointer text-sm"><RadioGroupItem value="spingere_destra" id="ed-sp-dx" /> Spingere destra</Label>
+                    <Label htmlFor="ed-sp-sx" className="flex items-center gap-2 cursor-pointer text-sm"><RadioGroupItem value="spingere_sinistra" id="ed-sp-sx" /> Spingere sinistra</Label>
+                    <Label htmlFor="ed-ti-dx" className="flex items-center gap-2 cursor-pointer text-sm"><RadioGroupItem value="tirare_destra" id="ed-ti-dx" /> Tirare destra</Label>
+                    <Label htmlFor="ed-ti-sx" className="flex items-center gap-2 cursor-pointer text-sm"><RadioGroupItem value="tirare_sinistra" id="ed-ti-sx" /> Tirare sinistra</Label>
                   </RadioGroup>
                 </div>
                 <div className="space-y-2">

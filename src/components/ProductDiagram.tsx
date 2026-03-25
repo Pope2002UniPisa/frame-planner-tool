@@ -51,6 +51,7 @@ interface ProductDiagramProps {
   doorHandleFinishId?: string;
   doorHandleModelId?: string;
   doorModelId?: string;
+  doorSpecialVariant?: string;
 }
 
 export default function ProductDiagram({
@@ -73,6 +74,7 @@ export default function ProductDiagram({
   doorHandleFinishId,
   doorHandleModelId,
   doorModelId,
+  doorSpecialVariant,
 }: ProductDiagramProps) {
   const w = parseInt(widthMm) || 1200;
   const h = parseInt(heightMm) || 1400;
@@ -265,13 +267,19 @@ export default function ProductDiagram({
     const hasGlass = !!glassType && glassType !== 'cieca';
     const doorColor = doorColorHex || frontColor;
     const isScorrevole = panelType === 'scorrevole';
+    const isRolling = doorSpecialVariant?.startsWith('rolling_');
+    const isFolding = doorSpecialVariant === 'modula' || doorSpecialVariant === 'indue';
     
-    // "Apertura destra" = handle on RIGHT, hinges LEFT
-    // "Apertura sinistra" = handle on LEFT, hinges RIGHT
+    // Parse opening direction: spingere_destra, spingere_sinistra, tirare_destra, tirare_sinistra
+    // Also support legacy: destra, sinistra
+    const dirParts = openingDirection.split('_');
+    const isRight = dirParts.includes('destra');
+    const isPush = dirParts.includes('spingere') || dirParts[0] === 'destra';
+    const isTirare = dirParts.includes('tirare');
+    
+    // For the diagram: handle on the side indicated by destra/sinistra
     const isInternal = view === 'internal';
-    const handleOnRight_ext = openingDirection === 'destra';
-    // Internal view mirrors
-    const effectiveHandleRight = isInternal ? !handleOnRight_ext : handleOnRight_ext;
+    const effectiveHandleRight = isInternal ? !isRight : isRight;
     
     const getHandleColor = () => {
       switch (doorHandleFinishId) {
@@ -291,21 +299,32 @@ export default function ProductDiagram({
     // Lever points INWARD (toward door center)
     const leverDir = effectiveHandleRight ? -1 : 1;
 
-    // Model name to display on the door
+    // Model name to display
     const doorModelName = (() => {
       const models: Record<string, string> = { 'yncisa_70': 'Yncisa 70' };
       return doorModelId ? (models[doorModelId] || doorModelId) : '';
     })();
 
-    // Handle rendering per model - NO back plate, just rosette + lever like the real photo
+    // Opening direction label
+    const openingLabel = (() => {
+      const labels: Record<string, string> = {
+        'spingere_destra': 'Spingere DX',
+        'spingere_sinistra': 'Spingere SX',
+        'tirare_destra': 'Tirare DX',
+        'tirare_sinistra': 'Tirare SX',
+        'destra': 'Destra',
+        'sinistra': 'Sinistra',
+      };
+      return labels[openingDirection] || openingDirection;
+    })();
+
+    // Handle rendering per model
     const renderBattenteHandle = () => {
       const rosetteCX = handleX + 2;
       const rosetteR = 5;
       const leverLen = 26;
       
-      // Different handle shapes per model
       if (doorHandleModelId === 'pure') {
-        // Pure: straight thin lever, round rosette
         return (
           <g>
             <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
@@ -314,7 +333,6 @@ export default function ProductDiagram({
               y={handleY - 1.5} width={leverLen} height={3} rx={1.5} 
               fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
             />
-            {/* Keyhole below */}
             <circle cx={rosetteCX} cy={handleY + 22} r={4} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
             <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
           </g>
@@ -322,35 +340,29 @@ export default function ProductDiagram({
       }
       
       if (doorHandleModelId === 'baar') {
-        // Baar: L-shaped angular lever, square rosette
         return (
           <g>
             <rect x={rosetteCX - rosetteR} y={handleY - rosetteR} width={rosetteR * 2} height={rosetteR * 2} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
-            {/* Horizontal part */}
             <rect 
               x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} 
               y={handleY - 2} width={leverLen} height={4} rx={1} 
               fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
             />
-            {/* Down-turn at end */}
             <rect 
               x={rosetteCX + leverDir * leverLen - 2} y={handleY - 2} 
               width={4} height={10} rx={1} 
               fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
             />
-            {/* Keyhole below */}
             <rect x={rosetteCX - 4} y={handleY + 18} width={8} height={8} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
             <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
           </g>
         );
       }
       
-      // Minimal Design (default): curved lever like the reference photo
+      // Minimal Design (default)
       return (
         <g>
-          {/* Round rosette */}
           <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
-          {/* Curved lever - like the photo */}
           <path 
             d={`M ${rosetteCX} ${handleY} 
                 L ${rosetteCX + leverDir * 12} ${handleY} 
@@ -363,7 +375,6 @@ export default function ProductDiagram({
                 Q ${rosetteCX + leverDir * 20} ${handleY} ${rosetteCX + leverDir * leverLen} ${handleY - 4}`}
             fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeLinecap="round"
           />
-          {/* Round keyhole rosette below */}
           <circle cx={rosetteCX} cy={handleY + 22} r={4} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
           <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
         </g>
@@ -395,6 +406,191 @@ export default function ProductDiagram({
       return frameType ? (frames[frameType] || frameType) : '';
     })();
 
+    // Special variant label
+    const variantLabel = (() => {
+      const variants: Record<string, string> = {
+        'modula': 'Sistema Modula',
+        'indue': 'Sistema InDue',
+        'rolling_scrighi': 'Rolling Scrighi',
+        'rolling_magic': 'Rolling Magic',
+        'rolling_prima': 'Rolling Prima',
+      };
+      return doorSpecialVariant ? (variants[doorSpecialVariant] || '') : '';
+    })();
+
+    // ===== FOLDING DOOR RENDERING (Modula / InDue) =====
+    if (isFolding) {
+      const isModula = doorSpecialVariant === 'modula';
+      // Modula: 1/3 + 2/3, InDue: 50/50
+      const leftRatio = isModula ? 0.33 : 0.5;
+      const rightRatio = 1 - leftRatio;
+      const leftW = drawW * leftRatio;
+      const rightW = drawW * rightRatio;
+      const foldGap = 3;
+      // Show door slightly folded/angled
+      const foldAngle = 12;
+
+      return (
+        <svg viewBox={`0 0 ${svgW} ${svgH + 50}`} className="w-full max-w-sm mx-auto">
+          {/* Door frame */}
+          <rect x={offsetX - 5} y={offsetY - 5} width={drawW + 10} height={drawH + 10} fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" />
+          
+          {/* Left panel (hinged to frame) - slightly angled */}
+          <g transform={`skewY(${effectiveHandleRight ? -2 : 2})`}>
+            <rect x={offsetX} y={offsetY} width={leftW - foldGap} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
+          </g>
+          
+          {/* Right panel - slightly angled other way */}
+          <g transform={`skewY(${effectiveHandleRight ? 2 : -2})`}>
+            <rect x={offsetX + leftW + foldGap} y={offsetY} width={rightW - foldGap} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
+          </g>
+
+          {/* Fold line / hinge between panels */}
+          <line x1={offsetX + leftW} y1={offsetY} x2={offsetX + leftW} y2={offsetY + drawH} stroke="hsl(var(--foreground))" strokeWidth="1.5" strokeDasharray="4 3" />
+
+          {/* Handle on right panel */}
+          {renderBattenteHandle()}
+
+          {/* Hinges on frame side */}
+          <rect x={hingeX} y={offsetY + drawH * 0.12} width={4} height={14} rx={2} fill="hsl(var(--foreground))" opacity="0.5" />
+          <rect x={hingeX} y={offsetY + drawH * 0.48} width={4} height={14} rx={2} fill="hsl(var(--foreground))" opacity="0.5" />
+          <rect x={hingeX} y={offsetY + drawH * 0.82} width={4} height={14} rx={2} fill="hsl(var(--foreground))" opacity="0.5" />
+
+          {/* Threshold */}
+          <rect x={offsetX - 6} y={offsetY + drawH + 5} width={drawW + 12} height={3} fill="hsl(var(--muted-foreground))" opacity="0.4" rx={1} />
+
+          {/* Ratio indicator */}
+          <text x={offsetX + leftW / 2} y={offsetY + drawH + 16} textAnchor="middle" fontSize="6" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+            {isModula ? '1/3' : '1/2'}
+          </text>
+          <text x={offsetX + leftW + rightW / 2} y={offsetY + drawH + 16} textAnchor="middle" fontSize="6" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+            {isModula ? '2/3' : '1/2'}
+          </text>
+
+          {/* Dimensions */}
+          <DimensionH x={offsetX} y={offsetY - 22} width={drawW} label={`${w}`} />
+          <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
+
+          {/* Opening info - well above dimension */}
+          <text x={offsetX + drawW / 2} y={offsetY - 48} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
+            {variantLabel} — {openingLabel}
+          </text>
+
+          {/* Labels below door */}
+          {doorModelName && (
+            <text x={offsetX + drawW / 2} y={offsetY + drawH + 28} textAnchor="middle" fontSize="9" fontWeight="600" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+              {doorModelName}
+            </text>
+          )}
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + 40} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+            Porta cieca — {variantLabel}
+          </text>
+          {frameLabel && (
+            <text x={offsetX + drawW / 2} y={offsetY + drawH + 52} textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+              Telaio: {frameLabel}
+            </text>
+          )}
+
+          {view && (
+            <text x={8} y={16} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
+              {view === 'internal' ? '🏠 Vista Interna' : '🌳 Vista Esterna'}
+            </text>
+          )}
+        </svg>
+      );
+    }
+
+    // ===== ROLLING DOOR RENDERING (Scrighi / Magic / Prima) =====
+    if (isRolling) {
+      const isScrighi = doorSpecialVariant === 'rolling_scrighi'; // inside wall
+      const isMagic = doorSpecialVariant === 'rolling_magic';
+      const isPrima = doorSpecialVariant === 'rolling_prima';
+      const isInsideWall = isScrighi;
+
+      // Wall representation
+      const wallThickness = 18;
+      const wallX = effectiveHandleRight ? offsetX + drawW + 6 : offsetX - wallThickness - 6;
+      const trackLen = drawW + 20;
+      
+      // Sliding direction: door slides into/along wall
+      const slideDir = effectiveHandleRight ? 1 : -1;
+
+      return (
+        <svg viewBox={`0 0 ${svgW + 60} ${svgH + 50}`} className="w-full max-w-sm mx-auto">
+          {/* Wall */}
+          <rect x={wallX} y={offsetY - 10} width={wallThickness} height={drawH + 20} fill="hsl(var(--muted))" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
+          {/* Wall hatching */}
+          {Array.from({ length: Math.floor((drawH + 20) / 8) }).map((_, i) => (
+            <line key={i} x1={wallX + 2} y1={offsetY - 10 + i * 8} x2={wallX + wallThickness - 2} y2={offsetY - 10 + i * 8 + 6} stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.3" />
+          ))}
+
+          {isInsideWall ? (
+            <>
+              {/* Pocket in wall for Scrighi - door slides inside */}
+              <rect x={wallX + wallThickness} y={offsetY - 5} width={drawW + 10} height={wallThickness * 0.4} fill="hsl(var(--muted))" stroke="hsl(var(--foreground))" strokeWidth="0.8" />
+              <rect x={wallX + wallThickness} y={offsetY + drawH - wallThickness * 0.4 + 5} width={drawW + 10} height={wallThickness * 0.4} fill="hsl(var(--muted))" stroke="hsl(var(--foreground))" strokeWidth="0.8" />
+              {/* Door partially inside wall */}
+              <rect x={wallX + wallThickness + 4} y={offsetY} width={drawW - 10} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" strokeDasharray="3 2" />
+              {/* Visible portion of door */}
+              <rect x={offsetX} y={offsetY} width={drawW * 0.3} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
+              {/* Recessed handle on visible part */}
+              <ellipse cx={offsetX + drawW * 0.15} cy={handleY} rx={5} ry={14} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            </>
+          ) : (
+            <>
+              {/* Track above door for Magic/Prima */}
+              <rect x={offsetX - 10} y={offsetY - 10} width={drawW + 40} height={5} rx={1} fill="hsl(var(--muted-foreground))" opacity="0.6" />
+              {/* Door panel */}
+              <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
+              {/* Recessed handle */}
+              <ellipse cx={offsetX + (effectiveHandleRight ? drawW - 16 : 16)} cy={handleY} rx={5} ry={14} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+              {/* Sliding arrow */}
+              <defs>
+                <marker id="slide-arrow" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                  <polygon points="0 0, 6 2, 0 4" fill="hsl(var(--accent))" />
+                </marker>
+              </defs>
+              <line x1={offsetX + drawW / 2 - 20} y1={offsetY - 16} x2={offsetX + drawW / 2 + 20} y2={offsetY - 16} stroke="hsl(var(--accent))" strokeWidth="1" markerEnd="url(#slide-arrow)" />
+            </>
+          )}
+
+          {/* Threshold */}
+          <rect x={offsetX - 10} y={offsetY + drawH + 5} width={drawW + 20} height={3} fill="hsl(var(--muted-foreground))" opacity="0.4" rx={1} />
+
+          {/* Dimensions */}
+          <DimensionH x={offsetX} y={offsetY - 28} width={drawW} label={`${w}`} />
+          <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
+
+          {/* Opening info */}
+          <text x={offsetX + drawW / 2} y={offsetY - 50} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
+            {variantLabel}
+          </text>
+
+          {/* Labels below door */}
+          {doorModelName && (
+            <text x={offsetX + drawW / 2} y={offsetY + drawH + 22} textAnchor="middle" fontSize="9" fontWeight="600" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+              {doorModelName}
+            </text>
+          )}
+          <text x={offsetX + drawW / 2} y={offsetY + drawH + 34} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+            Porta cieca — {variantLabel}
+          </text>
+          {frameLabel && (
+            <text x={offsetX + drawW / 2} y={offsetY + drawH + 46} textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+              Telaio: {frameLabel}
+            </text>
+          )}
+
+          {view && (
+            <text x={8} y={16} fontSize="9" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace">
+              {view === 'internal' ? '🏠 Vista Interna' : '🌳 Vista Esterna'}
+            </text>
+          )}
+        </svg>
+      );
+    }
+
+    // ===== STANDARD DOOR RENDERING (Battente / Scorrevole) =====
     return (
       <svg viewBox={`0 0 ${svgW} ${svgH + 30}`} className="w-full max-w-sm mx-auto">
         {/* Sliding track if scorrevole */}
@@ -416,8 +612,6 @@ export default function ProductDiagram({
         
         {/* Door body */}
         <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-
-        {/* Model name removed from door panel - shown in labels below */}
 
         {/* Glass insert */}
         {hasGlass && (
@@ -442,13 +636,13 @@ export default function ProductDiagram({
         {/* Threshold */}
         <rect x={offsetX - 6} y={offsetY + drawH + 5} width={drawW + 12} height={3} fill="hsl(var(--muted-foreground))" opacity="0.4" rx={1} />
 
-        {/* Dimensions - moved higher to avoid overlap */}
+        {/* Dimensions */}
         <DimensionH x={offsetX} y={offsetY - 22} width={drawW} label={`${w}`} />
         <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
 
-        {/* Opening type label - positioned above dimension line */}
-        <text x={offsetX + drawW / 2} y={offsetY - 40} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
-          {isScorrevole ? '↔ Scorrevole' : '⟳ Battente'}
+        {/* Opening type label - well above dimension line */}
+        <text x={offsetX + drawW / 2} y={offsetY - 48} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
+          {isScorrevole ? '↔ Scorrevole' : `⟳ Battente — ${openingLabel}`}
         </text>
 
         {/* Labels below door */}
