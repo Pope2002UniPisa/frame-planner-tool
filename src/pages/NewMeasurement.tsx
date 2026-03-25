@@ -223,7 +223,7 @@ export default function NewMeasurement() {
     status,
     accessories_config: {
       ...accessoriesConfig,
-      ...(form.product_type === 'porta' ? {
+      ...(isDoorType(form.product_type) ? {
         door_model: form.door_model,
         door_handle_model_id: form.door_handle_model_id,
         door_handle_finish_id: form.door_handle_finish_id,
@@ -413,17 +413,17 @@ export default function NewMeasurement() {
               openingDirection={form.opening_direction}
               handleType={form.handle_type}
               glassType={form.glass_type}
-              frameType={form.product_type === 'porta' && form.door_frame_id ? form.door_frame_id : form.frame_type}
+              frameType={isDoorType(form.product_type) && form.door_frame_id ? form.door_frame_id : form.frame_type}
               colorInternal={form.color_internal}
               colorExternal={form.color_external}
               internalSpaceMm={isMultiProduct ? (activeItem?.internal_space_mm || '') : form.internal_space_mm}
               externalSpaceMm={isMultiProduct ? (activeItem?.external_space_mm || '') : form.external_space_mm}
               view={view}
-              doorColorHex={form.product_type === 'porta' && form.door_color_id ? (getDoorModel(form.door_model)?.colors.find(c => c.id === form.door_color_id)?.hex) : undefined}
-              doorHandleFinishId={form.product_type === 'porta' ? form.door_handle_finish_id : undefined}
-              doorHandleModelId={form.product_type === 'porta' ? form.door_handle_model_id : undefined}
-              doorModelId={form.product_type === 'porta' ? form.door_model : undefined}
-              doorSpecialVariant={form.product_type === 'porta' ? form.door_special_variant : undefined}
+              doorColorHex={isDoorType(form.product_type) && form.door_color_id ? (getDoorModel(form.door_model)?.colors.find(c => c.id === form.door_color_id)?.hex) : undefined}
+              doorHandleFinishId={isDoorType(form.product_type) ? form.door_handle_finish_id : undefined}
+              doorHandleModelId={isDoorType(form.product_type) ? form.door_handle_model_id : undefined}
+              doorModelId={isDoorType(form.product_type) ? form.door_model : undefined}
+              doorSpecialVariant={isDoorType(form.product_type) ? form.door_special_variant : undefined}
             />
           </div>
         </div>
@@ -478,7 +478,7 @@ export default function NewMeasurement() {
           </div>
         </div>
 
-        <div className={`grid grid-cols-1 gap-4 ${form.product_type === 'porta' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+        <div className={`grid grid-cols-1 gap-4 ${isDoorType(form.product_type) ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
           <div className="space-y-2">
             <Label>Larghezza (mm) *</Label>
             <Input type="number" value={multiItems[activeItemIndex].width_mm} onChange={e => updateItem(activeItemIndex, 'width_mm', e.target.value)} placeholder="1200" />
@@ -487,7 +487,7 @@ export default function NewMeasurement() {
             <Label>Altezza (mm) *</Label>
             <Input type="number" value={multiItems[activeItemIndex].height_mm} onChange={e => updateItem(activeItemIndex, 'height_mm', e.target.value)} placeholder="1400" />
           </div>
-          {form.product_type !== 'porta' && (
+          {!isDoorType(form.product_type) && (
             <div className="space-y-2">
               <Label>Profondità muro (mm)</Label>
               <Input type="number" value={multiItems[activeItemIndex].depth_mm} onChange={e => updateItem(activeItemIndex, 'depth_mm', e.target.value)} placeholder="300" />
@@ -495,7 +495,7 @@ export default function NewMeasurement() {
           )}
         </div>
 
-        {form.product_type !== 'porta' && (
+        {!isDoorType(form.product_type) && (
           <div className="space-y-3 pt-2">
             <Label className="text-base font-semibold">Controlli tecnici</Label>
             <div className="space-y-3">
@@ -521,7 +521,7 @@ export default function NewMeasurement() {
           </div>
         )}
 
-        {form.product_type !== 'porta' && (
+        {!isDoorType(form.product_type) && (
           <div className="grid grid-cols-2 gap-4 pt-2">
             <div className="space-y-2">
               <Label>Spazio interno (mm)</Label>
@@ -875,7 +875,7 @@ export default function NewMeasurement() {
                   <CardTitle className="font-heading">Misure (in mm)</CardTitle>
                   <CardDescription>Inserisci le dimensioni rilevate</CardDescription>
                   {/* Door model dimension limits */}
-                  {form.product_type === 'porta' && form.door_model && (() => {
+                  {isDoorType(form.product_type) && form.door_model && (() => {
                     const model = getDoorModel(form.door_model);
                     if (!model) return null;
                     return (
@@ -890,7 +890,7 @@ export default function NewMeasurement() {
                       </div>
                     );
                   })()}
-                  <div className={`grid grid-cols-1 gap-4 ${form.product_type === 'porta' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+                  <div className={`grid grid-cols-1 gap-4 ${isDoorType(form.product_type) ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                     <div className="space-y-2">
                       <Label>Larghezza (mm) *</Label>
                       <Input type="number" value={form.width_mm} onChange={e => update('width_mm', e.target.value)} placeholder="1200" />
@@ -899,7 +899,7 @@ export default function NewMeasurement() {
                       <Label>Altezza (mm) *</Label>
                       <Input type="number" value={form.height_mm} onChange={e => update('height_mm', e.target.value)} placeholder="1400" />
                     </div>
-                    {form.product_type !== 'porta' && (
+                    {!isDoorType(form.product_type) && (
                       <div className="space-y-2">
                         <Label>Profondità muro (mm)</Label>
                         <Input type="number" value={form.depth_mm} onChange={e => update('depth_mm', e.target.value)} placeholder="300" />
@@ -907,7 +907,7 @@ export default function NewMeasurement() {
                     )}
                   </div>
 
-                  {form.product_type !== 'porta' && (
+                  {!isDoorType(form.product_type) && (
                     <div className="space-y-3 pt-4">
                       <Label className="text-base font-semibold">Controlli tecnici</Label>
                       <div className="space-y-3">
@@ -933,7 +933,7 @@ export default function NewMeasurement() {
                     </div>
                   )}
 
-                  {form.product_type !== 'porta' && (
+                  {!isDoorType(form.product_type) && (
                     <div className="grid grid-cols-2 gap-4 pt-4">
                       <div className="space-y-2">
                         <Label>Spazio interno (mm)</Label>
@@ -971,7 +971,7 @@ export default function NewMeasurement() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tipologia apertura</Label>
-                  {form.product_type === 'porta' && form.door_model ? (
+                  {isDoorType(form.product_type) && form.door_model ? (
                     <Select value={form.panel_type} onValueChange={v => update('panel_type', v)}>
                       <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
                       <SelectContent>
@@ -1011,7 +1011,7 @@ export default function NewMeasurement() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo telaio</Label>
-                  {form.product_type === 'porta' && form.door_model ? (
+                  {isDoorType(form.product_type) && form.door_model ? (
                     <>
                       <Select value={form.door_frame_id} onValueChange={v => { update('door_frame_id', v); update('frame_type', v); }}>
                         <SelectTrigger><SelectValue placeholder="Seleziona telaio..." /></SelectTrigger>
@@ -1060,13 +1060,13 @@ export default function NewMeasurement() {
                 <CardDescription>
                   {isMultiProduct
                     ? `Finiture condivise per tutti i ${multiItems.length} prodotti`
-                    : form.product_type === 'porta' && form.door_model
+                    : isDoorType(form.product_type) && form.door_model
                       ? `Colori e maniglie per ${getDoorModel(form.door_model)?.name || 'porta'}`
                       : 'Materiale, colori e maniglie'}
                 </CardDescription>
 
                 {/* Material - only for non-catalog doors */}
-                {!(form.product_type === 'porta' && form.door_model) && (
+                {!(isDoorType(form.product_type) && form.door_model) && (
                   <div className="space-y-2">
                     <Label>Materiale</Label>
                     <RadioGroup value={form.material} onValueChange={v => update('material', v)} className="flex flex-wrap gap-3">
@@ -1091,7 +1091,7 @@ export default function NewMeasurement() {
                 )}
 
                 {/* Door catalog colors */}
-                {form.product_type === 'porta' && form.door_model ? (() => {
+                {isDoorType(form.product_type) && form.door_model ? (() => {
                   const model = getDoorModel(form.door_model);
                   if (!model) return null;
                   const finishTypes = [...new Set(model.colors.map(c => c.finish))];
@@ -1315,7 +1315,7 @@ export default function NewMeasurement() {
                     ? 'La sezione accessori per le porte verrà aggiornata prossimamente.'
                     : 'Seleziona gli accessori e configurali'}
                 </CardDescription>
-                {form.product_type === 'porta' ? (
+                {isDoorType(form.product_type) ? (
                   <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
                     <p className="text-sm text-muted-foreground">Nessun accessorio disponibile per il momento</p>
                   </div>
