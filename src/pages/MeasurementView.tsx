@@ -11,7 +11,8 @@ import { getColorLabel } from '@/data/doorCatalog';
 
 const statusLabels: Record<string, string> = {
   bozza: 'Bozza', ricevuto: 'Inviata', submitted: 'Inviata', in_review: 'In revisione',
-  quoted: 'Preventivata', ordered: 'Ordinata', completed: 'Completata',
+  quoted: 'Preventivata', quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
+  ordered: 'Ordinata', completed: 'Completata',
 };
 const productLabels: Record<string, string> = {
   finestra: 'Finestra', porta_finestra: 'Porta Finestra', basculante: 'Basculante',
