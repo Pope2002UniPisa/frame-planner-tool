@@ -58,6 +58,8 @@ export default function ProductDiagram({
   internalSpaceMm = '',
   externalSpaceMm = '',
   view,
+  doorColorHex,
+  doorHandleId,
 }: ProductDiagramProps) {
   const w = parseInt(widthMm) || 1200;
   const h = parseInt(heightMm) || 1400;
