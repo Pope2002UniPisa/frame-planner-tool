@@ -264,7 +264,7 @@ export default function ProductDiagram({
     );
   }
 
-  if (productType === 'porta') {
+  if (isDoorType(productType)) {
     const hasGlass = !!glassType && glassType !== 'cieca';
     const doorColor = doorColorHex || frontColor;
     const isScorrevole = panelType === 'scorrevole';

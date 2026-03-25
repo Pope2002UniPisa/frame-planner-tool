@@ -1271,7 +1271,8 @@ export default function NewMeasurement() {
                   {(form.product_type === 'porta_finestra' || isDoorType(form.product_type)) ? (
                     <>
                       {[
-                        { value: 'cieca', label: '🚪 Porta cieca (no vetro)' },
+                        // Only show "porta cieca" for standard doors and filomuro, NOT for porta_finestrata
+                        ...(form.product_type !== 'porta_finestrata' ? [{ value: 'cieca', label: '🚪 Porta cieca (no vetro)' }] : []),
                         { value: 'trasparente', label: '🔍 Vetro trasparente' },
                         { value: 'satinato', label: '🌫️ Vetro satinato' },
                         { value: 'a_quadri', label: '🔲 Vetro a quadri' },

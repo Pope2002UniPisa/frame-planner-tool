@@ -178,8 +178,8 @@ const YNCISA_70_COLORS: DoorColor[] = [
 
 // ========== HELPERS ==========
 const DEFAULT_FRAMES = ['evoluto_eleva', 'minimal_eleva', 'quality_eleva', 'dorico'];
-const DEFAULT_HANDLES = ['minimal_design', 'pure', 'baar'];
-const DEFAULT_HANDLE_FINISHES = ['cromo_satinato', 'cromo_lucido', 'bianco_optical', 'nero', 'grigio_alluminio'];
+const DEFAULT_HANDLES = ['minimal_design', 'pure', 'baar', 'wind', 'lui', 'pepe', 'atlanta', 'wave', 'classica_1', 'classica_2', 'morbida_1', 'morbida_2', 'elegante_1', 'elegante_2', 'elegante_3', 'avanti_piu_tonda', 'avanti_piu_quadra', 'avanti_tonda', 'avanti_quadra', 'moderna_0', 'moderna_1', 'moderna_2', 'moderna_3', 'moderna_4', 'moderna_5', 'moderna_6', 'base', 'pomax_quadra', 'pomax_tonda', 'pomolo_1', 'pomolo_2', 'pomolo_3', 'premi_apri'];
+const DEFAULT_HANDLE_FINISHES = ['cromo_satinato', 'cromo_lucido', 'bianco_optical', 'nero', 'grigio_alluminio', 'grafite_satinato', 'oro_satinato', 'oro_24k', 'oro_antico_lucido', 'ottone_lucido', 'nikel_lucido', 'bronzo_satinato', 'cromo_lucido_satinato', 'cromo_lucido_bianco', 'cromo_lucido_nero', 'bianco'];
 const DEFAULT_SPECIAL_VARIANTS: DoorSpecialVariant[] = [
   { id: 'modula', name: 'Sistema Modula', description: "Anta pieghevole composta da due ante asimmetriche (1/3 + 2/3)." },
   { id: 'indue', name: 'Sistema InDue', description: "Anta pieghevole composta da due ante simmetriche (50/50)." },
