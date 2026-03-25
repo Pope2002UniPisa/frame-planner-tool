@@ -84,3 +84,18 @@ ordered
 in_production
 delivered
 completed
+
+# La strategia migliore
+GitHub come sorgente del codice
+Vercel come frontend/deploy pubblico
+Supabase come backend/database/auth/storage
+
+# E lo imposterei in questo ordine:
+sistemi il progetto locale
+lo carichi su GitHub
+colleghi GitHub a Vercel
+crei il progetto su Supabase
+metti le env in Vercel e in locale
+fai il primo deploy
+testi tutto direttamente sull’URL Vercel
+solo dopo colleghi il dominio definitivo
