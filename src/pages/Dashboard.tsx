@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
-import PaymentSummary from '@/components/PaymentSummary';
+
 
 const WORKFLOW_STEPS = [
   { key: 'bozza', label: 'Bozza', icon: '📝' },
