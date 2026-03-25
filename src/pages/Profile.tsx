@@ -550,16 +550,8 @@ export default function Profile() {
 
                     // Calculate progress from measurements
                     const relevantMeasurements = measurements.filter(m => {
-                      if (!['completed', 'ordered', 'quoted'].includes(m.status)) return false;
+                      if (m.status === 'bozza') return false;
                       if (obj.product_type && m.product_type !== obj.product_type) return false;
-                      const d = new Date(m.created_at);
-                      if (d.getFullYear() !== obj.year) return false;
-                      if (obj.period === 'monthly' && obj.month && (d.getMonth() + 1) !== obj.month) return false;
-                      if (obj.period === 'quarterly' && obj.month) {
-                        const q = Math.ceil((d.getMonth() + 1) / 3);
-                        const targetQ = Math.ceil(obj.month / 3);
-                        if (q !== targetQ) return false;
-                      }
                       return true;
                     });
 
