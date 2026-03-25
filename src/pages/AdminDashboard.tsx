@@ -201,6 +201,28 @@ export default function AdminDashboard() {
     });
   };
 
+  const openManageDialog = (m: any) => {
+    setManageMeasurement(m);
+    setManagePrice(m.estimated_price ? String(m.estimated_price) : '');
+    setManageDeliveryDate(m.estimated_delivery_date || '');
+    setManageNotes(m.notes || '');
+  };
+
+  const handleUpdateMeasurementStatus = async (newStatus: string) => {
+    if (!manageMeasurement) return;
+    const updates: any = { status: newStatus };
+    if (managePrice) updates.estimated_price = parseFloat(managePrice);
+    if (manageDeliveryDate) updates.estimated_delivery_date = manageDeliveryDate;
+    if (manageNotes !== manageMeasurement.notes) updates.notes = manageNotes;
+    
+    const { error } = await supabase.from('measurements').update(updates).eq('id', manageMeasurement.id);
+    if (error) { toast.error(error.message); return; }
+    setMeasurements(prev => prev.map(m => m.id === manageMeasurement.id ? { ...m, ...updates } : m));
+    setManageMeasurement(null);
+    const labels: Record<string, string> = { quoted: 'Preventivo inviato', ordered: 'Ordine confermato', in_review: 'In revisione', completed: 'Completata' };
+    toast.success(labels[newStatus] || `Stato aggiornato a ${newStatus}`);
+  };
+
   const handleApproveProfile = async (userId: string, approve: boolean) => {
     const { error } = await supabase.from('profiles').update({ approved: approve }).eq('user_id', userId);
     if (error) { toast.error(error.message); return; }
