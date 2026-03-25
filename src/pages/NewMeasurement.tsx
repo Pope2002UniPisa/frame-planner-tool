@@ -979,7 +979,33 @@ export default function NewMeasurement() {
             )}
 
             {/* Step 4: Configuration */}
-            {step === 4 && (
+            {step === 4 && form.product_type === 'maniglia' ? (
+              <div className="space-y-4">
+                <CardTitle className="font-heading">Seleziona Maniglia</CardTitle>
+                <CardDescription>Scegli il modello di maniglia desiderato</CardDescription>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[400px] overflow-y-auto">
+                  {ALL_HANDLE_MODELS.map(h => (
+                    <Label
+                      key={h.id}
+                      htmlFor={`mh-${h.id}`}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-all ${
+                        form.door_handle_model_id === h.id ? 'border-accent bg-accent/10' : 'border-border'
+                      }`}
+                    >
+                      <RadioGroupItem value={h.id} id={`mh-${h.id}`} checked={form.door_handle_model_id === h.id} onClick={() => update('door_handle_model_id', h.id)} />
+                      <div>
+                        <span className="font-medium text-sm">{h.name}</span>
+                        {h.description && <p className="text-xs text-muted-foreground">{h.description}</p>}
+                      </div>
+                    </Label>
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  <Label>Quantità</Label>
+                  <Input type="number" placeholder="1" min="1" value={(form as any).maniglia_qty || '1'} onChange={e => update('maniglia_qty' as any, e.target.value)} />
+                </div>
+              </div>
+            ) : step === 4 && (
               <div className="space-y-4">
                 <CardTitle className="font-heading">Configurazione</CardTitle>
                 <CardDescription>
