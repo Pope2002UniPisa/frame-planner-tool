@@ -491,6 +491,17 @@ export default function Dashboard() {
                             })}
                           </div>
                         )}
+                        {/* Quote response buttons */}
+                        {m.status === 'quoted' && (
+                          <div className="flex gap-2 mt-2">
+                            <Button size="sm" className="gap-1.5" onClick={(e) => { e.stopPropagation(); handleQuoteResponse(m.id, true); }}>
+                              <ThumbsUp className="h-3.5 w-3.5" /> Accetta preventivo
+                            </Button>
+                            <Button size="sm" variant="outline" className="gap-1.5" onClick={(e) => { e.stopPropagation(); setQuoteResponseDialog(m); }}>
+                              <MessageSquare className="h-3.5 w-3.5" /> Richiedi modifiche
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         {m.status === 'bozza' && (
