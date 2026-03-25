@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import ClientSummary from "./pages/ClientSummary";
+import DeliverySummary from "./pages/DeliverySummary";
 
 const queryClient = new QueryClient();
 
