@@ -276,7 +276,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="font-semibold text-foreground font-heading">Riepilogo Clienti</p>
-                <p className="text-xs text-muted-foreground">{clientSummaryCount} nominativi • Vista separata e pulita con lista alfabetica e filtri avanzati</p>
+                <p className="text-xs text-muted-foreground">Riepilogo nominativi</p>
               </div>
             </div>
             <Button onClick={() => navigate('/dashboard/clienti')} className="gap-2">
