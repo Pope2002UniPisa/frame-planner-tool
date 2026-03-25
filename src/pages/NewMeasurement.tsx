@@ -645,8 +645,10 @@ export default function NewMeasurement() {
                 {isDoorType(form.product_type) && (
                   <div className="mt-6 space-y-4">
                     <div className="border-t border-border pt-4">
-                      <Label className="text-base font-semibold">🏷️ Seleziona modello porta</Label>
-                      <p className="text-sm text-muted-foreground mt-1">Scegli il modello dal catalogo per accedere a colori, telai e maniglie specifici</p>
+                      <Label className="text-base font-semibold">🏷️ Seleziona modello {form.product_type === 'porta_finestrata' ? 'porta finestrata' : form.product_type === 'porta_filomuro' ? 'porta filomuro' : 'porta'}</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {form.product_type === 'porta_finestrata' ? 'Porte con inserto vetro/finestra' : form.product_type === 'porta_filomuro' ? 'Porte con telaio a scomparsa (A Filo / Concept)' : 'Scegli il modello dal catalogo per accedere a colori, telai e maniglie specifici'}
+                      </p>
                     </div>
                     {(() => {
                       // Group models by family prefix, sorted alphabetically
