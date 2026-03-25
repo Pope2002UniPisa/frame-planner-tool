@@ -761,10 +761,6 @@ export default function NewMeasurement() {
                 )}
               </div>
             )}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Step 1: Client info */}
             {step === 1 && (
