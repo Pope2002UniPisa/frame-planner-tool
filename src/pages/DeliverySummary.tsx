@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Truck, Search, Filter, Eye, MapPin, Clock, AlertTriangle, CheckCircle2, Package } from 'lucide-react';
+import { ArrowLeft, Truck, Search, Filter, Eye, MapPin, Clock, AlertTriangle, CheckCircle2, Package, CreditCard } from 'lucide-react';
+import PaymentSummary from '@/components/PaymentSummary';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   ordered: { label: 'Ordinata', variant: 'default' },
