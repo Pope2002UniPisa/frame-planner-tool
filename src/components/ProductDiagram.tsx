@@ -266,15 +266,13 @@ export default function ProductDiagram({
     const doorColor = doorColorHex || frontColor;
     const isScorrevole = panelType === 'scorrevole';
     
-    // "Apertura sinistra" = hinges LEFT, handle RIGHT (external view)
-    // "Apertura destra" = hinges RIGHT, handle LEFT (external view)
+    // "Apertura destra" = handle on RIGHT, hinges LEFT
+    // "Apertura sinistra" = handle on LEFT, hinges RIGHT
     const isInternal = view === 'internal';
-    // External: sinistra => handle RIGHT, destra => handle LEFT
-    const handleOnRight_ext = openingDirection === 'sinistra';
-    // Internal view mirrors everything
+    const handleOnRight_ext = openingDirection === 'destra';
+    // Internal view mirrors
     const effectiveHandleRight = isInternal ? !handleOnRight_ext : handleOnRight_ext;
     
-    // Handle finish color
     const getHandleColor = () => {
       switch (doorHandleFinishId) {
         case 'cromo_satinato': return '#B8B8B8';
@@ -287,181 +285,92 @@ export default function ProductDiagram({
     };
     const handleColor = getHandleColor();
 
-    // Door panel positions
-    const handleX = effectiveHandleRight ? offsetX + drawW - 22 : offsetX + 18;
+    // Positions
+    const handleX = effectiveHandleRight ? offsetX + drawW - 24 : offsetX + 20;
     const hingeX = effectiveHandleRight ? offsetX + 2 : offsetX + drawW - 6;
-    // Lever points OUTWARD from the door edge (away from center)
-    const leverDir = effectiveHandleRight ? 1 : -1;
+    // Lever points INWARD (toward door center)
+    const leverDir = effectiveHandleRight ? -1 : 1;
 
-    // Yncisa 70 specific pantograph pattern
-    const renderYncisa70Pattern = () => {
-      // The pattern has:
-      // 1. Vertical lines on the right ~60% of the door from top to ~55%
-      // 2. A large U-curve that goes down from the vertical lines area
-      // 3. Concentric arcs below the U
-      // 4. A smaller concentric pattern at bottom-right
+    // Model name to display on the door
+    const doorModelName = (() => {
+      const models: Record<string, string> = { 'yncisa_70': 'Yncisa 70' };
+      return doorModelId ? (models[doorModelId] || doorModelId) : '';
+    })();
+
+    // Handle rendering per model - NO back plate, just rosette + lever like the real photo
+    const renderBattenteHandle = () => {
+      const rosetteCX = handleX + 2;
+      const rosetteR = 5;
+      const leverLen = 26;
       
-      const isYncisa = doorModelId === 'yncisa_70';
-      if (!isYncisa) {
-        // Generic door - simple panels
+      // Different handle shapes per model
+      if (doorHandleModelId === 'pure') {
+        // Pure: straight thin lever, round rosette
         return (
           <g>
-            <rect x={offsetX + 12} y={offsetY + 12} width={drawW - 24} height={(drawH - 24) * 0.28} rx={2} fill="none" stroke={doorColor} strokeWidth="0.8" opacity="0.2" filter="url(#pantograph)" />
-            <rect x={offsetX + 12} y={offsetY + 12 + (drawH - 24) * 0.32} width={drawW - 24} height={(drawH - 24) * 0.63} rx={2} fill="none" stroke={doorColor} strokeWidth="0.8" opacity="0.2" filter="url(#pantograph)" />
+            <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect 
+              x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} 
+              y={handleY - 1.5} width={leverLen} height={3} rx={1.5} 
+              fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
+            />
+            {/* Keyhole below */}
+            <circle cx={rosetteCX} cy={handleY + 22} r={4} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
           </g>
         );
       }
-
-      // Yncisa 70 faithful rendering
-      const doorL = offsetX;
-      const doorT = offsetY;
-      const doorR = offsetX + drawW;
-      const doorB = offsetY + drawH;
-      const dw = drawW;
-      const dh = drawH;
-
-      // Handle side is plain, lines are on the hinge side
-      const linesOnLeft = !effectiveHandleRight;
       
-      // Vertical lines region: about 5 lines spanning ~55% of width on the non-handle side
-      const lineStartX = linesOnLeft ? doorL + dw * 0.12 : doorL + dw * 0.35;
-      const lineEndX = linesOnLeft ? doorL + dw * 0.65 : doorL + dw * 0.88;
-      const lineSpacing = (lineEndX - lineStartX) / 5;
-      const lineTopY = doorT + 10;
-      const lineBottomY = doorT + dh * 0.55;
-
-      // U-curve center position (on the non-handle side)
-      const curveBaseX = linesOnLeft ? doorL + dw * 0.38 : doorL + dw * 0.62;
-      const curveCenterY = doorT + dh * 0.55;
-      
-      // Large arc center
-      const arcCX = linesOnLeft ? doorL + dw * 0.38 : doorL + dw * 0.62;
-      const arcCY = doorT + dh * 0.72;
-      const arcR1 = dw * 0.22;
-      const arcR2 = dw * 0.17;
-      const arcR3 = dw * 0.12;
-      const smallDotR = dw * 0.03;
-
-      // Small pattern at bottom corner (opposite to handle)
-      const smallCX = linesOnLeft ? doorL + dw * 0.15 : doorL + dw * 0.85;
-      const smallCY = doorT + dh * 0.92;
-      const smallR1 = dw * 0.12;
-      const smallR2 = dw * 0.08;
-      const smallDotR2 = dw * 0.025;
-
-      // Darker shade for pantograph grooves - more visible
-      const grooveColor = adjustColor(doorColor, -30);
-      const grooveOpacity = 0.55;
-      const grooveWidth = 1.5;
-
-      return (
-        <g>
-          <defs>
-            <filter id="pantograph" x="-2%" y="-2%" width="104%" height="104%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="0.8" />
-              <feOffset dx="0.5" dy="0.5" />
-              <feComponentTransfer>
-                <feFuncA type="linear" slope="0.25" />
-              </feComponentTransfer>
-              <feMerge>
-                <feMergeNode />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {/* Vertical lines */}
-          {Array.from({ length: 6 }).map((_, i) => (
-            <line
-              key={`vl-${i}`}
-              x1={lineStartX + i * lineSpacing}
-              y1={lineTopY}
-              x2={lineStartX + i * lineSpacing}
-              y2={lineBottomY}
-              stroke={grooveColor}
-              strokeWidth={grooveWidth}
-              opacity={grooveOpacity}
-              filter="url(#pantograph)"
+      if (doorHandleModelId === 'baar') {
+        // Baar: L-shaped angular lever, square rosette
+        return (
+          <g>
+            <rect x={rosetteCX - rosetteR} y={handleY - rosetteR} width={rosetteR * 2} height={rosetteR * 2} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            {/* Horizontal part */}
+            <rect 
+              x={leverDir > 0 ? rosetteCX : rosetteCX - leverLen} 
+              y={handleY - 2} width={leverLen} height={4} rx={1} 
+              fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
             />
-          ))}
-
-          {/* U-shape curves */}
-          <path
-            d={`M ${lineStartX + 2 * lineSpacing} ${lineBottomY} 
-                L ${lineStartX + 2 * lineSpacing} ${curveCenterY + dh * 0.02}
-                Q ${lineStartX + 2 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX} ${arcCY - arcR1 * 0.3}`}
-            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
-          />
-          <path
-            d={`M ${lineStartX + 4 * lineSpacing} ${lineBottomY}
-                L ${lineStartX + 4 * lineSpacing} ${curveCenterY + dh * 0.02}
-                Q ${lineStartX + 4 * lineSpacing} ${arcCY - arcR1 * 0.3} ${arcCX + (linesOnLeft ? arcR1 * 0.6 : -arcR1 * 0.6)} ${arcCY - arcR1 * 0.1}`}
-            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
-          />
-
-          {/* Large concentric arcs */}
-          <path
-            d={`M ${arcCX - arcR1} ${arcCY} A ${arcR1} ${arcR1} 0 0 ${linesOnLeft ? 0 : 1} ${arcCX + arcR1} ${arcCY}`}
-            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
-          />
-          <path
-            d={`M ${arcCX - arcR2} ${arcCY} A ${arcR2} ${arcR2} 0 0 ${linesOnLeft ? 0 : 1} ${arcCX + arcR2} ${arcCY}`}
-            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
-          />
-          <path
-            d={`M ${arcCX - arcR3} ${arcCY} A ${arcR3} ${arcR3} 0 0 ${linesOnLeft ? 0 : 1} ${arcCX + arcR3} ${arcCY}`}
-            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity} filter="url(#pantograph)"
-          />
-          <circle cx={arcCX} cy={arcCY - smallDotR * 1.5} r={smallDotR} fill="none" stroke={grooveColor} strokeWidth="1.2" opacity={grooveOpacity} filter="url(#pantograph)" />
-
-          {/* Small bottom pattern */}
-          <path
-            d={`M ${smallCX} ${doorB - 10} A ${smallR1} ${smallR1} 0 0 ${linesOnLeft ? 1 : 0} ${smallCX + (linesOnLeft ? smallR1 : -smallR1)} ${smallCY}`}
-            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity * 0.8} filter="url(#pantograph)"
-          />
-          <path
-            d={`M ${smallCX} ${doorB - 10} A ${smallR2} ${smallR2} 0 0 ${linesOnLeft ? 1 : 0} ${smallCX + (linesOnLeft ? smallR2 : -smallR2)} ${smallCY + (smallR1 - smallR2) * 0.5}`}
-            fill="none" stroke={grooveColor} strokeWidth={grooveWidth} opacity={grooveOpacity * 0.8} filter="url(#pantograph)"
-          />
-          <circle cx={smallCX + (linesOnLeft ? smallDotR2 * 2 : -smallDotR2 * 2)} cy={smallCY + smallR1 * 0.3} r={smallDotR2} fill="none" stroke={grooveColor} strokeWidth="1" opacity={grooveOpacity * 0.8} filter="url(#pantograph)" />
-        </g>
-      );
-    };
-
-    // Lever handle for battente - with visible back plate
-    const renderBattenteHandle = () => {
-      const plateW = 14;
-      const plateH = 50;
-      const plateCX = handleX + 2;
-      const plateX = plateCX - plateW / 2;
-      const plateY = handleY - plateH / 2;
+            {/* Down-turn at end */}
+            <rect 
+              x={rosetteCX + leverDir * leverLen - 2} y={handleY - 2} 
+              width={4} height={10} rx={1} 
+              fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
+            />
+            {/* Keyhole below */}
+            <rect x={rosetteCX - 4} y={handleY + 18} width={8} height={8} rx={1} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+            <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
+          </g>
+        );
+      }
+      
+      // Minimal Design (default): curved lever like the reference photo
       return (
         <g>
-          {/* Back plate (placca) */}
-          <rect 
-            x={plateX} y={plateY} width={plateW} height={plateH} rx={3} 
-            fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.6" opacity="0.95" 
+          {/* Round rosette */}
+          <circle cx={rosetteCX} cy={handleY} r={rosetteR} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+          {/* Curved lever - like the photo */}
+          <path 
+            d={`M ${rosetteCX} ${handleY} 
+                L ${rosetteCX + leverDir * 12} ${handleY} 
+                Q ${rosetteCX + leverDir * 20} ${handleY} ${rosetteCX + leverDir * leverLen} ${handleY - 4}`}
+            fill="none" stroke={handleColor} strokeWidth="4" strokeLinecap="round"
           />
-          {/* Lever - extends OUTWARD from door edge */}
-          <rect 
-            x={leverDir > 0 ? plateCX : plateCX + leverDir * 24} 
-            y={handleY - 2} 
-            width={24} height={4} rx={2} 
-            fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" 
+          <path 
+            d={`M ${rosetteCX} ${handleY} 
+                L ${rosetteCX + leverDir * 12} ${handleY} 
+                Q ${rosetteCX + leverDir * 20} ${handleY} ${rosetteCX + leverDir * leverLen} ${handleY - 4}`}
+            fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeLinecap="round"
           />
-          {/* Lever tip curve */}
-          <circle 
-            cx={plateCX + leverDir * 24} cy={handleY} r={2.5} 
-            fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.4" 
-          />
-          {/* Keyhole below */}
-          <circle cx={plateCX} cy={handleY + 18} r={3.5} fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.7" opacity="0.5" />
-          <rect x={plateCX - 1} y={handleY + 16} width={2} height={4} fill="hsl(var(--foreground))" opacity="0.3" />
+          {/* Round keyhole rosette below */}
+          <circle cx={rosetteCX} cy={handleY + 22} r={4} fill={handleColor} stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+          <rect x={rosetteCX - 0.8} y={handleY + 20} width={1.6} height={4} fill="hsl(var(--foreground))" opacity="0.4" />
         </g>
       );
     };
 
-    // Sliding handle (recessed/pomello)
+    // Sliding handle (recessed pomello)
     const renderScorrevoleHandle = () => (
       <g>
         <ellipse 
@@ -508,8 +417,13 @@ export default function ProductDiagram({
         {/* Door body */}
         <rect x={offsetX} y={offsetY} width={drawW} height={drawH} fill={doorColor} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
 
-        {/* Pantograph pattern */}
-        {renderYncisa70Pattern()}
+        {/* Model name centered on door instead of pantograph */}
+        {doorModelName && (
+          <text x={offsetX + drawW / 2} y={offsetY + drawH / 2} textAnchor="middle" dominantBaseline="central" 
+            fontSize="14" fontWeight="600" fill="hsl(var(--foreground))" fontFamily="monospace" opacity="0.35">
+            {doorModelName}
+          </text>
+        )}
 
         {/* Glass insert */}
         {hasGlass && (
@@ -534,16 +448,16 @@ export default function ProductDiagram({
         {/* Threshold */}
         <rect x={offsetX - 6} y={offsetY + drawH + 5} width={drawW + 12} height={3} fill="hsl(var(--muted-foreground))" opacity="0.4" rx={1} />
 
-        {/* Dimensions - moved up to avoid overlap */}
+        {/* Dimensions */}
         <DimensionH x={offsetX} y={offsetY - 30} width={drawW} label={`${w}`} />
         <DimensionV x={offsetX - 32} y={offsetY} height={drawH} label={`${h}`} />
 
-        {/* Opening type label - above dimensions */}
+        {/* Opening type label */}
         <text x={offsetX + drawW / 2} y={offsetY - 44} textAnchor="middle" fontSize="7" fill="hsl(var(--accent))" fontFamily="monospace">
           {isScorrevole ? '↔ Scorrevole' : '⟳ Battente'}
         </text>
 
-        {/* Labels below door: porta cieca → frame type → handle info */}
+        {/* Labels below door */}
         <text x={offsetX + drawW / 2} y={offsetY + drawH + 24} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
           {hasGlass ? 'Porta con vetro' : 'Porta cieca'}
         </text>
