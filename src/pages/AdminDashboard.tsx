@@ -546,7 +546,7 @@ export default function AdminDashboard() {
                     Obiettivi di vendita
                   </CardTitle>
                   <Button size="sm" className="gap-1.5" onClick={() => {
-                    setObjForm({ user_id: '', product_type: '', brand: '', target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
+                    setObjForm({ user_id: '', product_type: ALL_PRODUCTS_VALUE, brand: ALL_BRANDS_VALUE, target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
                     setObjectiveDialog(true);
                   }}>
                     <Plus className="h-3.5 w-3.5" /> Nuovo obiettivo
