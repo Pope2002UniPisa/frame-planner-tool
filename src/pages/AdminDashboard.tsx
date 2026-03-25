@@ -835,8 +835,6 @@ export default function AdminDashboard() {
 }
 
 // ─── Business Indices Card ──────────────────────────────────────
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { HelpCircle } from 'lucide-react';
 
 const BUSINESS_INDICES = [
   {
