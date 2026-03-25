@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { isDoorType, getDoorModel, ALL_HANDLE_MODELS, ALL_HANDLE_FINISHES } from '@/data/doorCatalog';
 
 // 10 predefined colors
 export const COLOR_OPTIONS = [
@@ -263,7 +264,7 @@ export default function ProductDiagram({
     );
   }
 
-  if (productType === 'porta') {
+  if (isDoorType(productType)) {
     const hasGlass = !!glassType && glassType !== 'cieca';
     const doorColor = doorColorHex || frontColor;
     const isScorrevole = panelType === 'scorrevole';
@@ -282,14 +283,15 @@ export default function ProductDiagram({
     const effectiveHandleRight = isInternal ? !isRight : isRight;
     
     const getHandleColor = () => {
-      switch (doorHandleFinishId) {
-        case 'cromo_satinato': return '#B8B8B8';
-        case 'cromo_lucido': return '#E0E0E0';
-        case 'bianco_optical': return '#F0F0EC';
-        case 'nero': return '#2A2A2A';
-        case 'grigio_alluminio': return '#A0A0A0';
-        default: return '#B8B8B8';
-      }
+      const finishMap: Record<string, string> = {
+        'cromo_satinato': '#B8B8B8', 'cromo_lucido': '#E0E0E0', 'bianco_optical': '#F0F0EC',
+        'nero': '#2A2A2A', 'grigio_alluminio': '#A0A0A0', 'grafite_satinato': '#6A6A6A',
+        'oro_satinato': '#C5A55A', 'oro_24k': '#D4A017', 'oro_antico_lucido': '#C8A070',
+        'ottone_lucido': '#C8A040', 'nikel_lucido': '#D0C8C0', 'bronzo_satinato': '#8B6E50',
+        'cromo_lucido_satinato': '#D0D0D0', 'cromo_lucido_bianco': '#E8E8E4',
+        'cromo_lucido_nero': '#808080', 'bianco': '#FAFAF5',
+      };
+      return finishMap[doorHandleFinishId || ''] || '#B8B8B8';
     };
     const handleColor = getHandleColor();
 
@@ -302,23 +304,17 @@ export default function ProductDiagram({
     // Model name to display
     const doorModelName = (() => {
       if (!doorModelId) return '';
-      const model = doorModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).replace(/\//g, '/');
-      // Special formatting
-      const map: Record<string, string> = {
-        'yncisa_70': 'Yncisa 70', 'yncisa_zig_1': 'Yncisa Zig/1', 'yncisa_zig_2': 'Yncisa Zig/2',
-        'yncisa_segni': 'Yncisa Segni', 'yncisa_styla': 'Yncisa Styla', 'yncisa_tartan': 'Yncisa Tartan',
-        'yncisa_tratto': 'Yncisa Tratto', 'yncisa_0': 'Yncisa/0', 'yncisa_1': 'Yncisa/1', 'yncisa_8': 'Yncisa/8',
-        'equa_styla': 'Equa Styla', 'equa': 'Equa', 'equa_1': 'Equa/1',
-        'lignum_exit': 'Lignum Exit', 'lignum_exitlyne': 'Lignum Exitlyne',
-        'exit': 'Exit', 'plisse': 'Plissè', 'plisse_vario': 'Plissè Vario',
-        'suite_9': 'Suite/9', 'suite_10': 'Suite/10',
-        'intaglio_1': 'Intaglio/1', 'intaglio_4': 'Intaglio/4', 'intaglio_8': 'Intaglio/8',
-        'supernova': 'Supernova', 'nova': 'Nova', 'tratto': 'Tratto', 'segni': 'Segni',
-        'logica': 'Logica', 'logica_1': 'Logica/1', 'logica_4': 'Logica/4', 'logica_90': 'Logica/90',
-        'liss': 'Liss', 'liss_4': 'Liss/4', 'liss_90': 'Liss/90', 'bilico': 'Bilico',
-      };
-      return map[doorModelId] || model;
+      const catalogModel = getDoorModel(doorModelId);
+      if (catalogModel) return catalogModel.name;
+      return doorModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     })();
+
+    // Handle model name for label
+    const handleModelLabel = doorHandleModelId ? (ALL_HANDLE_MODELS.find(h => h.id === doorHandleModelId)?.name || '') : '';
+    const handleFinishLabel = doorHandleFinishId ? (ALL_HANDLE_FINISHES.find(h => h.id === doorHandleFinishId)?.name || '') : '';
+
+    // Product type label
+    const productTypeLabel = productType === 'porta_finestrata' ? 'Porta finestrata' : productType === 'porta_filomuro' ? 'Porta filomuro' : 'Porta cieca';
 
     // Opening direction label
     const openingLabel = (() => {
@@ -513,11 +509,16 @@ export default function ProductDiagram({
             </text>
           )}
           <text x={offsetX + drawW / 2} y={offsetY + drawH + 40} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-            Porta cieca — {variantLabel}
+            {productTypeLabel} — {variantLabel}
           </text>
           {frameLabel && (
             <text x={offsetX + drawW / 2} y={offsetY + drawH + 52} textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
               Telaio: {frameLabel}
+            </text>
+          )}
+          {handleModelLabel && handleFinishLabel && (
+            <text x={offsetX + drawW / 2} y={offsetY + drawH + (frameLabel ? 64 : 52)} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+              {handleModelLabel} — {handleFinishLabel}
             </text>
           )}
 
@@ -603,11 +604,16 @@ export default function ProductDiagram({
             </text>
           )}
           <text x={offsetX + drawW / 2} y={offsetY + drawH + 34} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-            Porta cieca — {variantLabel}
+            {productTypeLabel} — {variantLabel}
           </text>
           {frameLabel && (
             <text x={offsetX + drawW / 2} y={offsetY + drawH + 46} textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
               Telaio: {frameLabel}
+            </text>
+          )}
+          {handleModelLabel && handleFinishLabel && (
+            <text x={offsetX + drawW / 2} y={offsetY + drawH + (frameLabel ? 58 : 46)} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
+              {handleModelLabel} — {handleFinishLabel}
             </text>
           )}
 
@@ -683,7 +689,7 @@ export default function ProductDiagram({
         )}
 
         <text x={offsetX + drawW / 2} y={offsetY + drawH + (doorModelName ? 30 : 18)} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-          {hasGlass ? 'Porta con vetro' : 'Porta cieca'}
+          {hasGlass ? 'Porta con vetro' : productTypeLabel}
         </text>
 
         {frameLabel && (
@@ -692,9 +698,9 @@ export default function ProductDiagram({
           </text>
         )}
 
-        {doorHandleModelId && doorHandleFinishId && (
+        {handleModelLabel && handleFinishLabel && (
           <text x={offsetX + drawW / 2} y={offsetY + drawH + (doorModelName ? (frameLabel ? 54 : 42) : (frameLabel ? 42 : 30))} textAnchor="middle" fontSize="7" fill="hsl(var(--muted-foreground))" fontFamily="monospace">
-            {doorHandleModelId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} — {doorHandleFinishId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            {handleModelLabel} — {handleFinishLabel}
           </text>
         )}
 

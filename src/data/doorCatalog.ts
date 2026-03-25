@@ -67,9 +67,41 @@ export const ALL_FRAMES: DoorFrame[] = [
 
 // ========== MODELLI MANIGLIA ==========
 export const ALL_HANDLE_MODELS: DoorHandleModel[] = [
+  // Maniglie a leva
   { id: 'minimal_design', name: 'Minimal Design', description: 'Maniglia a leva design minimale con rosetta quadrata' },
   { id: 'pure', name: 'Pure', description: 'Maniglia a leva dal design pulito e lineare' },
   { id: 'baar', name: 'Baar', description: 'Maniglia a leva dal design contemporaneo' },
+  { id: 'wind', name: 'Wind', description: 'Maniglia a leva dal design curvo e aerodinamico' },
+  { id: 'lui', name: 'Lui', description: 'Maniglia esclusiva Ferrero Legno (non per tutti i modelli pantografati)' },
+  { id: 'pepe', name: 'Pepe', description: 'Maniglia a leva compatta e moderna' },
+  { id: 'atlanta', name: 'Atlanta', description: 'Maniglia a leva con rosetta tonda e linee pulite' },
+  { id: 'wave', name: 'Wave', description: 'Maniglia integrata a scomparsa (non per tutti i modelli pantografati)' },
+  { id: 'classica_1', name: 'Classica 1', description: 'Maniglia classica con profilo curvo lucido' },
+  { id: 'classica_2', name: 'Classica 2', description: 'Maniglia classica con profilo decorato' },
+  { id: 'morbida_1', name: 'Morbida 1', description: 'Maniglia dal profilo morbido e arrotondato' },
+  { id: 'morbida_2', name: 'Morbida 2', description: 'Maniglia dal profilo morbido, versione compatta' },
+  { id: 'elegante_1', name: 'Elegante 1', description: 'Maniglia elegante con dettagli raffinati' },
+  { id: 'elegante_2', name: 'Elegante 2', description: 'Maniglia elegante con profilo allungato' },
+  { id: 'elegante_3', name: 'Elegante 3', description: 'Maniglia elegante con decorazione classica' },
+  { id: 'avanti_piu_tonda', name: 'Avanti Più Tonda', description: 'Maniglia moderna con rosetta tonda oversize' },
+  { id: 'avanti_piu_quadra', name: 'Avanti Più Quadra', description: 'Maniglia moderna con rosetta quadra oversize' },
+  { id: 'avanti_tonda', name: 'Avanti Tonda', description: 'Maniglia moderna con rosetta tonda' },
+  { id: 'avanti_quadra', name: 'Avanti Quadra', description: 'Maniglia moderna con rosetta quadra' },
+  { id: 'moderna_0', name: 'Moderna 0', description: 'Maniglia moderna essenziale' },
+  { id: 'moderna_1', name: 'Moderna 1', description: 'Maniglia moderna bicolore' },
+  { id: 'moderna_2', name: 'Moderna 2', description: 'Maniglia moderna bicolore con rosetta' },
+  { id: 'moderna_3', name: 'Moderna 3', description: 'Maniglia moderna lineare' },
+  { id: 'moderna_4', name: 'Moderna 4', description: 'Maniglia moderna con dettagli satinati' },
+  { id: 'moderna_5', name: 'Moderna 5', description: 'Maniglia moderna NEW con design aggiornato' },
+  { id: 'moderna_6', name: 'Moderna 6', description: 'Maniglia moderna NEW con profilo sottile' },
+  { id: 'base', name: 'Base', description: 'Maniglia a leva base classica' },
+  // Pomoli
+  { id: 'pomax_quadra', name: 'Pomax Quadra', description: 'Pomolo quadrato moderno' },
+  { id: 'pomax_tonda', name: 'Pomax Tonda', description: 'Pomolo tondo moderno' },
+  { id: 'pomolo_1', name: 'Pomolo 1', description: 'Pomolo sferico classico' },
+  { id: 'pomolo_2', name: 'Pomolo 2', description: 'Pomolo sferico con base larga' },
+  { id: 'pomolo_3', name: 'Pomolo 3', description: 'Pomolo sferico compatto' },
+  { id: 'premi_apri', name: 'Premi-Apri', description: 'Sistema push-to-open senza maniglia visibile' },
 ];
 
 // ========== FINITURE MANIGLIA ==========
@@ -79,6 +111,36 @@ export const ALL_HANDLE_FINISHES: DoorHandleFinish[] = [
   { id: 'bianco_optical', name: 'Bianco Optical', hex: '#F0F0EC' },
   { id: 'nero', name: 'Nero', hex: '#2A2A2A' },
   { id: 'grigio_alluminio', name: 'Grigio Alluminio', hex: '#A0A0A0' },
+  { id: 'grafite_satinato', name: 'Grafite Satinato', hex: '#6A6A6A' },
+  { id: 'oro_satinato', name: 'Oro Satinato', hex: '#C5A55A' },
+  { id: 'oro_24k', name: 'Oro 24K', hex: '#D4A017' },
+  { id: 'oro_antico_lucido', name: 'Oro Antico Lucido', hex: '#C8A070' },
+  { id: 'ottone_lucido', name: 'Ottone Lucido', hex: '#C8A040' },
+  { id: 'nikel_lucido', name: 'Nikel Lucido', hex: '#D0C8C0' },
+  { id: 'bronzo_satinato', name: 'Bronzo Satinato', hex: '#8B6E50' },
+  { id: 'cromo_lucido_satinato', name: 'Cromo Lucido + Satinato', hex: '#D0D0D0' },
+  { id: 'cromo_lucido_bianco', name: 'Cromo Lucido + Bianco Optical', hex: '#E8E8E4' },
+  { id: 'cromo_lucido_nero', name: 'Cromo Lucido + Nero', hex: '#808080' },
+  { id: 'bianco', name: 'Bianco', hex: '#FAFAF5' },
+];
+
+// ========== KIT SERRATURE ==========
+export interface DoorLockKit {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export const ALL_LOCK_KITS: DoorLockKit[] = [
+  { id: 'nottolino_punto', name: 'Kit Nottolino Punto', description: 'Nottolino a punto per bagno/WC' },
+  { id: 'bocchetta_chiave', name: 'Kit Bocchetta Chiave', description: 'Bocchetta per serratura a chiave' },
+  { id: 'bocchetta_yale', name: 'Kit Bocchetta Yale', description: 'Bocchetta per cilindro yale' },
+  { id: 'nottolino_tondo', name: 'Kit Nottolino Tondo', description: 'Nottolino tondo per bagno/WC' },
+  { id: 'nottolino_quadro', name: 'Kit Nottolino Quadro', description: 'Nottolino quadrato per bagno/WC' },
+  { id: 'bocchetta_tonda_chiave', name: 'Kit Bocchetta Tonda Chiave', description: 'Bocchetta tonda per serratura a chiave' },
+  { id: 'bocchetta_tonda_yale', name: 'Kit Bocchetta Tonda Yale', description: 'Bocchetta tonda per cilindro yale' },
+  { id: 'bocchetta_quadra_chiave', name: 'Kit Bocchetta Quadra Chiave', description: 'Bocchetta quadrata per serratura a chiave' },
+  { id: 'bocchetta_quadra_yale', name: 'Kit Bocchetta Quadra Yale', description: 'Bocchetta quadrata per cilindro yale' },
 ];
 
 // ========== COLORI YNCISA 70 ==========
@@ -116,8 +178,8 @@ const YNCISA_70_COLORS: DoorColor[] = [
 
 // ========== HELPERS ==========
 const DEFAULT_FRAMES = ['evoluto_eleva', 'minimal_eleva', 'quality_eleva', 'dorico'];
-const DEFAULT_HANDLES = ['minimal_design', 'pure', 'baar'];
-const DEFAULT_HANDLE_FINISHES = ['cromo_satinato', 'cromo_lucido', 'bianco_optical', 'nero', 'grigio_alluminio'];
+const DEFAULT_HANDLES = ['minimal_design', 'pure', 'baar', 'wind', 'lui', 'pepe', 'atlanta', 'wave', 'classica_1', 'classica_2', 'morbida_1', 'morbida_2', 'elegante_1', 'elegante_2', 'elegante_3', 'avanti_piu_tonda', 'avanti_piu_quadra', 'avanti_tonda', 'avanti_quadra', 'moderna_0', 'moderna_1', 'moderna_2', 'moderna_3', 'moderna_4', 'moderna_5', 'moderna_6', 'base', 'pomax_quadra', 'pomax_tonda', 'pomolo_1', 'pomolo_2', 'pomolo_3', 'premi_apri'];
+const DEFAULT_HANDLE_FINISHES = ['cromo_satinato', 'cromo_lucido', 'bianco_optical', 'nero', 'grigio_alluminio', 'grafite_satinato', 'oro_satinato', 'oro_24k', 'oro_antico_lucido', 'ottone_lucido', 'nikel_lucido', 'bronzo_satinato', 'cromo_lucido_satinato', 'cromo_lucido_bianco', 'cromo_lucido_nero', 'bianco'];
 const DEFAULT_SPECIAL_VARIANTS: DoorSpecialVariant[] = [
   { id: 'modula', name: 'Sistema Modula', description: "Anta pieghevole composta da due ante asimmetriche (1/3 + 2/3)." },
   { id: 'indue', name: 'Sistema InDue', description: "Anta pieghevole composta da due ante simmetriche (50/50)." },
