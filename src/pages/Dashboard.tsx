@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import pratelliLogo from '@/assets/pratelli-logo.png';
 
 
 const WORKFLOW_STEPS = [
@@ -155,9 +156,7 @@ export default function Dashboard() {
       <header className="border-b border-border bg-card shadow-card">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg gradient-accent p-2">
-              <Ruler className="h-5 w-5 text-accent-foreground" />
-            </div>
+            <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-10 object-contain" />
             <div>
               <h1 className="text-lg font-bold font-heading text-foreground">Portale Misurazioni</h1>
               {profile && <p className="text-xs text-muted-foreground">{profile.company_name || user.email}</p>}
