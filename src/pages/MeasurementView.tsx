@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Printer, Edit3 } from 'lucide-react';
 import ProductDiagram from '@/components/ProductDiagram';
+import { getColorLabel } from '@/data/doorCatalog';
 
 const statusLabels: Record<string, string> = {
   bozza: 'Bozza', ricevuto: 'Inviata', submitted: 'Inviata', in_review: 'In revisione',
