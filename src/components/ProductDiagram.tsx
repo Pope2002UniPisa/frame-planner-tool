@@ -51,6 +51,7 @@ interface ProductDiagramProps {
   doorHandleFinishId?: string;
   doorHandleModelId?: string;
   doorModelId?: string;
+  doorSpecialVariant?: string;
 }
 
 export default function ProductDiagram({
@@ -73,6 +74,7 @@ export default function ProductDiagram({
   doorHandleFinishId,
   doorHandleModelId,
   doorModelId,
+  doorSpecialVariant,
 }: ProductDiagramProps) {
   const w = parseInt(widthMm) || 1200;
   const h = parseInt(heightMm) || 1400;
