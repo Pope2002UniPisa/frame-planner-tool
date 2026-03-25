@@ -298,8 +298,8 @@ export default function Dashboard() {
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
           <StatCard icon={FileText} label="Totale" value={stats.total} />
           <StatCard icon={Edit3} label="Bozze" value={stats.drafts} />
-          <StatCard icon={Send} label="Inviate" value={stats.sent} />
-          <StatCard icon={Package} label="Preventivate" value={stats.quoted} />
+          <StatCard icon={Send} label="Preventivi" value={stats.quoted} />
+          <StatCard icon={Package} label="Ordini" value={stats.ordered} />
           <StatCard icon={CheckCircle} label="Completate" value={stats.completed} />
         </div>
 

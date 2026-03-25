@@ -341,9 +341,9 @@ export default function NewMeasurement() {
           if (error) throw error;
         }
       } else {
-        const { error } = await supabase.from('measurements').insert(buildInsertData('ricevuto', photo_urls));
+        const { error } = await supabase.from('measurements').insert(buildInsertData('quoted', photo_urls));
         if (error) throw error;
-        await createAccessoryRecords('ricevuto');
+        await createAccessoryRecords('quoted');
       }
 
       // Send email notification
