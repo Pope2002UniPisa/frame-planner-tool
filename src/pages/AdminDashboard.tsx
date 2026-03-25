@@ -431,7 +431,7 @@ export default function AdminDashboard() {
                   {measurements.filter(m => m.status !== 'bozza').slice(0, 10).map(m => {
                     const profile = profiles.find(p => p.user_id === m.user_id);
                     return (
-                      <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                      <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => openManageDialog(m)}>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-sm text-foreground">{productLabels[m.product_type] || m.product_type}</span>
