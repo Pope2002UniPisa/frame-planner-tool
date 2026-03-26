@@ -623,13 +623,29 @@ export default function Dashboard() {
             <div>
               <p className="font-semibold text-sm text-foreground mb-3">Seguici</p>
               <div className="flex items-center gap-3">
-                <a href="#" className="rounded-lg bg-muted p-2 hover:bg-accent/10 transition-colors">
+                <a 
+                  href="https://www.facebook.com/pratellirappresentanze?locale=it_IT" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Seguici su Facebook"
+                  className="rounded-lg bg-muted p-2 hover:bg-accent/10 transition-colors"
+                >
                   <Facebook className="h-4 w-4 text-muted-foreground" />
                 </a>
-                <a href="#" className="rounded-lg bg-muted p-2 hover:bg-accent/10 transition-colors">
+                <a 
+                  href="https://www.instagram.com/pratellirappresentanze/?hl=it" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Seguici su Instagram"
+                  className="rounded-lg bg-muted p-2 hover:bg-accent/10 transition-colors"
+                >
                   <Instagram className="h-4 w-4 text-muted-foreground" />
                 </a>
-                <a href="#" className="rounded-lg bg-muted p-2 hover:bg-accent/10 transition-colors">
+                <a href="https://www.linkedin.com/company/pratellirappresentanze/posts/?feedView=all"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Seguici su Linkedin"
+                  className="rounded-lg bg-muted p-2 hover:bg-accent/10 transition-colors">
                   <Linkedin className="h-4 w-4 text-muted-foreground" />
                 </a>
               </div>
