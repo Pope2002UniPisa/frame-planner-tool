@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, CalendarDays, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard, ThumbsUp, MessageSquare } from 'lucide-react';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, CalendarDays, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard, ThumbsUp, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { toast } from 'sonner';
 import pratelliLogo from '@/assets/pratelli-logo.png';
@@ -105,6 +105,29 @@ export default function Dashboard() {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [quoteResponseDialog, setQuoteResponseDialog] = useState<any>(null);
   const [modificationNotes, setModificationNotes] = useState('');
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
+  const [calendarAppointments, setCalendarAppointments] = useState<
+    Array<{
+      id: string;
+      date: string;
+      type: string;
+      title: string;
+      time: string;
+      location: string;
+      description: string;
+      color: string;
+    }>
+  >([]);
+
+  const [appointmentForm, setAppointmentForm] = useState({
+    type: 'consegna',
+    title: '',
+    time: '',
+    location: '',
+    description: '',
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -185,6 +208,95 @@ export default function Dashboard() {
     toast.success(accept ? 'Preventivo accettato! L\'ordine verrà confermato a breve.' : 'Richiesta di modifiche inviata.');
   };
 
+  const APPOINTMENT_TYPES: Record<string, { label: string; color: string }> = {
+    consegna: { label: 'Consegna', color: '#f59e0b' },   // giallo/arancio
+    chiamata: { label: 'Chiamata', color: '#10b981' },   // verde
+    pagamento: { label: 'Pagamento', color: '#ef4444' }, // rosso
+    sopralluogo: { label: 'Sopralluogo', color: '#3b82f6' }, // blu
+    altro: { label: 'Altro', color: '#8b5cf6' },         // viola
+  };
+
+  const monthNames = [
+    'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+    'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+  ];
+
+  const formatDateKey = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+
+  const firstDayOfMonth = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Lunedì = 0 ... Domenica = 6
+  const startWeekday = (firstDayOfMonth.getDay() + 6) % 7;
+
+  const calendarCells = Array.from({ length: 42 }, (_, index) => {
+    const dayNumber = index - startWeekday + 1;
+    if (dayNumber < 1 || dayNumber > daysInMonth) return null;
+    return new Date(year, month, dayNumber);
+  });
+
+  const getAppointmentsForDay = (date: Date) => {
+    const key = formatDateKey(date);
+    return calendarAppointments.filter(a => a.date === key);
+  };
+
+  const openAppointmentDialog = (date: Date) => {
+    setSelectedDay(date);
+    setAppointmentForm({
+      type: 'consegna',
+      title: '',
+      time: '',
+      location: '',
+      description: '',
+    });
+    setAppointmentDialogOpen(true);
+  };
+
+  const handleSaveAppointment = () => {
+    if (!selectedDay || !appointmentForm.title.trim()) return;
+
+    const typeConfig = APPOINTMENT_TYPES[appointmentForm.type];
+
+    const newAppointment = {
+      id: crypto.randomUUID(),
+      date: formatDateKey(selectedDay),
+      type: appointmentForm.type,
+      title: appointmentForm.title.trim(),
+      time: appointmentForm.time,
+      location: appointmentForm.location.trim(),
+      description: appointmentForm.description.trim(),
+      color: typeConfig.color,
+    };
+
+    setCalendarAppointments(prev => [...prev, newAppointment]);
+    setAppointmentDialogOpen(false);
+    setSelectedDay(null);
+    setAppointmentForm({
+      type: 'consegna',
+      title: '',
+      time: '',
+      location: '',
+      description: '',
+    });
+  };
+
+  const goToPreviousMonth = () => {
+    setCalendarDate(new Date(year, month - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCalendarDate(new Date(year, month + 1, 1));
+  };
+
+
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -227,7 +339,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {newsItems.map(n => (
+                  {newsItems.slice(0, 8).map(n => (
                     <div
                       key={n.id}
                       onClick={() => setSelectedNews(n)}
@@ -261,7 +373,7 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Colonna destra: Calendario placeholder */}
+          {/* Colonna destra: Calendario */}
           <div className="lg:col-span-1">
             <Card className="h-full">
               <CardContent className="p-4 h-full flex flex-col">
@@ -273,9 +385,17 @@ export default function Dashboard() {
                 </div>
 
                 <div className="flex items-center justify-between mb-3">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousMonth}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
                   <p className="text-sm font-semibold text-foreground">
-                    Marzo 2026
+                    {monthNames[month]} {year}
                   </p>
+
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextMonth}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
 
                 <div className="flex-1 rounded-xl border border-border bg-muted/20 p-4 flex flex-col">
@@ -289,25 +409,113 @@ export default function Dashboard() {
                     <div>D</div>
                   </div>
 
-                  <div className="grid grid-cols-7 gap-1 flex-1">
-                    {Array.from({ length: 35 }).map((_, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className="aspect-square rounded-md border border-border/50 bg-background text-[11px] flex items-center justify-center text-muted-foreground hover:border-accent hover:bg-accent/5 transition-colors"
-                      >
-                        {i < 31 ? i + 1 : ''}
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-7 gap-1">
+                    {calendarCells.map((date, i) => {
+                      if (!date) {
+                        return <div key={i} className="aspect-square" />;
+                      }
+
+                      const dayAppointments = getAppointmentsForDay(date);
+                      const firstColor = dayAppointments[0]?.color;
+                      const isSelected =
+                        selectedDay && formatDateKey(selectedDay) === formatDateKey(date);
+
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => openAppointmentDialog(date)}
+                          className={`aspect-square rounded-md border text-[11px] flex flex-col items-center justify-center transition-colors relative ${isSelected
+                            ? 'border-accent bg-accent/10'
+                            : 'border-border/50 bg-background hover:border-accent hover:bg-accent/5'
+                            }`}
+                          style={
+                            firstColor
+                              ? {
+                                boxShadow: `inset 0 0 0 2px ${firstColor}`,
+                              }
+                              : undefined
+                          }
+                        >
+                          <span className="text-muted-foreground">{date.getDate()}</span>
+
+                          {dayAppointments.length > 0 && (
+                            <div className="absolute bottom-1 flex items-center gap-1">
+                              {dayAppointments.slice(0, 3).map((appt, idx) => (
+                                <span
+                                  key={idx}
+                                  className="h-1.5 w-1.5 rounded-full"
+                                  style={{ backgroundColor: appt.color }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
 
+                  <div className="mt-4">
+                    {selectedDay ? (
+                      <div className="rounded-lg border border-border bg-background p-3">
+                        <p className="text-xs font-semibold text-foreground mb-2">
+                          {selectedDay.toLocaleDateString('it-IT', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </p>
+
+                        {getAppointmentsForDay(selectedDay).length > 0 ? (
+                          <div className="space-y-2">
+                            {getAppointmentsForDay(selectedDay).map(appt => (
+                              <div
+                                key={appt.id}
+                                className="rounded-md border border-border p-2"
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span
+                                    className="h-2.5 w-2.5 rounded-full"
+                                    style={{ backgroundColor: appt.color }}
+                                  />
+                                  <span className="text-xs font-semibold text-foreground">
+                                    {appt.title}
+                                  </span>
+                                </div>
+
+                                <p className="text-[11px] text-muted-foreground">
+                                  {APPOINTMENT_TYPES[appt.type]?.label}
+                                  {appt.time ? ` • ${appt.time}` : ''}
+                                </p>
+
+                                {appt.location && (
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {appt.location}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            Nessun appuntamento per questo giorno.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+                        Clicca su un giorno per aggiungere o vedere appuntamenti.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* News Dialog */}
+{/* News Dialog */}
         <Dialog open={!!selectedNews} onOpenChange={open => !open && setSelectedNews(null)}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
@@ -338,7 +546,7 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Photo preview dialog */}
+{/* Photo preview dialog */}
         <Dialog open={!!selectedPhoto} onOpenChange={open => !open && setSelectedPhoto(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -350,7 +558,7 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Quote modifications dialog */}
+{/* Quote modifications dialog */}
         <Dialog open={!!quoteResponseDialog} onOpenChange={open => { if (!open) { setQuoteResponseDialog(null); setModificationNotes(''); } }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -373,8 +581,106 @@ export default function Dashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+{/* Appointment Dialog */}
+        <Dialog open={appointmentDialogOpen} onOpenChange={setAppointmentDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-heading">
+                Nuovo appuntamento
+              </DialogTitle>
+            </DialogHeader>
 
-        {/* Stats cards */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  {selectedDay?.toLocaleDateString('it-IT', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tipo</label>
+                <Select
+                  value={appointmentForm.type}
+                  onValueChange={(value) =>
+                    setAppointmentForm(prev => ({ ...prev, type: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="consegna">Consegna</SelectItem>
+                    <SelectItem value="chiamata">Chiamata</SelectItem>
+                    <SelectItem value="pagamento">Pagamento</SelectItem>
+                    <SelectItem value="sopralluogo">Sopralluogo</SelectItem>
+                    <SelectItem value="altro">Altro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Titolo</label>
+                <Input
+                  value={appointmentForm.title}
+                  onChange={(e) =>
+                    setAppointmentForm(prev => ({ ...prev, title: e.target.value }))
+                  }
+                  placeholder="Es. Consegna infissi"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Orario</label>
+                <Input
+                  type="time"
+                  value={appointmentForm.time}
+                  onChange={(e) =>
+                    setAppointmentForm(prev => ({ ...prev, time: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Luogo</label>
+                <Input
+                  value={appointmentForm.location}
+                  onChange={(e) =>
+                    setAppointmentForm(prev => ({ ...prev, location: e.target.value }))
+                  }
+                  placeholder="Es. Via Roma 12, Pisa"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Descrizione</label>
+                <Textarea
+                  rows={3}
+                  value={appointmentForm.description}
+                  onChange={(e) =>
+                    setAppointmentForm(prev => ({ ...prev, description: e.target.value }))
+                  }
+                  placeholder="Breve descrizione..."
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAppointmentDialogOpen(false)}>
+                Annulla
+              </Button>
+              <Button onClick={handleSaveAppointment} disabled={!appointmentForm.title.trim()}>
+                Salva appuntamento
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+{/* Stats cards */}
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
           <StatCard icon={FileText} label="Totale" value={stats.total} />
           <StatCard icon={Edit3} label="Bozze" value={stats.drafts} />
@@ -383,7 +689,7 @@ export default function Dashboard() {
           <StatCard icon={CheckCircle} label="Completate" value={stats.completed} />
         </div>
 
-        {/* CTA */}
+{/* CTA */}
         <Card className="mb-6 gradient-primary border-0">
           <CardContent className="flex flex-col items-center gap-4 py-6 text-center sm:flex-row sm:text-left">
             <div className="flex-1">
@@ -399,7 +705,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Riepilogo Clienti - pagina dedicata */}
+{/* Riepilogo Clienti - pagina dedicata */}
         <Card className="mb-6 border-2 border-primary/20 bg-primary/5 shadow-md">
           <CardContent className="flex items-center justify-between py-5 px-6">
             <div className="flex items-center gap-3">
@@ -417,7 +723,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Riepilogo Consegne - pagina dedicata */}
+{/* Riepilogo Consegne - pagina dedicata */}
         <Card className="mb-6 border-2 border-accent/20 bg-accent/5 shadow-md">
           <CardContent className="flex items-center justify-between py-5 px-6">
             <div className="flex items-center gap-3">
@@ -435,7 +741,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Riepilogo Pagamenti - pagina dedicata */}
+{/* Riepilogo Pagamenti - pagina dedicata */}
         <Card className="mb-6 border-2 border-green-500/20 bg-green-500/5 shadow-md">
           <CardContent className="flex items-center justify-between py-5 px-6">
             <div className="flex items-center gap-3">
@@ -572,7 +878,7 @@ export default function Dashboard() {
                             )}
                           </div>
                         )}
-                        {/* Workflow tracker */}
+{/* Workflow tracker */}
                         {m.status !== 'bozza' && (
                           <div className="flex items-center gap-0.5 mt-2">
                             {WORKFLOW_STEPS.slice(1).map((ws, idx) => {
@@ -595,7 +901,7 @@ export default function Dashboard() {
                             })}
                           </div>
                         )}
-                        {/* Quote response buttons */}
+{/* Quote response buttons */}
                         {['ricevuto', 'submitted', 'quoted'].includes(m.status) && (
                           <div className="flex gap-2 mt-2">
                             <Button size="sm" className="gap-1.5" onClick={(e) => { e.stopPropagation(); handleQuoteResponse(m.id, true); }}>
@@ -631,7 +937,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Portfolio / Lavori svolti */}
+{/* Portfolio / Lavori svolti */}
         <div className="mt-10">
           <div className="flex items-center gap-2 mb-4">
             <Camera className="h-5 w-5 text-accent" />
@@ -660,11 +966,11 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Footer */}
+{/* Footer */}
       <footer className="border-t border-border bg-card mt-8">
         <div className="container py-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            {/* Company info and logo */}
+{/* Company info and logo */}
             <div>
               <div className="flex items-center gap-2 mb-3 -ml-3.5">
                 <img src={pratelliLogo}
