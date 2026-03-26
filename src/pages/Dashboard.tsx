@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard, ThumbsUp, MessageSquare } from 'lucide-react';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, CalendarDays, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard, ThumbsUp, MessageSquare } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { toast } from 'sonner';
 import pratelliLogo from '@/assets/pratelli-logo.png';
@@ -169,7 +169,7 @@ export default function Dashboard() {
       return true;
     });
   }, [measurements, filterStatus, filterProduct, searchText, filterDateFrom, filterDateTo]);
-{/* Stato accettazione preventivo e workflow conseguente */}
+  {/* Stato accettazione preventivo e workflow conseguente */ }
   const handleQuoteResponse = async (measurementId: string, accept: boolean) => {
     const newStatus = accept ? 'quote_accepted' : 'quote_modifications';
     const updates: any = { status: newStatus };
@@ -213,31 +213,93 @@ export default function Dashboard() {
       </header>
 
       <main className="container py-8 flex-1">
-        {/* News Section - compact */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Newspaper className="h-4 w-4 text-accent" />
-            <h3 className="text-sm font-heading font-semibold text-foreground">Novità e Promozioni</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {newsItems.map(n => (
-              <div
-                key={n.id}
-                onClick={() => setSelectedNews(n)}
-                className="rounded-lg border border-border p-3 hover:shadow-card-hover transition-all cursor-pointer group"
-              >
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{n.tag}</Badge>
-                  {n.link && <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />}
-                  {n.social_link && <Instagram className="h-2.5 w-2.5 text-muted-foreground" />}
+        {/* News + Calendario */}
+        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3 items-stretch">
+          {/* Colonna sinistra: Novità e Promozioni */}
+          <div className="lg:col-span-2">
+            <Card className="h-full">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Newspaper className="h-4 w-4 text-accent" />
+                  <h3 className="text-sm font-heading font-semibold text-foreground">
+                    Novità e Promozioni
+                  </h3>
                 </div>
-                <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{n.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.created_at).toLocaleDateString('it-IT')}</p>
-              </div>
-            ))}
-            {newsItems.length === 0 && (
-              <p className="col-span-4 text-xs text-muted-foreground text-center py-4">Nessuna novità al momento.</p>
-            )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  {newsItems.slice(0, 4).map(n => (
+                    <div
+                      key={n.id}
+                      onClick={() => setSelectedNews(n)}
+                      className="rounded-lg border border-border p-3 hover:shadow-card-hover transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          {n.tag}
+                        </Badge>
+                        {n.link && <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />}
+                        {n.social_link && <Instagram className="h-2.5 w-2.5 text-muted-foreground" />}
+                      </div>
+
+                      <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">
+                        {n.title}
+                      </p>
+
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {new Date(n.created_at).toLocaleDateString('it-IT')}
+                      </p>
+                    </div>
+                  ))}
+
+                  {newsItems.length === 0 && (
+                    <p className="col-span-2 text-xs text-muted-foreground text-center py-4">
+                      Nessuna novità al momento.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Colonna destra: Calendario placeholder */}
+          <div className="lg:col-span-1">
+            <Card className="h-full">
+              <CardContent className="p-4 h-full flex flex-col">
+                <div className="flex items-center gap-2 mb-3">
+                  <CalendarDays className="h-4 w-4 text-accent" />
+                  <h3 className="text-sm font-heading font-semibold text-foreground">
+                    Calendario
+                  </h3>
+                </div>
+
+                <div className="flex-1 rounded-xl border border-border bg-muted/20 p-4 flex flex-col">
+                  <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-muted-foreground mb-2">
+                    <div>L</div>
+                    <div>M</div>
+                    <div>M</div>
+                    <div>G</div>
+                    <div>V</div>
+                    <div>S</div>
+                    <div>D</div>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 flex-1">
+                    {Array.from({ length: 35 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="aspect-square rounded-md border border-border/50 bg-background text-[11px] flex items-center justify-center text-muted-foreground"
+                      >
+                        {i < 31 ? i + 1 : ''}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+                    Qui inseriremo gli appuntamenti con data, ora, luogo, descrizione e colore.
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -516,10 +578,9 @@ export default function Dashboard() {
                               const isCurrent = stepIdx === currentIdx;
                               return (
                                 <div key={ws.key} className="flex items-center gap-0.5">
-                                  <div className={`flex items-center justify-center w-5 h-5 rounded-full text-[8px] ${
-                                    isCurrent ? 'bg-accent text-accent-foreground ring-2 ring-accent/30' :
-                                    isActive ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground'
-                                  }`} title={ws.label}>
+                                  <div className={`flex items-center justify-center w-5 h-5 rounded-full text-[8px] ${isCurrent ? 'bg-accent text-accent-foreground ring-2 ring-accent/30' :
+                                      isActive ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground'
+                                    }`} title={ws.label}>
                                     {ws.icon}
                                   </div>
                                   {idx < WORKFLOW_STEPS.length - 2 && (
@@ -602,15 +663,15 @@ export default function Dashboard() {
             {/* Company info and logo */}
             <div>
               <div className="flex items-center gap-2 mb-3 -ml-3.5">
-                <img src={pratelliLogo} 
-                alt="Pratelli Rappresentanze" 
-                className="h-16 object-contain" 
-              />
+                <img src={pratelliLogo}
+                  alt="Pratelli Rappresentanze"
+                  className="h-16 object-contain"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Portale professionale per la gestione delle misurazioni e configurazione di infissi.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Portale professionale per la gestione delle misurazioni e configurazione di infissi.
-            </p>
-          </div>
             <div>
               <p className="font-semibold text-sm text-foreground mb-3">Informazioni legali</p>
               <div className="space-y-1.5 text-xs text-muted-foreground">
@@ -623,8 +684,8 @@ export default function Dashboard() {
             <div>
               <p className="font-semibold text-sm text-foreground mb-3">Seguici</p>
               <div className="flex items-center gap-3">
-                <a 
-                  href="https://www.facebook.com/pratellirappresentanze?locale=it_IT" 
+                <a
+                  href="https://www.facebook.com/pratellirappresentanze?locale=it_IT"
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Seguici su Facebook"
@@ -632,8 +693,8 @@ export default function Dashboard() {
                 >
                   <Facebook className="h-4 w-4 text-muted-foreground" />
                 </a>
-                <a 
-                  href="https://www.instagram.com/pratellirappresentanze/?hl=it" 
+                <a
+                  href="https://www.instagram.com/pratellirappresentanze/?hl=it"
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Seguici su Instagram"
