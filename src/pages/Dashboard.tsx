@@ -291,12 +291,13 @@ export default function Dashboard() {
 
                   <div className="grid grid-cols-7 gap-1 flex-1">
                     {Array.from({ length: 35 }).map((_, i) => (
-                      <div
+                      <button
                         key={i}
-                        className="aspect-square rounded-md border border-border/50 bg-background text-[11px] flex items-center justify-center text-muted-foreground"
+                        type="button"
+                        className="aspect-square rounded-md border border-border/50 bg-background text-[11px] flex items-center justify-center text-muted-foreground hover:border-accent hover:bg-accent/5 transition-colors"
                       >
                         {i < 31 ? i + 1 : ''}
-                      </div>
+                      </button>
                     ))}
                   </div>
 
