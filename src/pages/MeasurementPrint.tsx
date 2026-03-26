@@ -36,7 +36,13 @@ export default function MeasurementPrint() {
 
   useEffect(() => {
     if (!user || !id) return;
-    supabase.from('measurements').select('*').eq('id', id).single().then(({ data }) => {
+    supabase
+      .from('measurements')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
       setM(data);
       setLoading(false);
     });

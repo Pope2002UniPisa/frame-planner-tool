@@ -59,10 +59,17 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
   useEffect(() => {
     const fetchData = async () => {
       const [{ data: mData }, { data: pData }] = await Promise.all([
-        supabase.from('measurements').select('*')
+        supabase
+          .from('measurements')
+          .select('*')
+          .eq('user_id', userId)
           .in('status', ['quoted', 'ordered', 'completed'])
           .order('created_at', { ascending: false }),
-        supabase.from('payments').select('*').order('payment_date', { ascending: false }),
+        supabase
+          .from('payments')
+          .select('*')
+          .eq('user_id', userId)
+          .order('payment_date', { ascending: false }),
       ]);
       setMeasurements(mData || []);
       setPayments(pData || []);
@@ -146,10 +153,17 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
 
       // Refresh data
       const [{ data: mData }, { data: pData }] = await Promise.all([
-        supabase.from('measurements').select('*')
+        supabase
+          .from('measurements')
+          .select('*')
+          .eq('user_id', userId)
           .in('status', ['quoted', 'ordered', 'completed'])
           .order('created_at', { ascending: false }),
-        supabase.from('payments').select('*').order('payment_date', { ascending: false }),
+        supabase
+          .from('payments')
+          .select('*')
+          .eq('user_id', userId)
+          .order('payment_date', { ascending: false }),
       ]);
       setMeasurements(mData || []);
       setPayments(pData || []);

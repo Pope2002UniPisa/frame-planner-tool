@@ -36,9 +36,15 @@ export default function MeasurementView() {
 
   useEffect(() => {
     if (!user || !id) return;
-    supabase.from('measurements').select('*').eq('id', id).single().then(({ data }) => {
-      setM(data);
-      setLoading(false);
+    supabase
+      .from('measurements')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+    setM(data);
+    setLoading(false);
     });
   }, [user, id]);
 

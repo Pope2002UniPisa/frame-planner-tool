@@ -110,10 +110,24 @@ export default function Dashboard() {
     if (!user) return;
     const fetchData = async () => {
       const [{ data: mData }, { data: pData }, { data: nData }, { data: pfData }] = await Promise.all([
-        supabase.from('measurements').select('*').order('created_at', { ascending: false }),
-        supabase.from('profiles').select('*').eq('user_id', user.id).single(),
-        supabase.from('news').select('*').order('created_at', { ascending: false }),
-        supabase.from('portfolio_images').select('*').order('sort_order', { ascending: true }),
+        supabase
+          .from('measurements')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single(),
+        supabase
+          .from('news')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('portfolio_images')
+          .select('*')
+          .order('sort_order', { ascending: true }),
       ]);
       setMeasurements(mData || []);
       setProfile(pData);
