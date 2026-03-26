@@ -227,7 +227,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {newsItems.slice(0, 4).map(n => (
+                  {newsItems.map(n => (
                     <div
                       key={n.id}
                       onClick={() => setSelectedNews(n)}
