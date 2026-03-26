@@ -66,7 +66,7 @@ const DEFAULT_ORG_ROLES = [
 ];
 
 export default function Profile() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuth(); {/* si usa questo e poi riga 85*/}
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [measurements, setMeasurements] = useState<any[]>([]);
@@ -86,7 +86,11 @@ export default function Profile() {
     const fetchData = async () => {
       const [{ data: pData }, { data: mData }, { data: oData }] = await Promise.all([
         supabase.from('profiles').select('*').eq('user_id', user.id).single(),
-        supabase.from('measurements').select('*').order('created_at', { ascending: false }),
+        supabase
+          .from('measurements')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
         supabase.from('sales_objectives').select('*').eq('user_id', user.id),
       ]);
       if (pData) {
