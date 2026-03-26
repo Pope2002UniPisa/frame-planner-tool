@@ -294,9 +294,6 @@ export default function Dashboard() {
                     ))}
                   </div>
 
-                  <div className="mt-4 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
-                    Qui inseriremo gli appuntamenti con data, ora, luogo, descrizione e colore.
-                  </div>
                 </div>
               </CardContent>
             </Card>
