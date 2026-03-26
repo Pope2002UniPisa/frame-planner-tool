@@ -272,6 +272,12 @@ export default function Dashboard() {
                   </h3>
                 </div>
 
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    Marzo 2026
+                  </p>
+                </div>
+
                 <div className="flex-1 rounded-xl border border-border bg-muted/20 p-4 flex flex-col">
                   <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-muted-foreground mb-2">
                     <div>L</div>
@@ -576,7 +582,7 @@ export default function Dashboard() {
                               return (
                                 <div key={ws.key} className="flex items-center gap-0.5">
                                   <div className={`flex items-center justify-center w-5 h-5 rounded-full text-[8px] ${isCurrent ? 'bg-accent text-accent-foreground ring-2 ring-accent/30' :
-                                      isActive ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground'
+                                    isActive ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground'
                                     }`} title={ws.label}>
                                     {ws.icon}
                                   </div>
