@@ -58,3 +58,22 @@ Su Vercel le stesse variabili vanno configurate nelle impostazioni del progetto.
 
 - Push su `main` → Vercel aggiorna automaticamente il sito live.
 - Il database è su Supabase, separato dal deploy frontend.
+
+
+
+Si dovrà poi aggiungere un numero whataspp business verificato per far arrivare le notifiche su whatsapp direttamente dal sito.
+3. Configurare le variabili Twilio (quando hai il numero verificato)
+→ Supabase → Edge Functions → send-whatsapp → Secrets:
+
+
+TWILIO_ACCOUNT_SID     = ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN      = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_WHATSAPP_FROM   = whatsapp:+14155238886
+TWILIO_WHATSAPP_TO     = whatsapp:+39XXXXXXXXXX
+Finché non metti questi valori, la funzione gira ma salta l'invio WhatsApp senza errori.
+
+Quale evento manda WhatsApp:
+
+Nuovo appuntamento salvato nel calendario
+Cliente accetta o chiede modifiche a un preventivo
+

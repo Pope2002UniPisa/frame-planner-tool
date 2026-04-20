@@ -9,11 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, CalendarDays, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard, ThumbsUp, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, LogOut, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter, Printer, Eye, Newspaper, User, Calendar, CalendarDays, ExternalLink, Facebook, Instagram, Linkedin, Camera, Shield, Users, ArrowRight, Truck, CreditCard, ThumbsUp, MessageSquare, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { toast } from 'sonner';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 import { productLabels, statusLabels, WORKFLOW_STEPS, getWorkflowIndex, productIcons } from '@/lib/constants';
+import { NotificationBell } from '@/components/NotificationBell';
+import { createNotification } from '@/lib/notifications';
 
 interface NewsItem {
   id: string;
@@ -21,9 +23,9 @@ interface NewsItem {
   title: string;
   tag: string;
   summary: string;
-  image_url?: string;
-  link?: string;
-  social_link?: string;
+  image_url?: string | null;
+  link?: string | null;
+  social_link?: string | null;
 }
 
 interface PortfolioItem {
@@ -57,13 +59,14 @@ export default function Dashboard() {
   const [calendarAppointments, setCalendarAppointments] = useState<
     Array<{
       id: string;
+      user_id?: string;
       date: string;
       type: string;
       title: string;
-      time: string;
-      location: string;
-      description: string;
-      color: string;
+      time: string | null;
+      location: string | null;
+      description: string | null;
+      color: string | null;
     }>
   >([]);
 
@@ -78,7 +81,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [{ data: mData }, { data: pData }, { data: nData }, { data: pfData }] = await Promise.all([
+      const [{ data: mData }, { data: pData }, { data: nData }, { data: pfData }, { data: aData }] = await Promise.all([
         supabase
           .from('measurements')
           .select('*')
@@ -97,11 +100,17 @@ export default function Dashboard() {
           .from('portfolio_images')
           .select('*')
           .order('sort_order', { ascending: true }),
+        supabase
+          .from('appointments')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('date', { ascending: true }),
       ]);
       setMeasurements(mData || []);
       setProfile(pData);
       setNewsItems(nData || []);
       setPortfolioImages(pfData || []);
+      setCalendarAppointments(aData || []);
       setLoadingData(false);
     };
     fetchData();
@@ -148,10 +157,24 @@ export default function Dashboard() {
     }
     const { error } = await supabase.from('measurements').update(updates).eq('id', measurementId);
     if (error) { toast.error(error.message); return; }
+
+    const measurement = measurements.find(m => m.id === measurementId);
     setMeasurements(prev => prev.map(m => m.id === measurementId ? { ...m, ...updates } : m));
     setQuoteResponseDialog(null);
     setModificationNotes('');
     toast.success(accept ? 'Preventivo accettato! L\'ordine verrà confermato a breve.' : 'Richiesta di modifiche inviata.');
+
+    if (user && measurement) {
+      const label = accept ? 'Preventivo accettato' : 'Modifiche richieste';
+      createNotification({
+        userId: user.id,
+        type: 'status',
+        title: `🔄 ${label}: ${measurement.client_name}`,
+        body: `${productLabels[measurement.product_type] || measurement.product_type}${accept ? '' : modificationNotes ? ` — ${modificationNotes}` : ''}`,
+        whatsapp: true,
+        whatsappMessage: `🔄 *${label}*\nCliente: ${measurement.client_name}\nProdotto: ${productLabels[measurement.product_type] || measurement.product_type}${!accept && modificationNotes ? `\nNote: ${modificationNotes}` : ''}`,
+      });
+    }
   };
 
   const APPOINTMENT_TYPES: Record<string, { label: string; color: string }> = {
@@ -206,32 +229,58 @@ export default function Dashboard() {
     setAppointmentDialogOpen(true);
   };
 
-  const handleSaveAppointment = () => {
-    if (!selectedDay || !appointmentForm.title.trim()) return;
+  const handleSaveAppointment = async () => {
+    if (!selectedDay || !appointmentForm.title.trim() || !user) return;
 
     const typeConfig = APPOINTMENT_TYPES[appointmentForm.type];
 
     const newAppointment = {
-      id: crypto.randomUUID(),
+      user_id: user.id,
       date: formatDateKey(selectedDay),
       type: appointmentForm.type,
       title: appointmentForm.title.trim(),
-      time: appointmentForm.time,
-      location: appointmentForm.location.trim(),
-      description: appointmentForm.description.trim(),
+      time: appointmentForm.time || null,
+      location: appointmentForm.location.trim() || null,
+      description: appointmentForm.description.trim() || null,
       color: typeConfig.color,
     };
 
-    setCalendarAppointments(prev => [...prev, newAppointment]);
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert(newAppointment)
+      .select()
+      .single();
+
+    if (error) {
+      toast.error('Errore nel salvataggio dell\'appuntamento');
+      return;
+    }
+
+    setCalendarAppointments(prev => [...prev, data]);
     setAppointmentDialogOpen(false);
     setSelectedDay(null);
-    setAppointmentForm({
-      type: 'consegna',
-      title: '',
-      time: '',
-      location: '',
-      description: '',
+    setAppointmentForm({ type: 'consegna', title: '', time: '', location: '', description: '' });
+    toast.success('Appuntamento salvato');
+
+    // Notifica in-app + WhatsApp
+    createNotification({
+      userId: user.id,
+      type: 'appointment',
+      title: `📅 Nuovo appuntamento: ${newAppointment.title}`,
+      body: `${newAppointment.date}${newAppointment.time ? ' alle ' + newAppointment.time : ''}${newAppointment.location ? ' — ' + newAppointment.location : ''}`,
+      whatsapp: true,
+      whatsappMessage: `📅 *Nuovo appuntamento salvato*\n*${newAppointment.title}*\nData: ${newAppointment.date}${newAppointment.time ? '\nOra: ' + newAppointment.time : ''}${newAppointment.location ? '\nLuogo: ' + newAppointment.location : ''}`,
     });
+  };
+
+  const handleDeleteAppointment = async (id: string) => {
+    const { error } = await supabase.from('appointments').delete().eq('id', id);
+    if (error) {
+      toast.error('Errore nella cancellazione');
+      return;
+    }
+    setCalendarAppointments(prev => prev.filter(a => a.id !== id));
+    toast.success('Appuntamento eliminato');
   };
 
   const goToPreviousMonth = () => {
@@ -260,6 +309,7 @@ export default function Dashboard() {
                 <Shield className="h-4 w-4" />
               </Button>
             )}
+            <NotificationBell />
             <Button variant="outline" size="icon" onClick={() => navigate('/profilo')} title="Profilo">
               <User className="h-4 w-4" />
             </Button>
@@ -391,7 +441,7 @@ export default function Dashboard() {
                                 <span
                                   key={idx}
                                   className="h-1.5 w-1.5 rounded-full"
-                                  style={{ backgroundColor: appt.color }}
+                                  style={{ backgroundColor: appt.color ?? undefined }}
                                 />
                               ))}
                             </div>
@@ -422,12 +472,19 @@ export default function Dashboard() {
                               >
                                 <div className="flex items-center gap-2 mb-1">
                                   <span
-                                    className="h-2.5 w-2.5 rounded-full"
-                                    style={{ backgroundColor: appt.color }}
+                                    className="h-2.5 w-2.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: appt.color ?? undefined }}
                                   />
-                                  <span className="text-xs font-semibold text-foreground">
+                                  <span className="text-xs font-semibold text-foreground flex-1">
                                     {appt.title}
                                   </span>
+                                  <button
+                                    onClick={() => handleDeleteAppointment(appt.id)}
+                                    className="text-muted-foreground hover:text-destructive transition-colors"
+                                    title="Elimina appuntamento"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
                                 </div>
 
                                 <p className="text-[11px] text-muted-foreground">

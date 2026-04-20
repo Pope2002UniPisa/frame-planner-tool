@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          type: string
+          title: string
+          time: string | null
+          location: string | null
+          description: string | null
+          color: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          type?: string
+          title: string
+          time?: string | null
+          location?: string | null
+          description?: string | null
+          color?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          type?: string
+          title?: string
+          time?: string | null
+          location?: string | null
+          description?: string | null
+          color?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          title: string
+          body: string | null
+          read: boolean
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type?: string
+          title: string
+          body?: string | null
+          read?: boolean
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          title?: string
+          body?: string | null
+          read?: boolean
+          metadata?: Json | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       measurements: {
         Row: {
           accessories_config: Json | null
