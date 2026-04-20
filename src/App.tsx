@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,22 +27,25 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/clienti" element={<ClientSummary />} />
-            <Route path="/dashboard/consegne" element={<DeliverySummary />} />
-            <Route path="/dashboard/pagamenti" element={<PaymentSummaryPage />} />
-            <Route path="/nuova-misurazione" element={<NewMeasurement />} />
-            <Route path="/misurazione/:id" element={<MeasurementView />} />
-            <Route path="/misurazione/:id/stampa" element={<MeasurementPrint />} />
-            <Route path="/misurazione/:id/modifica" element={<EditMeasurement />} />
-            <Route path="/profilo" element={<Profile />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-          </Routes>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard/clienti" element={<ClientSummary />} />
+              <Route path="/dashboard/consegne" element={<DeliverySummary />} />
+              <Route path="/dashboard/pagamenti" element={<PaymentSummaryPage />} />
+              <Route path="/nuova-misurazione" element={<NewMeasurement />} />
+              <Route path="/misurazione/:id" element={<MeasurementView />} />
+              <Route path="/misurazione/:id/stampa" element={<MeasurementPrint />} />
+              <Route path="/misurazione/:id/modifica" element={<EditMeasurement />} />
+              <Route path="/profilo" element={<Profile />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </ErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

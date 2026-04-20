@@ -15,6 +15,7 @@ import {
   CreditCard, Search, Filter, Eye, DollarSign, CheckCircle2,
   AlertCircle, Clock, Receipt, Download, Plus, Banknote
 } from 'lucide-react';
+import { productLabels } from '@/lib/constants';
 
 const PAYMENT_METHODS = [
   { value: 'bonifico', label: '🏦 Bonifico Bancario', icon: Banknote },
@@ -26,13 +27,6 @@ const PAYMENT_METHODS = [
   { value: 'contanti', label: '💵 Contanti', icon: Banknote },
   { value: 'assegno', label: '📝 Assegno', icon: Receipt },
 ];
-
-const productLabels: Record<string, string> = {
-  finestra: 'Finestra', porta_finestra: 'Porta Finestra', porta: 'Porta',
-  porta_finestrata: 'Porta Finestrata', porta_filomuro: 'Porta Filomuro',
-  basculante: 'Basculante', zanzariera: 'Zanzariera', persiana: 'Persiana',
-  battiscopa: 'Battiscopa', maniglia: 'Maniglia',
-};
 
 interface PaymentSummaryProps {
   userId: string;

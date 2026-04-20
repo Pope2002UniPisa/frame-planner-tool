@@ -8,29 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Users, Search, Filter, ChevronDown, ChevronUp, Eye, User } from 'lucide-react';
-
-const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  bozza: { label: 'Bozza', variant: 'outline' },
-  ricevuto: { label: 'Inviata', variant: 'default' },
-  submitted: { label: 'Inviata', variant: 'default' },
-  in_review: { label: 'In revisione', variant: 'secondary' },
-  quoted: { label: 'Preventivata', variant: 'outline' },
-  ordered: { label: 'Ordinata', variant: 'default' },
-  completed: { label: 'Completata', variant: 'secondary' },
-};
-
-const productLabels: Record<string, string> = {
-  finestra: 'Finestra',
-  porta_finestra: 'Porta Finestra',
-  porta: 'Porta',
-  porta_finestrata: 'Porta Finestrata',
-  porta_filomuro: 'Porta Filomuro',
-  basculante: 'Basculante',
-  zanzariera: 'Zanzariera',
-  persiana: 'Persiana',
-  battiscopa: 'Battiscopa',
-  maniglia: 'Maniglia',
-};
+import { productLabels, statusLabels } from '@/lib/constants';
 
 export default function ClientSummary() {
   const { user, loading } = useAuth();

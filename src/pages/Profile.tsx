@@ -13,11 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro, Target } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
-
-const productLabels: Record<string, string> = {
-  finestra: 'Finestra', porta_finestra: 'Porta Finestra', porta: 'Porta',
-  basculante: 'Basculante', zanzariera: 'Zanzariera', persiana: 'Persiana',
-};
+import { productLabels } from '@/lib/constants';
 
 const LINE_COLORS: Record<string, string> = {
   Finestra: '#f97316', 'Porta Finestra': '#3b82f6', Porta: '#a855f7',

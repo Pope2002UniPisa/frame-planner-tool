@@ -11,17 +11,7 @@ import { ArrowLeft, Printer, Edit3, ThumbsUp, MessageSquare } from 'lucide-react
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel } from '@/data/doorCatalog';
 import { toast } from 'sonner';
-
-const statusLabels: Record<string, string> = {
-  bozza: 'Bozza', ricevuto: 'Preventivo', submitted: 'Preventivo', in_review: 'In revisione',
-  quoted: 'Preventivo', quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
-  ordered: 'Ordine confermato', in_production: 'In produzione', delivering: 'In consegna', completed: 'Completata',
-};
-const productLabels: Record<string, string> = {
-  finestra: 'Finestra', porta_finestra: 'Porta Finestra', basculante: 'Basculante',
-  zanzariera: 'Zanzariera', persiana: 'Persiana', porta: 'Porta',
-  porta_finestrata: 'Porta Finestrata', porta_filomuro: 'Porta Filomuro',
-};
+import { productLabels, statusLabels } from '@/lib/constants';
 
 const isQuoteStatus = (status: string) => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(status);
 
@@ -179,7 +169,7 @@ export default function MeasurementView() {
       </header>
       <main className="container max-w-3xl py-8 space-y-6">
         <div className="flex items-center gap-3">
-          <Badge>{statusLabels[m.status] || m.status}</Badge>
+          <Badge>{statusLabels[m.status]?.label || m.status}</Badge>
           <span className="text-sm text-muted-foreground">{new Date(m.created_at).toLocaleDateString('it-IT')}</span>
         </div>
 

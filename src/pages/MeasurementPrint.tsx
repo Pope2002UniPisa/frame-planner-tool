@@ -8,20 +8,10 @@ import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel } from '@/data/doorCatalog';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 import ferreroLegnoLogo from '@/assets/ferrerolegno-logo.png';
+import { productLabels } from '@/lib/constants';
 
-const productLabels: Record<string, string> = {
-  finestra: 'Finestra', porta_finestra: 'Porta Finestra', basculante: 'Basculante',
-  zanzariera: 'Zanzariera', persiana: 'Persiana', porta: 'Porta',
-  porta_finestrata: 'Porta Finestrata', porta_filomuro: 'Porta Filomuro',
-};
 const surveyLabels: Record<string, string> = {
   foro_muro: 'Foro muro', luce_netta: 'Luce netta', controtelaio: 'Controtelaio', vecchio_infisso: 'Vecchio infisso',
-};
-
-const statusLabels: Record<string, string> = {
-  bozza: 'Bozza', ricevuto: 'Preventivo', submitted: 'Preventivo', quoted: 'Preventivo',
-  quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
-  ordered: 'Ordine confermato', in_production: 'In produzione', delivering: 'In consegna', completed: 'Completata',
 };
 
 const isQuoteStatus = (status: string) => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(status);

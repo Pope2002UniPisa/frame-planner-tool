@@ -18,22 +18,11 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp, HelpCircle, CreditCard, ArrowRight } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
-
-const productLabels: Record<string, string> = {
-  finestra: 'Finestra', porta_finestra: 'Porta Finestra', porta: 'Porta',
-  basculante: 'Basculante', zanzariera: 'Zanzariera', persiana: 'Persiana',
-};
+import { productLabels, statusLabels } from '@/lib/constants';
 
 const LINE_COLORS: Record<string, string> = {
   Finestra: '#3b82f6', 'Porta Finestra': '#8b5cf6', Porta: '#a855f7',
   Basculante: '#f97316', Zanzariera: '#10b981', Persiana: '#f59e0b',
-};
-
-const statusLabels: Record<string, string> = {
-  bozza: 'Bozza', ricevuto: 'Preventivo', submitted: 'Preventivo',
-  in_review: 'In revisione', quoted: 'Preventivo', 
-  quote_accepted: 'Preventivo accettato', quote_modifications: 'Modifiche richieste',
-  ordered: 'Ordinata', in_production: 'In produzione', delivering: 'In consegna', completed: 'Completata',
 };
 
 const BRANDS = ['FerreroLegno SPA', 'AluK Group', 'Finstral SPA', 'Somfy Italia'];
@@ -439,7 +428,7 @@ export default function AdminDashboard() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-sm text-foreground">{productLabels[m.product_type] || m.product_type}</span>
-                            <Badge variant="outline" className="text-[10px]">{statusLabels[m.status] || m.status}</Badge>
+                            <Badge variant="outline" className="text-[10px]">{statusLabels[m.status]?.label || m.status}</Badge>
                             {m.order_group_id && <Badge variant="secondary" className="text-[10px]">📦 {m.order_item_index}/{m.order_total_items}</Badge>}
                           </div>
                           <p className="text-xs text-muted-foreground">{m.client_name} • {m.client_address}</p>
@@ -548,7 +537,7 @@ export default function AdminDashboard() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium text-xs text-foreground">{productLabels[m.product_type] || m.product_type}</span>
-                                  <Badge variant="outline" className="text-[9px]">{statusLabels[m.status] || m.status}</Badge>
+                                  <Badge variant="outline" className="text-[9px]">{statusLabels[m.status]?.label || m.status}</Badge>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground">{m.client_name} • {m.client_address}</p>
                               </div>
@@ -901,7 +890,7 @@ export default function AdminDashboard() {
                   <div className="rounded-lg border border-border p-3 bg-muted/30 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground">{productLabels[manageMeasurement.product_type] || manageMeasurement.product_type}</span>
-                      <Badge variant="outline">{statusLabels[currentStatus] || currentStatus}</Badge>
+                      <Badge variant="outline">{statusLabels[currentStatus]?.label || currentStatus}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{manageMeasurement.client_name} • {manageMeasurement.client_address}</p>
                     <p className="text-xs text-muted-foreground">Dealer: {mp?.company_name || mp?.email || 'N/A'}</p>

@@ -8,25 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Truck, Search, Filter, Eye, MapPin, Clock, AlertTriangle, CheckCircle2, Package } from 'lucide-react';
-
-const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  ordered: { label: 'Ordinata', variant: 'default' },
-  completed: { label: 'Completata', variant: 'secondary' },
-  quoted: { label: 'Preventivata', variant: 'outline' },
-};
-
-const productLabels: Record<string, string> = {
-  finestra: 'Finestra',
-  porta_finestra: 'Porta Finestra',
-  porta: 'Porta',
-  porta_finestrata: 'Porta Finestrata',
-  porta_filomuro: 'Porta Filomuro',
-  basculante: 'Basculante',
-  zanzariera: 'Zanzariera',
-  persiana: 'Persiana',
-  battiscopa: 'Battiscopa',
-  maniglia: 'Maniglia',
-};
+import { productLabels, statusLabels } from '@/lib/constants';
 
 function getDaysRemaining(dateStr: string | null): number | null {
   if (!dateStr) return null;
