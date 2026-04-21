@@ -70,6 +70,8 @@ export default function Dashboard() {
     }>
   >([]);
 
+  const [addMode, setAddMode] = useState(false);
+
   const [appointmentForm, setAppointmentForm] = useState({
     type: 'consegna',
     title: '',
@@ -420,8 +422,15 @@ export default function Dashboard() {
                         <button
                           key={i}
                           type="button"
-                          onClick={() => openAppointmentDialog(date)}
-                          className={`aspect-square rounded-md border text-[11px] flex flex-col items-center justify-center transition-colors relative ${isSelected
+                          onClick={() => {
+                            if (addMode) {
+                              setAddMode(false);
+                              openAppointmentDialog(date);
+                            } else {
+                              setSelectedDay(date);
+                            }
+                          }}
+                          className={`aspect-square rounded-md border text-[11px] flex flex-col items-center justify-center transition-colors relative ${addMode ? 'cursor-crosshair' : ''} ${isSelected
                             ? 'border-accent bg-accent/10'
                             : 'border-border/50 bg-background hover:border-accent hover:bg-accent/5'
                             }`}
@@ -451,7 +460,19 @@ export default function Dashboard() {
                     })}
                   </div>
 
-                  <div className="mt-4">
+                  <div className="flex justify-center mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setAddMode(prev => !prev)}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${addMode ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-accent/10 hover:text-accent'}`}
+                      title="Aggiungi appuntamento"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      {addMode ? 'Seleziona un giorno…' : 'Aggiungi'}
+                    </button>
+                  </div>
+
+                  <div className="mt-3">
                     {selectedDay ? (
                       <div className="rounded-lg border border-border bg-background p-3">
                         <p className="text-xs font-semibold text-foreground mb-2">
@@ -585,7 +606,7 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 {/* Appointment Dialog */}
-        <Dialog open={appointmentDialogOpen} onOpenChange={setAppointmentDialogOpen}>
+        <Dialog open={appointmentDialogOpen} onOpenChange={(open) => { setAppointmentDialogOpen(open); if (!open) setAddMode(false); }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="font-heading">
