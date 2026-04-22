@@ -71,6 +71,13 @@ export default function Dashboard() {
   >([]);
 
   const [addMode, setAddMode] = useState(false);
+  const [clock, setClock] = useState('');
+  useEffect(() => {
+    const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const [appointmentForm, setAppointmentForm] = useState({
     type: 'consegna',
@@ -299,11 +306,14 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b border-border bg-card shadow-card">
+      <header className="border-b border-border bg-card shadow-card relative">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-12 object-contain" />
             {profile && <h1 className="text-lg font-bold font-heading text-foreground">{profile.company_name || user.email}</h1>}
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none select-none">
+            <span className="text-xl font-mono font-bold text-foreground tabular-nums tracking-widest">{clock}</span>
           </div>
           <div className="flex items-center gap-3">
             {isAdmin && (
