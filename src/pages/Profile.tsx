@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro, Target, ExternalLink } from 'lucide-react';
-import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 import { productLabels } from '@/lib/constants';
@@ -64,7 +63,6 @@ const DEFAULT_ORG_ROLES = [
 
 export default function Profile() {
   const { user, loading } = useAuth();
-  const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [measurements, setMeasurements] = useState<any[]>([]);
@@ -98,9 +96,6 @@ export default function Profile() {
         setProfile(pData);
         setForm({ company_name: pData.company_name || '', phone: pData.phone || '', email: pData.email || '', client_code: pData.client_code || '' });
         if (pData.logo_url) setLogoUrl(pData.logo_url);
-        if (pData.supplier_logos && typeof pData.supplier_logos === 'object') {
-          setSupplierLogos(pData.supplier_logos as Record<string, string>);
-        }
       }
       setMeasurements(mData || []);
       setObjectives(oData || []);
@@ -299,24 +294,6 @@ export default function Profile() {
       toast.error(err.message);
     } finally {
       setUploadingLogo(false);
-    }
-  };
-
-  const handleSupplierLogoUpload = async (supplierId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0] || !user || !profile) return;
-    try {
-      const file = e.target.files[0];
-      const path = `suppliers/${user.id}/${supplierId}_${Date.now()}_${file.name}`;
-      const { error: upErr } = await supabase.storage.from('logos').upload(path, file);
-      if (upErr) throw upErr;
-      const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
-      const newLogos = { ...supplierLogos, [supplierId]: publicUrl };
-      const { error: dbErr } = await supabase.from('profiles').update({ supplier_logos: newLogos }).eq('id', profile.id);
-      if (dbErr) throw dbErr;
-      setSupplierLogos(newLogos);
-      toast.success('Logo fornitore caricato!');
-    } catch (err: any) {
-      toast.error(err.message);
     }
   };
 
@@ -695,15 +672,6 @@ export default function Profile() {
                           <p className="font-semibold text-foreground">{s.name}</p>
                           <p className="text-xs text-muted-foreground">{s.category}</p>
                         </div>
-                        {isAdmin && (
-                          <div onClick={e => e.stopPropagation()}>
-                            <input type="file" accept="image/*" className="hidden" id={`supplier-logo-${s.id}`}
-                              onChange={e => handleSupplierLogoUpload(s.id, e)} />
-                            <Button variant="ghost" size="sm" asChild className="text-[10px] h-6 px-2">
-                              <label htmlFor={`supplier-logo-${s.id}`} className="cursor-pointer gap-1"><Upload className="h-2.5 w-2.5" /> Logo</label>
-                            </Button>
-                          </div>
-                        )}
                       </div>
                       {selectedSupplier === s.id && (
                         <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2">
