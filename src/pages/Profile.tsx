@@ -64,6 +64,13 @@ const DEFAULT_ORG_ROLES = [
 export default function Profile() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [clock, setClock] = useState('');
+  useEffect(() => {
+    const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
   const [profile, setProfile] = useState<any>(null);
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [objectives, setObjectives] = useState<any[]>([]);
@@ -302,11 +309,14 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card shadow-card">
+      <header className="border-b border-border bg-card shadow-card relative">
         <div className="container flex h-16 items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}><ArrowLeft className="h-5 w-5" /></Button>
           <User className="h-5 w-5 text-accent" />
           <h1 className="text-lg font-bold font-heading text-foreground">Area Personale</h1>
+          <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none select-none">
+            <span className="text-xl font-mono font-bold text-foreground tabular-nums tracking-widest">{clock}</span>
+          </div>
         </div>
       </header>
 
