@@ -57,6 +57,12 @@ export default function AdminDashboard() {
   const [portfolioForm, setPortfolioForm] = useState({ title: '', description: '', image_url: '', sort_order: 0 });
   const [clientFilter, setClientFilter] = useState<'all' | 'pending' | 'approved'>('all');
 
+  // Catalogs
+  const [catalogs, setCatalogs] = useState<any[]>([]);
+  const [catalogDialog, setCatalogDialog] = useState(false);
+  const [catalogForm, setCatalogForm] = useState({ supplier_id: '', name: '', pdf_url: '', sort_order: 0 });
+  const [uploadingCatalog, setUploadingCatalog] = useState(false);
+
   // Sales objectives
   const [objectiveDialog, setObjectiveDialog] = useState(false);
   const [objForm, setObjForm] = useState({ user_id: '', product_type: ALL_PRODUCTS_VALUE, brand: ALL_BRANDS_VALUE, target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
@@ -64,18 +70,20 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!user || !isAdmin) return;
     const fetchAll = async () => {
-      const [{ data: m }, { data: p }, { data: n }, { data: pf }, { data: so }] = await Promise.all([
+      const [{ data: m }, { data: p }, { data: n }, { data: pf }, { data: so }, { data: cat }] = await Promise.all([
         supabase.from('measurements').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('*').order('created_at', { ascending: false }),
         supabase.from('news').select('*').order('created_at', { ascending: false }),
         supabase.from('portfolio_images').select('*').order('sort_order', { ascending: true }),
         supabase.from('sales_objectives').select('*').order('created_at', { ascending: false }),
+        supabase.from('supplier_catalogs').select('*').order('sort_order', { ascending: true }),
       ]);
       setMeasurements(m || []);
       setProfiles(p || []);
       setNews(n || []);
       setPortfolio(pf || []);
       setSalesObjectives(so || []);
+      setCatalogs(cat || []);
       setLoadingData(false);
     };
     fetchAll();
@@ -313,6 +321,37 @@ export default function AdminDashboard() {
     setNewsForm(f => ({ ...f, image_url: publicUrl }));
   };
 
+  const handleCatalogPdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return;
+    setUploadingCatalog(true);
+    const file = e.target.files[0];
+    const path = `catalogs/${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage.from('catalogs').upload(path, file);
+    if (error) { toast.error(error.message); setUploadingCatalog(false); return; }
+    const { data: { publicUrl } } = supabase.storage.from('catalogs').getPublicUrl(path);
+    setCatalogForm(f => ({ ...f, pdf_url: publicUrl }));
+    setUploadingCatalog(false);
+    toast.success('PDF caricato!');
+  };
+
+  const handleSaveCatalog = async () => {
+    try {
+      const { data, error } = await supabase.from('supplier_catalogs').insert(catalogForm).select().single();
+      if (error) throw error;
+      setCatalogs(prev => [...prev, data]);
+      setCatalogDialog(false);
+      setCatalogForm({ supplier_id: '', name: '', pdf_url: '', sort_order: 0 });
+      toast.success('Catalogo aggiunto!');
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const handleDeleteCatalog = async (id: string) => {
+    const { error } = await supabase.from('supplier_catalogs').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    setCatalogs(prev => prev.filter(c => c.id !== id));
+    toast.success('Catalogo eliminato');
+  };
+
   if (authLoading || adminLoading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
@@ -329,7 +368,7 @@ export default function AdminDashboard() {
 
       <main className="container max-w-7xl py-8">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Panoramica</TabsTrigger>
             <TabsTrigger value="clients" className="gap-1.5 relative">
               <Users className="h-3.5 w-3.5" /> Clienti
@@ -338,6 +377,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="objectives" className="gap-1.5"><Target className="h-3.5 w-3.5" /> Obiettivi</TabsTrigger>
             <TabsTrigger value="news" className="gap-1.5"><Newspaper className="h-3.5 w-3.5" /> News</TabsTrigger>
             <TabsTrigger value="portfolio" className="gap-1.5"><Camera className="h-3.5 w-3.5" /> Portfolio</TabsTrigger>
+            <TabsTrigger value="catalogs" className="gap-1.5"><FileText className="h-3.5 w-3.5" /> Cataloghi</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW */}
@@ -871,6 +911,87 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <DialogFooter><Button onClick={handleSavePortfolio} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Salva</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* CATALOGHI */}
+          <TabsContent value="catalogs" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="font-heading flex items-center gap-2"><FileText className="h-5 w-5 text-accent" /> Cataloghi Fornitori</CardTitle>
+                  <Button size="sm" className="gap-1.5" onClick={() => { setCatalogForm({ supplier_id: '', name: '', pdf_url: '', sort_order: 0 }); setCatalogDialog(true); }}>
+                    <Plus className="h-3.5 w-3.5" /> Aggiungi catalogo
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {catalogs.map(c => (
+                    <div key={c.id} className="flex items-center justify-between rounded-lg border border-border p-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-foreground">{c.name}</p>
+                        <p className="text-xs text-muted-foreground">{c.supplier_id}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {c.pdf_url && (
+                          <a href={c.pdf_url} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs">
+                              <Eye className="h-3 w-3" /> Apri
+                            </Button>
+                          </a>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteCatalog(c.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {catalogs.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nessun catalogo ancora.</p>}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Dialog open={catalogDialog} onOpenChange={setCatalogDialog}>
+              <DialogContent className="max-w-md">
+                <DialogHeader><DialogTitle className="font-heading">Aggiungi catalogo PDF</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Fornitore</Label>
+                    <Select value={catalogForm.supplier_id} onValueChange={v => setCatalogForm(f => ({ ...f, supplier_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona fornitore..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ferrerolegno">FerreroLegno SPA</SelectItem>
+                        <SelectItem value="madrugada">Madrugada Group</SelectItem>
+                        <SelectItem value="nurith">Nurith SPA</SelectItem>
+                        <SelectItem value="denardi">Denardi SRL</SelectItem>
+                        <SelectItem value="anger">Anger SRL</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nome catalogo</Label>
+                    <Input value={catalogForm.name} onChange={e => setCatalogForm(f => ({ ...f, name: e.target.value }))} placeholder="Es. Catalogo Porte 2026" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>File PDF</Label>
+                    <div className="flex gap-2">
+                      <Input value={catalogForm.pdf_url} onChange={e => setCatalogForm(f => ({ ...f, pdf_url: e.target.value }))} placeholder="URL o carica file..." className="flex-1" />
+                      <div>
+                        <input type="file" accept="application/pdf" className="hidden" id="catalog-pdf-upload" onChange={handleCatalogPdfUpload} />
+                        <Button variant="outline" size="sm" asChild disabled={uploadingCatalog}>
+                          <label htmlFor="catalog-pdf-upload" className="cursor-pointer">{uploadingCatalog ? 'Caricamento...' : 'Carica'}</label>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleSaveCatalog} disabled={!catalogForm.supplier_id || !catalogForm.name} className="gap-1.5">
+                    <Save className="h-3.5 w-3.5" /> Salva
+                  </Button>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
           </TabsContent>

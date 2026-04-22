@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro, Target } from 'lucide-react';
+import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro, Target, ExternalLink } from 'lucide-react';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 import { productLabels } from '@/lib/constants';
@@ -62,7 +63,8 @@ const DEFAULT_ORG_ROLES = [
 ];
 
 export default function Profile() {
-  const { user, loading } = useAuth(); {/* si usa questo e poi riga 85*/}
+  const { user, loading } = useAuth();
+  const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [measurements, setMeasurements] = useState<any[]>([]);
@@ -76,11 +78,13 @@ export default function Profile() {
   const [logoPreview, setLogoPreview] = useState(false);
   const [supplierLogos, setSupplierLogos] = useState<Record<string, string>>({});
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [supplierCatalogs, setSupplierCatalogs] = useState<Record<string, Array<{ id: string; name: string; pdf_url: string | null }>>>({});
+  const [pdfViewer, setPdfViewer] = useState<{ url: string; name: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [{ data: pData }, { data: mData }, { data: oData }] = await Promise.all([
+      const [{ data: pData }, { data: mData }, { data: oData }, { data: cData }] = await Promise.all([
         supabase.from('profiles').select('*').eq('user_id', user.id).single(),
         supabase
           .from('measurements')
@@ -88,6 +92,7 @@ export default function Profile() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
         supabase.from('sales_objectives').select('*').eq('user_id', user.id),
+        supabase.from('supplier_catalogs').select('*').order('sort_order', { ascending: true }),
       ]);
       if (pData) {
         setProfile(pData);
@@ -99,6 +104,13 @@ export default function Profile() {
       }
       setMeasurements(mData || []);
       setObjectives(oData || []);
+      // Group catalogs by supplier_id
+      const grouped: Record<string, Array<{ id: string; name: string; pdf_url: string | null }>> = {};
+      (cData || []).forEach((c: any) => {
+        if (!grouped[c.supplier_id]) grouped[c.supplier_id] = [];
+        grouped[c.supplier_id].push({ id: c.id, name: c.name, pdf_url: c.pdf_url });
+      });
+      setSupplierCatalogs(grouped);
       setLoadingData(false);
     };
     fetchData();
@@ -326,6 +338,30 @@ export default function Profile() {
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle className="font-heading">Logo aziendale</DialogTitle></DialogHeader>
             {logoUrl && <img src={logoUrl} alt="Logo aziendale" className="w-full rounded-lg" />}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!pdfViewer} onOpenChange={open => !open && setPdfViewer(null)}>
+          <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
+            <DialogHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between">
+              <DialogTitle className="font-heading flex items-center gap-2">
+                <FileText className="h-4 w-4 text-accent" /> {pdfViewer?.name}
+              </DialogTitle>
+              {pdfViewer?.url && (
+                <a href={pdfViewer.url} download target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Download className="h-3.5 w-3.5" /> Scarica
+                  </Button>
+                </a>
+              )}
+            </DialogHeader>
+            {pdfViewer?.url && (
+              <iframe
+                src={pdfViewer.url}
+                className="flex-1 w-full rounded-b-lg"
+                title={pdfViewer.name}
+              />
+            )}
           </DialogContent>
         </Dialog>
 
@@ -659,13 +695,15 @@ export default function Profile() {
                           <p className="font-semibold text-foreground">{s.name}</p>
                           <p className="text-xs text-muted-foreground">{s.category}</p>
                         </div>
-                        <div onClick={e => e.stopPropagation()}>
-                          <input type="file" accept="image/*" className="hidden" id={`supplier-logo-${s.id}`}
-                            onChange={e => handleSupplierLogoUpload(s.id, e)} />
-                          <Button variant="ghost" size="sm" asChild className="text-[10px] h-6 px-2">
-                            <label htmlFor={`supplier-logo-${s.id}`} className="cursor-pointer gap-1"><Upload className="h-2.5 w-2.5" /> Logo</label>
-                          </Button>
-                        </div>
+                        {isAdmin && (
+                          <div onClick={e => e.stopPropagation()}>
+                            <input type="file" accept="image/*" className="hidden" id={`supplier-logo-${s.id}`}
+                              onChange={e => handleSupplierLogoUpload(s.id, e)} />
+                            <Button variant="ghost" size="sm" asChild className="text-[10px] h-6 px-2">
+                              <label htmlFor={`supplier-logo-${s.id}`} className="cursor-pointer gap-1"><Upload className="h-2.5 w-2.5" /> Logo</label>
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       {selectedSupplier === s.id && (
                         <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2">
@@ -687,12 +725,28 @@ export default function Profile() {
                           <div>
                             <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Cataloghi disponibili</p>
                             <div className="space-y-2">
-                              {s.catalogs.map(cat => (
-                                <div key={cat} className="flex items-center justify-between rounded-lg border border-border p-3">
-                                  <span className="text-sm text-foreground">{cat}</span>
-                                  <Badge variant="outline" className="text-[10px]">PDF</Badge>
-                                </div>
-                              ))}
+                              {(supplierCatalogs[s.id] || []).length > 0 ? (
+                                supplierCatalogs[s.id].map(cat => (
+                                  <div key={cat.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                                    <span className="text-sm text-foreground">{cat.name}</span>
+                                    {cat.pdf_url ? (
+                                      <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs"
+                                        onClick={e => { e.stopPropagation(); setPdfViewer({ url: cat.pdf_url!, name: cat.name }); }}>
+                                        <FileText className="h-3 w-3" /> Apri PDF
+                                      </Button>
+                                    ) : (
+                                      <Badge variant="outline" className="text-[10px]">PDF</Badge>
+                                    )}
+                                  </div>
+                                ))
+                              ) : (
+                                s.catalogs.map(cat => (
+                                  <div key={cat} className="flex items-center justify-between rounded-lg border border-border p-3">
+                                    <span className="text-sm text-foreground">{cat}</span>
+                                    <Badge variant="outline" className="text-[10px]">PDF</Badge>
+                                  </div>
+                                ))
+                              )}
                             </div>
                           </div>
                         </div>
