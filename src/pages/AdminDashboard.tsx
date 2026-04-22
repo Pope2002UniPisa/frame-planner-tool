@@ -28,11 +28,11 @@ const LINE_COLORS: Record<string, string> = {
 const BRANDS = ['FerreroLegno SPA', 'AluK Group', 'Finstral SPA', 'Somfy Italia'];
 
 const SUPPLIERS = [
-  { id: 'ferrerolegno', name: 'FerreroLegno SPA' },
-  { id: 'madrugada', name: 'Madrugada Group' },
-  { id: 'nurith', name: 'Nurith SPA' },
-  { id: 'denardi', name: 'Denardi SRL' },
-  { id: 'anger', name: 'Anger SRL' },
+  { id: 'ferrerolegno', name: 'FerreroLegno SPA', defaultLogo: '/images/ferrerolegno.png' },
+  { id: 'madrugada', name: 'Madrugada Group', defaultLogo: '/images/madrugada.png' },
+  { id: 'nurith', name: 'Nurith SPA', defaultLogo: '/images/finestrenurith.png' },
+  { id: 'denardi', name: 'Denardi SRL', defaultLogo: '/images/denardi.png' },
+  { id: 'anger', name: 'Anger SRL', defaultLogo: '/images/logo-Anger.png' },
 ];
 const ALL_PRODUCTS_VALUE = '__all_products__';
 const ALL_BRANDS_VALUE = '__all_brands__';
@@ -955,13 +955,12 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {SUPPLIERS.map(s => (
                     <div key={s.id} className="flex items-center gap-3 rounded-xl border border-border p-4">
-                      {supplierLogos[s.id] ? (
-                        <img src={supplierLogos[s.id]} alt={s.name} className="h-12 w-12 rounded-lg object-contain border border-border flex-shrink-0" />
-                      ) : (
-                        <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          <Building2 className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      )}
+                      <img
+                        src={supplierLogos[s.id] || supabase.storage.from('logos').getPublicUrl(`suppliers/${s.id}`).data.publicUrl}
+                        alt={s.name}
+                        className="h-12 w-12 rounded-lg object-contain border border-border flex-shrink-0"
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = s.defaultLogo; }}
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">{s.name}</p>
                         <div className="mt-1">
