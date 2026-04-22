@@ -320,7 +320,7 @@ export default function Profile() {
 
         <Dialog open={!!pdfViewer} onOpenChange={open => !open && setPdfViewer(null)}>
           <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
-            <DialogHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between">
+            <DialogHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between pr-12">
               <DialogTitle className="font-heading flex items-center gap-2">
                 <FileText className="h-4 w-4 text-accent" /> {pdfViewer?.name}
               </DialogTitle>
@@ -657,17 +657,15 @@ export default function Profile() {
                         {/* */}
                         {/* Devo modificare per avere il logo permanente dei fornitori */}
                         {/* */}
-                        {s.defaultLogo ? (
-                          <img 
-                            src={s.defaultLogo}
-                            alt={s.name} 
-                            className="h-10 w-10 rounded-lg object-contain border border-border" 
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                            <Building2 className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                        )}
+                        <img
+                          src={supabase.storage.from('logos').getPublicUrl(`suppliers/${s.id}`).data.publicUrl}
+                          alt={s.name}
+                          className="h-10 w-10 rounded-lg object-contain border border-border"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = s.defaultLogo || '';
+                          }}
+                        />
                         <div className="flex-1">
                           <p className="font-semibold text-foreground">{s.name}</p>
                           <p className="text-xs text-muted-foreground">{s.category}</p>
@@ -708,12 +706,7 @@ export default function Profile() {
                                   </div>
                                 ))
                               ) : (
-                                s.catalogs.map(cat => (
-                                  <div key={cat} className="flex items-center justify-between rounded-lg border border-border p-3">
-                                    <span className="text-sm text-foreground">{cat}</span>
-                                    <Badge variant="outline" className="text-[10px]">PDF</Badge>
-                                  </div>
-                                ))
+                                <p className="text-xs text-muted-foreground text-center py-3">Nessun catalogo disponibile</p>
                               )}
                             </div>
                           </div>

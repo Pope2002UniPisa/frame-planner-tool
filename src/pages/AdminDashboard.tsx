@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp, HelpCircle, CreditCard, ArrowRight } from 'lucide-react';
+import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp, HelpCircle, CreditCard, ArrowRight, Upload, Building2 } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 import { productLabels, statusLabels } from '@/lib/constants';
@@ -26,6 +26,14 @@ const LINE_COLORS: Record<string, string> = {
 };
 
 const BRANDS = ['FerreroLegno SPA', 'AluK Group', 'Finstral SPA', 'Somfy Italia'];
+
+const SUPPLIERS = [
+  { id: 'ferrerolegno', name: 'FerreroLegno SPA' },
+  { id: 'madrugada', name: 'Madrugada Group' },
+  { id: 'nurith', name: 'Nurith SPA' },
+  { id: 'denardi', name: 'Denardi SRL' },
+  { id: 'anger', name: 'Anger SRL' },
+];
 const ALL_PRODUCTS_VALUE = '__all_products__';
 const ALL_BRANDS_VALUE = '__all_brands__';
 
@@ -62,6 +70,8 @@ export default function AdminDashboard() {
   const [catalogDialog, setCatalogDialog] = useState(false);
   const [catalogForm, setCatalogForm] = useState({ supplier_id: '', name: '', pdf_url: '', sort_order: 0 });
   const [uploadingCatalog, setUploadingCatalog] = useState(false);
+  const [supplierLogos, setSupplierLogos] = useState<Record<string, string>>({});
+  const [uploadingSupplierLogo, setUploadingSupplierLogo] = useState<string | null>(null);
 
   // Sales objectives
   const [objectiveDialog, setObjectiveDialog] = useState(false);
@@ -84,6 +94,13 @@ export default function AdminDashboard() {
       setPortfolio(pf || []);
       setSalesObjectives(so || []);
       setCatalogs(cat || []);
+      const { data: logoFiles } = await supabase.storage.from('logos').list('suppliers');
+      const logos: Record<string, string> = {};
+      (logoFiles || []).forEach(f => {
+        const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(`suppliers/${f.name}`);
+        logos[f.name] = publicUrl;
+      });
+      setSupplierLogos(logos);
       setLoadingData(false);
     };
     fetchAll();
@@ -319,6 +336,18 @@ export default function AdminDashboard() {
     if (error) { toast.error(error.message); return; }
     const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
     setNewsForm(f => ({ ...f, image_url: publicUrl }));
+  };
+
+  const handleSupplierLogoUpload = async (supplierId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return;
+    setUploadingSupplierLogo(supplierId);
+    const file = e.target.files[0];
+    const { error } = await supabase.storage.from('logos').upload(`suppliers/${supplierId}`, file, { upsert: true });
+    if (error) { toast.error(error.message); setUploadingSupplierLogo(null); return; }
+    const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(`suppliers/${supplierId}`);
+    setSupplierLogos(prev => ({ ...prev, [supplierId]: publicUrl }));
+    setUploadingSupplierLogo(null);
+    toast.success('Logo fornitore aggiornato!');
   };
 
   const handleCatalogPdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -917,6 +946,41 @@ export default function AdminDashboard() {
 
           {/* CATALOGHI */}
           <TabsContent value="catalogs" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading flex items-center gap-2"><Building2 className="h-5 w-5 text-accent" /> Loghi Fornitori</CardTitle>
+                <CardDescription>Carica il logo ufficiale per ogni fornitore — visibile a tutti i clienti</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {SUPPLIERS.map(s => (
+                    <div key={s.id} className="flex items-center gap-3 rounded-xl border border-border p-4">
+                      {supplierLogos[s.id] ? (
+                        <img src={supplierLogos[s.id]} alt={s.name} className="h-12 w-12 rounded-lg object-contain border border-border flex-shrink-0" />
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{s.name}</p>
+                        <div className="mt-1">
+                          <input type="file" accept="image/*" className="hidden" id={`admin-logo-${s.id}`}
+                            onChange={e => handleSupplierLogoUpload(s.id, e)} />
+                          <Button variant="outline" size="sm" asChild disabled={uploadingSupplierLogo === s.id} className="h-7 text-xs gap-1">
+                            <label htmlFor={`admin-logo-${s.id}`} className="cursor-pointer">
+                              <Upload className="h-3 w-3" />
+                              {uploadingSupplierLogo === s.id ? 'Caricamento...' : supplierLogos[s.id] ? 'Cambia logo' : 'Carica logo'}
+                            </label>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
