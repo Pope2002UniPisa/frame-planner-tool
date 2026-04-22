@@ -310,7 +310,14 @@ export default function Dashboard() {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-12 object-contain" />
-            {profile && <h1 className="text-lg font-bold font-heading text-foreground">{profile.company_name || user.email}</h1>}
+            {profile && (
+              <div className="flex items-center gap-2">
+                {profile.logo_url && (
+                  <img src={profile.logo_url} alt={profile.company_name} className="h-8 w-8 rounded-md object-contain border border-border" />
+                )}
+                <h1 className="text-lg font-bold font-heading text-foreground">{profile.company_name || user.email}</h1>
+              </div>
+            )}
           </div>
           <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none select-none">
             <span className="text-xl font-mono font-bold text-foreground tabular-nums tracking-widest">{clock}</span>
