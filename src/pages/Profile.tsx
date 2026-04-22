@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro, Target, ExternalLink } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
-import { productLabels } from '@/lib/constants';
+import { productLabels, WORKFLOW_STEPS, getWorkflowIndex, statusLabels } from '@/lib/constants';
 
 const LINE_COLORS: Record<string, string> = {
   Finestra: '#f97316', 'Porta Finestra': '#3b82f6', Porta: '#a855f7',
@@ -21,37 +22,11 @@ const LINE_COLORS: Record<string, string> = {
 };
 
 const SUPPLIERS = [
-  { id: 'ferrerolegno', 
-    name: 'FerreroLegno SPA', 
-    category: 'Porte in legno e vetro', 
-    catalogs: ['Catalogo Porte 2026', 'Listino Prezzi Q1'],
-    defaultLogo: '/images/ferrerolegno.png'
-  },
-  { id: 'madrugada', 
-    name: 'Madrugada Group', 
-    category: 'Infissi in PVC', 
-    catalogs: ['Catalogo 2026'],
-    defaultLogo: '/images/madrugada.png'
-  },
-  { 
-  id: 'nurith',
-  name: 'Nurith SPA',
-  category: 'Infissi, oscuranti e portoncini in PVC',
-  catalogs: ['Catalogo PVC 2026', 'Innovazioni Termiche', 'Listino Premium 2026'],
-  defaultLogo: '/images/finestrenurith.png'
-  },
-  { id: 'denardi',
-    name: 'Denardi SRL', 
-    category: 'Basculanti in acciaio e legno', 
-    catalogs: ['Catalogo Basculanti 2026', 'Catalogo Motorizzazioni 2026'],
-    defaultLogo: '/images/denardi.png'
-  },
-  { id: 'anger',
-    name: 'Anger SRL', 
-    category: 'Infissi in legno', 
-    catalogs: ['Catalogo 2026', 'Catalogo legno/alluminio 2026'],
-    defaultLogo: '/images/logo-Anger.png'
-  },
+  { id: 'ferrerolegno', name: 'FerreroLegno SPA', category: 'Porte in legno e vetro', defaultLogo: '/images/ferrerolegno.png' },
+  { id: 'madrugada', name: 'Madrugada Group', category: 'Infissi in PVC', defaultLogo: '/images/madrugada.png' },
+  { id: 'nurith', name: 'Nurith SPA', category: 'Infissi, oscuranti e portoncini in PVC', defaultLogo: '/images/finestrenurith.png' },
+  { id: 'denardi', name: 'Denardi SRL', category: 'Basculanti in acciaio e legno', defaultLogo: '/images/denardi.png' },
+  { id: 'anger', name: 'Anger SRL', category: 'Infissi in legno', defaultLogo: '/images/logo-Anger.png' },
 ];
 
 const DEFAULT_ORG_ROLES = [
@@ -85,6 +60,10 @@ export default function Profile() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [supplierCatalogs, setSupplierCatalogs] = useState<Record<string, Array<{ id: string; name: string; pdf_url: string | null }>>>({});
   const [pdfViewer, setPdfViewer] = useState<{ url: string; name: string } | null>(null);
+  const [statsPeriod, setStatsPeriod] = useState<'all' | 'month' | 'year'>('all');
+  const [statsYear, setStatsYear] = useState(new Date().getFullYear());
+  const [statsMonth, setStatsMonth] = useState(new Date().getMonth() + 1);
+  const [savingOrg, setSavingOrg] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -103,6 +82,9 @@ export default function Profile() {
         setProfile(pData);
         setForm({ company_name: pData.company_name || '', phone: pData.phone || '', email: pData.email || '', client_code: pData.client_code || '' });
         if (pData.logo_url) setLogoUrl(pData.logo_url);
+        if (Array.isArray(pData.org_contacts) && pData.org_contacts.length > 0) {
+          setOrgContacts(pData.org_contacts as typeof DEFAULT_ORG_ROLES);
+        }
       }
       setMeasurements(mData || []);
       setObjectives(oData || []);
@@ -118,18 +100,27 @@ export default function Profile() {
     fetchData();
   }, [user]);
 
+  const filteredMeasurements = useMemo(() => {
+    if (statsPeriod === 'all') return measurements;
+    return measurements.filter(m => {
+      const d = new Date(m.created_at);
+      if (statsPeriod === 'year') return d.getFullYear() === statsYear;
+      return d.getFullYear() === statsYear && d.getMonth() + 1 === statsMonth;
+    });
+  }, [measurements, statsPeriod, statsYear, statsMonth]);
+
   const stats = useMemo(() => {
-    const total = measurements.length;
-    const drafts = measurements.filter(m => m.status === 'bozza').length;
-    const sent = measurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted' || m.status === 'in_review').length;
-    const quoted = measurements.filter(m => m.status === 'quoted').length;
-    const completed = measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length;
-    const totalEstimated = measurements.reduce((s, m) => s + (Number((m as any).estimated_price) || 0), 0);
-    const totalPaid = measurements.reduce((s, m) => s + (Number((m as any).amount_paid) || 0), 0);
-    const disputes = measurements.filter(m => (m as any).has_dispute).length;
-    const modifications = measurements.filter(m => (m as any).has_modification).length;
+    const total = filteredMeasurements.length;
+    const drafts = filteredMeasurements.filter(m => m.status === 'bozza').length;
+    const sent = filteredMeasurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted' || m.status === 'in_review').length;
+    const quoted = filteredMeasurements.filter(m => m.status === 'quoted').length;
+    const completed = filteredMeasurements.filter(m => m.status === 'completed' || m.status === 'ordered').length;
+    const totalEstimated = filteredMeasurements.reduce((s, m) => s + (Number((m as any).estimated_price) || 0), 0);
+    const totalPaid = filteredMeasurements.reduce((s, m) => s + (Number((m as any).amount_paid) || 0), 0);
+    const disputes = filteredMeasurements.filter(m => (m as any).has_dispute).length;
+    const modifications = filteredMeasurements.filter(m => (m as any).has_modification).length;
     return { total, drafts, sent, quoted, completed, totalEstimated, totalPaid, remaining: totalEstimated - totalPaid, disputes, modifications };
-  }, [measurements]);
+  }, [filteredMeasurements]);
 
   const statusChartData = useMemo(() => [
     { name: 'Bozze', value: stats.drafts, color: '#94a3b8' },
@@ -140,7 +131,7 @@ export default function Profile() {
 
   const monthlyProductData = useMemo(() => {
     const days: Record<string, Record<string, number>> = {};
-    measurements.forEach(m => {
+    filteredMeasurements.forEach(m => {
       const d = new Date(m.created_at);
       const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = productLabels[m.product_type] || m.product_type;
@@ -153,13 +144,13 @@ export default function Profile() {
       return ma !== mb ? ma - mb : da - db;
     });
     return sorted.map(([day, counts]) => ({ month: day, ...counts }));
-  }, [measurements]);
+  }, [filteredMeasurements]);
 
   const productTypes = useMemo(() => {
     const s = new Set<string>();
-    measurements.forEach(m => s.add(productLabels[m.product_type] || m.product_type));
+    filteredMeasurements.forEach(m => s.add(productLabels[m.product_type] || m.product_type));
     return Array.from(s);
-  }, [measurements]);
+  }, [filteredMeasurements]);
 
   const paymentChartData = useMemo(() => [
     { name: 'Pagato', value: stats.totalPaid, color: '#10b981' },
@@ -168,7 +159,7 @@ export default function Profile() {
 
   const productPriceData = useMemo(() => {
     const byType: Record<string, { count: number; total: number }> = {};
-    measurements.forEach(m => {
+    filteredMeasurements.forEach(m => {
       const label = productLabels[m.product_type] || m.product_type;
       const price = Number((m as any).estimated_price) || 0;
       if (!byType[label]) byType[label] = { count: 0, total: 0 };
@@ -176,7 +167,7 @@ export default function Profile() {
       if (price > 0) byType[label].total += price;
     });
     return Object.entries(byType).map(([name, d]) => ({ name, totale: Math.round(d.total), media: d.count > 0 ? Math.round(d.total / d.count) : 0 }));
-  }, [measurements]);
+  }, [filteredMeasurements]);
 
   const supplierStats = useMemo(() => {
     if (!selectedSupplier) return null;
@@ -189,9 +180,36 @@ export default function Profile() {
     };
   }, [selectedSupplier, measurements]);
 
+  const handleSaveOrg = async () => {
+    if (!profile) return;
+    setSavingOrg(true);
+    try {
+      const { error } = await supabase.from('profiles').update({ org_contacts: orgContacts }).eq('id', profile.id);
+      if (error) throw error;
+      toast.success('Organigramma salvato!');
+    } catch (err: any) {
+      toast.error(err.message || 'Errore');
+    } finally {
+      setSavingOrg(false);
+    }
+  };
+
+  const downloadQR = () => {
+    const svg = document.getElementById('client-qr-code');
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `qr_${form.client_code || 'cliente'}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const exportCSV = useCallback(() => {
     const headers = ['Data', 'Prodotto', 'Cliente', 'Indirizzo', 'Stato', 'Prezzo stimato (€)', 'Pagato (€)', 'Residuo (€)', 'Contestazione', 'Modifica'];
-    const rows = measurements.map(m => [
+    const rows = filteredMeasurements.map(m => [
       new Date(m.created_at).toLocaleDateString('it-IT'),
       productLabels[m.product_type] || m.product_type,
       m.client_name, m.client_address, m.status,
@@ -210,7 +228,7 @@ export default function Profile() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success('File Excel/CSV scaricato!');
-  }, [measurements, form.company_name]);
+  }, [filteredMeasurements, form.company_name]);
 
   const exportPDF = useCallback(() => {
     const printWindow = window.open('', '_blank');
@@ -250,7 +268,7 @@ export default function Profile() {
       </div>
       <h2>Dettaglio misurazioni</h2>
       <table><thead><tr><th>Data</th><th>Prodotto</th><th>Cliente</th><th>Stato</th><th>Prezzo €</th><th>Pagato €</th><th>Residuo €</th></tr></thead><tbody>
-      ${measurements.map(m => `<tr>
+      ${filteredMeasurements.map(m => `<tr>
         <td>${new Date(m.created_at).toLocaleDateString('it-IT')}</td>
         <td>${productLabels[m.product_type] || m.product_type}</td>
         <td>${m.client_name}</td>
@@ -264,7 +282,7 @@ export default function Profile() {
       </body></html>`);
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 500);
-  }, [measurements, form.company_name, stats]);
+  }, [filteredMeasurements, form.company_name, stats]);
 
   const handleSave = async () => {
     if (!profile) return;
@@ -400,6 +418,21 @@ export default function Profile() {
                     <Button onClick={handleSave} disabled={saving} className="gap-2">
                       <Save className="h-4 w-4" /> {saving ? 'Salvataggio...' : 'Salva modifiche'}
                     </Button>
+                    {form.client_code && (
+                      <div className="flex items-center gap-6 pt-4 border-t border-border">
+                        <div className="flex flex-col items-center gap-2">
+                          <QRCodeSVG id="client-qr-code" value={form.client_code} size={96} includeMargin />
+                          <p className="text-xs text-muted-foreground font-mono">{form.client_code}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground mb-1">Codice QR cliente</p>
+                          <p className="text-xs text-muted-foreground mb-3">Stampalo e consegnalo al tuo rappresentante.</p>
+                          <Button variant="outline" size="sm" onClick={downloadQR} className="gap-1.5">
+                            <Download className="h-3.5 w-3.5" /> Scarica QR
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </CardContent>
@@ -408,14 +441,38 @@ export default function Profile() {
 
           {/* TAB: Statistics */}
           <TabsContent value="stats" className="space-y-6">
-            {/* Export buttons */}
-            <div className="flex gap-3 justify-end">
-              <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
-                <Download className="h-4 w-4" /> Scarica Excel/CSV
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportPDF} className="gap-2">
-                <FileText className="h-4 w-4" /> Scarica PDF
-              </Button>
+            {/* Filters + Export */}
+            <div className="flex flex-wrap items-center gap-3 justify-between">
+              <div className="flex items-center gap-2 flex-wrap">
+                {(['all', 'year', 'month'] as const).map(p => (
+                  <button key={p} onClick={() => setStatsPeriod(p)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${statsPeriod === p ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-accent/10'}`}>
+                    {p === 'all' ? 'Tutto' : p === 'year' ? 'Anno' : 'Mese'}
+                  </button>
+                ))}
+                {statsPeriod !== 'all' && (
+                  <select value={statsYear} onChange={e => setStatsYear(Number(e.target.value))}
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground">
+                    {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                )}
+                {statsPeriod === 'month' && (
+                  <select value={statsMonth} onChange={e => setStatsMonth(Number(e.target.value))}
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground">
+                    {['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'].map((m, i) => (
+                      <option key={i+1} value={i+1}>{m}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
+                  <Download className="h-4 w-4" /> Excel/CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportPDF} className="gap-2">
+                  <FileText className="h-4 w-4" /> PDF
+                </Button>
+              </div>
             </div>
 
             {/* Measurement counts */}
@@ -439,8 +496,45 @@ export default function Profile() {
               ))}
             </div>
 
+            {/* Workflow visivo ordini attivi */}
+            {filteredMeasurements.filter(m => m.status !== 'bozza' && m.status !== 'completed').length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-heading flex items-center gap-2"><Package className="h-4 w-4 text-accent" /> Stato ordini in corso</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {filteredMeasurements.filter(m => m.status !== 'bozza' && m.status !== 'completed').slice(0, 5).map(m => {
+                    const step = getWorkflowIndex(m.status);
+                    return (
+                      <div key={m.id} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-medium text-foreground">{productLabels[m.product_type] || m.product_type} — {m.client_name}</p>
+                          <Badge variant="outline" className="text-[10px]">{statusLabels[m.status]?.label || m.status}</Badge>
+                        </div>
+                        <div className="flex items-center gap-0">
+                          {WORKFLOW_STEPS.map((s, i) => (
+                            <div key={s.key} className="flex items-center flex-1">
+                              <div className={`flex flex-col items-center flex-1 ${i <= step ? 'text-accent' : 'text-muted-foreground'}`}>
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-colors ${i < step ? 'bg-accent border-accent text-accent-foreground' : i === step ? 'border-accent text-accent bg-accent/10' : 'border-border bg-muted'}`}>
+                                  {i < step ? '✓' : i + 1}
+                                </div>
+                                <span className="text-[9px] mt-0.5 text-center leading-tight hidden sm:block">{s.label}</span>
+                              </div>
+                              {i < WORKFLOW_STEPS.length - 1 && (
+                                <div className={`h-0.5 flex-1 mx-0.5 ${i < step ? 'bg-accent' : 'bg-border'}`} />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Charts: Status + Product trend */}
-            {measurements.length > 0 && (
+            {filteredMeasurements.length > 0 && (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-sm font-heading flex items-center gap-2"><BarChart3 className="h-4 w-4 text-muted-foreground" /> Stato misurazioni</CardTitle></CardHeader>
@@ -549,7 +643,7 @@ export default function Profile() {
                           <p className="text-xs text-muted-foreground">Contestazioni attive</p>
                         </div>
                       </div>
-                      {measurements.filter(m => (m as any).has_dispute).map(m => (
+                      {filteredMeasurements.filter(m => (m as any).has_dispute).map(m => (
                         <div key={m.id} className="rounded-lg border border-red-200 p-3">
                           <p className="text-sm font-medium text-foreground">{m.client_name} — {productLabels[m.product_type] || m.product_type}</p>
                           <p className="text-xs text-muted-foreground mt-1">{(m as any).dispute_notes || 'Dettagli in fase di revisione'}</p>
@@ -579,7 +673,7 @@ export default function Profile() {
                           <p className="text-xs text-muted-foreground">Modifiche richieste</p>
                         </div>
                       </div>
-                      {measurements.filter(m => (m as any).has_modification).map(m => (
+                      {filteredMeasurements.filter(m => (m as any).has_modification).map(m => (
                         <div key={m.id} className="rounded-lg border border-amber-200 p-3">
                           <p className="text-sm font-medium text-foreground">{m.client_name} — {productLabels[m.product_type] || m.product_type}</p>
                           <p className="text-xs text-muted-foreground mt-1">{(m as any).modification_notes || 'In fase di valutazione'}</p>
@@ -759,9 +853,14 @@ export default function Profile() {
                     </div>
                   </div>
                 ))}
-                <Button variant="outline" onClick={() => setOrgContacts(prev => [...prev, { role: 'Altro', name: '', phone: '', email: '' }])}>
-                  + Aggiungi ruolo
-                </Button>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setOrgContacts(prev => [...prev, { role: 'Altro', name: '', phone: '', email: '' }])}>
+                    + Aggiungi ruolo
+                  </Button>
+                  <Button onClick={handleSaveOrg} disabled={savingOrg} className="gap-2">
+                    <Save className="h-4 w-4" /> {savingOrg ? 'Salvataggio...' : 'Salva organigramma'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
