@@ -159,7 +159,7 @@ export default function Dashboard() {
   }, [measurements, filterStatus, filterProduct, searchText, filterDateFrom, filterDateTo]);
   {/* Stato accettazione preventivo e workflow conseguente */ }
   const handleQuoteResponse = async (measurementId: string, accept: boolean) => {
-    const newStatus = accept ? 'quote_accepted' : 'quote_modifications';
+    const newStatus = accept ? 'ordered' : 'quote_modifications';
     const updates: any = { status: newStatus };
     if (!accept && modificationNotes) {
       updates.modification_notes = modificationNotes;
@@ -172,10 +172,10 @@ export default function Dashboard() {
     setMeasurements(prev => prev.map(m => m.id === measurementId ? { ...m, ...updates } : m));
     setQuoteResponseDialog(null);
     setModificationNotes('');
-    toast.success(accept ? 'Preventivo accettato! L\'ordine verrà confermato a breve.' : 'Richiesta di modifiche inviata.');
+    toast.success(accept ? 'Ordine confermato! Ti contatteremo per procedere.' : 'Richiesta di modifiche inviata.');
 
     if (user && measurement) {
-      const label = accept ? 'Preventivo accettato' : 'Modifiche richieste';
+      const label = accept ? 'Ordine confermato' : 'Modifiche richieste';
       createNotification({
         userId: user.id,
         type: 'status',
@@ -959,6 +959,13 @@ export default function Dashboard() {
                             </Button>
                             <Button size="sm" variant="outline" className="gap-1.5" onClick={(e) => { e.stopPropagation(); setQuoteResponseDialog(m); }}>
                               <MessageSquare className="h-3.5 w-3.5" /> Richiedi modifiche
+                            </Button>
+                          </div>
+                        )}
+                        {m.status === 'quote_modifications' && (
+                          <div className="flex gap-2 mt-2">
+                            <Button size="sm" variant="outline" className="gap-1.5" onClick={(e) => { e.stopPropagation(); navigate(`/misurazione/${m.id}/modifica`); }}>
+                              <Edit3 className="h-3.5 w-3.5" /> Modifica misurazione
                             </Button>
                           </div>
                         )}

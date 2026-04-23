@@ -36,8 +36,9 @@ export const WORKFLOW_STEPS = [
 
 export const getWorkflowIndex = (status: string): number => {
   const map: Record<string, number> = {
-    bozza: 0, ricevuto: 1, submitted: 1, quoted: 1, quote_accepted: 1,
-    quote_modifications: 1, ordered: 2, in_production: 3, delivering: 4, completed: 5,
+    bozza: 0, ricevuto: 1, submitted: 1, quoted: 1,
+    quote_modifications: 1, quote_accepted: 2, ordered: 2,
+    in_production: 3, delivering: 4, completed: 5,
   };
   return map[status] ?? 0;
 };
