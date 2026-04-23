@@ -365,9 +365,11 @@ export default function NewMeasurement() {
       try {
         await supabase.functions.invoke('notify-measurement', {
           body: {
+            userId: user.id,
             clientName: form.client_name,
             clientAddress: form.client_address,
             productType: form.product_type,
+            surveyType: form.survey_type,
             dimensions: isMultiProduct
               ? `${multiItems.length} prodotti`
               : `${form.width_mm}×${form.height_mm} mm`,
@@ -380,6 +382,7 @@ export default function NewMeasurement() {
               frame_type: form.frame_type,
               handle_type: form.handle_type,
               installation_type: form.installation_type,
+              laying_type: form.laying_type,
               notes: form.notes,
             },
           },

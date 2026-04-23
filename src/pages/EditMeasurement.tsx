@@ -98,7 +98,7 @@ export default function EditMeasurement() {
   if (authLoading || loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
   if (!form) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Misurazione non trovata</div>;
-  if (form.status !== 'bozza') return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Solo le bozze possono essere modificate</div>;
+  if (!['bozza', 'quote_modifications'].includes(form.status)) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Solo le bozze e le misurazioni con modifiche richieste possono essere modificate</div>;
 
   const update = (key: string, value: any) => setForm((prev: any) => ({ ...prev, [key]: value }));
 
@@ -192,12 +192,14 @@ export default function EditMeasurement() {
           photo_urls = [...photo_urls, publicUrl];
         }
       }
+      const resubmitStatus = form.status === 'quote_modifications' ? 'submitted' : 'ricevuto';
       const { error } = await supabase.from('measurements').update({
-        ...buildUpdateData('ricevuto'),
+        ...buildUpdateData(resubmitStatus),
         photo_urls: photo_urls.length > 0 ? photo_urls : null,
+        has_modification: form.status === 'quote_modifications' ? true : form.has_modification,
       }).eq('id', id);
       if (error) throw error;
-      toast.success('Misurazione inviata con successo!');
+      toast.success(form.status === 'quote_modifications' ? 'Modifiche inviate! Attendi il nuovo preventivo.' : 'Misurazione inviata con successo!');
       navigate('/dashboard');
     } catch (err: any) {
       toast.error(err.message || "Errore durante l'invio");
