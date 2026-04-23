@@ -39,10 +39,10 @@ export default function MeasurementView() {
   }, [user, id]);
 
   const handleAcceptQuote = async () => {
-    const { error } = await supabase.from('measurements').update({ status: 'quote_accepted' }).eq('id', id);
+    const { error } = await supabase.from('measurements').update({ status: 'ordered' }).eq('id', id);
     if (error) { toast.error(error.message); return; }
-    setM((prev: any) => ({ ...prev, status: 'quote_accepted' }));
-    toast.success('Preventivo accettato! L\'ordine verrà confermato a breve.');
+    setM((prev: any) => ({ ...prev, status: 'ordered' }));
+    toast.success('Ordine confermato! Ti contatteremo per procedere.');
   };
 
   const handleRequestModifications = async () => {
@@ -117,7 +117,7 @@ export default function MeasurementView() {
   const isDoor = ['porta', 'porta_finestrata', 'porta_filomuro'].includes(m.product_type);
   const fields: [string, any, any?][] = [
     ['Prodotto', doorModelName || (productLabels[m.product_type] || m.product_type)],
-    ['Tipo rilievo', m.survey_type],
+    ['Tipo rilievo', { foro_muro: 'Foro muro', luce_netta: 'Luce netta', grezzo: 'Grezzo', finito: 'Finito' }[m.survey_type] || m.survey_type],
     ['Larghezza (mm)', m.width_mm],
     ['Altezza (mm)', m.height_mm],
     m.depth_mm && ['Profondità (mm)', m.depth_mm],
@@ -132,9 +132,9 @@ export default function MeasurementView() {
     m.handle_type && ['Tipo maniglia', resolveHandleType(m.handle_type)],
     doorHandleModel && ['Modello maniglia', resolveHandleModel(doorHandleModel)],
     doorHandleFinish && ['Finitura maniglia', resolveHandleFinish(doorHandleFinish)],
-    m.glass_type && ['Tipo vetro', m.glass_type],
-    m.installation_type && ['Tipo fornitura', m.installation_type],
-    m.laying_type && ['Tipo posa', m.laying_type],
+    m.glass_type && ['Tipo vetro', { doppio_vetro: 'Doppio vetro', triplo_vetro: 'Triplo vetro', sicurezza: 'Vetro sicurezza', cieca: 'Cieca' }[m.glass_type] || m.glass_type],
+    m.installation_type && ['Tipo fornitura', { solo_fornitura: 'Solo fornitura', con_installazione: 'Con installazione' }[m.installation_type] || m.installation_type],
+    m.laying_type && ['Tipo posa', { standard: 'Standard', certificata: 'Certificata' }[m.laying_type] || m.laying_type],
     m.remove_old && ['Rimozione vecchio', 'Sì'],
     m.notes && ['Note', m.notes],
   ].filter(Boolean) as [string, any, any?][];
@@ -170,7 +170,9 @@ export default function MeasurementView() {
       <main className="container max-w-3xl py-8 space-y-6">
         <div className="flex items-center gap-3">
           <Badge>{statusLabels[m.status]?.label || m.status}</Badge>
-          <span className="text-sm text-muted-foreground">{new Date(m.created_at).toLocaleDateString('it-IT')}</span>
+          <span className="text-sm text-muted-foreground">
+            {new Date(m.created_at).toLocaleDateString('it-IT')} alle {new Date(m.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+          </span>
         </div>
 
         {/* Accept/Reject quote buttons */}
