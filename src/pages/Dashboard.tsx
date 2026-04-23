@@ -360,6 +360,13 @@ export default function Dashboard() {
                       onClick={() => setSelectedNews(n)}
                       className="rounded-lg border border-border p-3 hover:shadow-card-hover transition-all cursor-pointer group"
                     >
+                      {n.image_url && (
+                        <img
+                          src={n.image_url}
+                          alt={n.title}
+                          className="w-full h-20 object-cover rounded-md mb-2"
+                        />
+                      )}
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                           {n.tag}
