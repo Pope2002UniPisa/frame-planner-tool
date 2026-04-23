@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
@@ -66,6 +66,9 @@ export default function AdminDashboard() {
   const [newsDialog, setNewsDialog] = useState(false);
   const [editingNews, setEditingNews] = useState<any>(null);
   const [newsForm, setNewsForm] = useState({ title: '', summary: '', tag: 'Novità', image_url: '', image_position: '50% 50%', link: '', social_link: '', published: true });
+
+  const imgDragActive = useRef(false);
+  const imgDragStart = useRef({ x: 0, y: 0, posX: 50, posY: 50 });
 
   // Portfolio form
   const [portfolioDialog, setPortfolioDialog] = useState(false);
@@ -909,35 +912,55 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     {newsForm.image_url && (
-                      <div className="space-y-2">
-                        <div className="relative h-24 rounded-lg overflow-hidden border border-border">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Trascina l'immagine per scegliere il ritaglio</Label>
+                        <div
+                          className="relative h-32 rounded-lg overflow-hidden border border-border cursor-grab select-none"
+                          style={{ touchAction: 'none' }}
+                          onMouseDown={(e) => {
+                            imgDragActive.current = true;
+                            const [px, py] = newsForm.image_position.replace(/%/g, '').split(' ').map(Number);
+                            imgDragStart.current = { x: e.clientX, y: e.clientY, posX: px || 50, posY: py || 50 };
+                            e.preventDefault();
+                          }}
+                          onMouseMove={(e) => {
+                            if (!imgDragActive.current) return;
+                            const dx = e.clientX - imgDragStart.current.x;
+                            const dy = e.clientY - imgDragStart.current.y;
+                            const newX = Math.max(0, Math.min(100, imgDragStart.current.posX - dx * 0.4));
+                            const newY = Math.max(0, Math.min(100, imgDragStart.current.posY - dy * 0.4));
+                            setNewsForm(f => ({ ...f, image_position: `${Math.round(newX)}% ${Math.round(newY)}%` }));
+                          }}
+                          onMouseUp={() => { imgDragActive.current = false; }}
+                          onMouseLeave={() => { imgDragActive.current = false; }}
+                          onTouchStart={(e) => {
+                            const t = e.touches[0];
+                            imgDragActive.current = true;
+                            const [px, py] = newsForm.image_position.replace(/%/g, '').split(' ').map(Number);
+                            imgDragStart.current = { x: t.clientX, y: t.clientY, posX: px || 50, posY: py || 50 };
+                          }}
+                          onTouchMove={(e) => {
+                            if (!imgDragActive.current) return;
+                            const t = e.touches[0];
+                            const dx = t.clientX - imgDragStart.current.x;
+                            const dy = t.clientY - imgDragStart.current.y;
+                            const newX = Math.max(0, Math.min(100, imgDragStart.current.posX - dx * 0.4));
+                            const newY = Math.max(0, Math.min(100, imgDragStart.current.posY - dy * 0.4));
+                            setNewsForm(f => ({ ...f, image_position: `${Math.round(newX)}% ${Math.round(newY)}%` }));
+                          }}
+                          onTouchEnd={() => { imgDragActive.current = false; }}
+                        >
                           <img
                             src={newsForm.image_url}
                             alt="Preview"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover pointer-events-none"
                             style={{ objectPosition: newsForm.image_position }}
+                            draggable={false}
                           />
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/20">
-                            <span className="text-white text-xs font-medium">Anteprima ritaglio</span>
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Posizione inquadratura</Label>
-                          <div className="grid grid-cols-3 gap-1">
-                            {[
-                              { label: '↖', pos: '0% 0%' }, { label: '↑', pos: '50% 0%' }, { label: '↗', pos: '100% 0%' },
-                              { label: '←', pos: '0% 50%' }, { label: '⊙', pos: '50% 50%' }, { label: '→', pos: '100% 50%' },
-                              { label: '↙', pos: '0% 100%' }, { label: '↓', pos: '50% 100%' }, { label: '↘', pos: '100% 100%' },
-                            ].map(({ label, pos }) => (
-                              <button
-                                key={pos}
-                                type="button"
-                                onClick={() => setNewsForm(f => ({ ...f, image_position: pos }))}
-                                className={`h-8 rounded text-sm font-mono transition-colors ${newsForm.image_position === pos ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80 text-muted-foreground'}`}
-                              >
-                                {label}
-                              </button>
-                            ))}
+                          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 pointer-events-none">
+                            <span className="text-white text-[10px] font-medium bg-black/50 px-2 py-0.5 rounded-full">
+                              ✥ trascina per spostare
+                            </span>
                           </div>
                         </div>
                       </div>
