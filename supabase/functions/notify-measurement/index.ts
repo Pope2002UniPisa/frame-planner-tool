@@ -17,15 +17,53 @@ const PRODUCT_LABELS: Record<string, string> = {
   porta_finestrata: 'Porta finestrata', porta_filomuro: 'Porta filomuro',
 };
 
-const SURVEY_LABELS: Record<string, string> = {
-  foro_muro: 'Foro muro', luce_netta: 'Luce netta',
-  grezzo: 'Grezzo', finito: 'Finito',
+const STATUS_LABELS: Record<string, string> = {
+  submitted: 'Nuova richiesta preventivo', ricevuto: 'Nuova richiesta preventivo',
+  quoted: 'Preventivo inviato', quote_accepted: 'Preventivo accettato',
+  quote_modifications: 'Modifiche preventivo richieste', ordered: 'Ordine confermato',
+  in_production: 'In produzione', delivering: 'Pronta per consegna', completed: 'Completata',
 };
 
+const SURVEY_LABELS: Record<string, string> = {
+  foro_muro: 'Foro muro', luce_netta: 'Luce netta',
+  grezzo: 'Grezzo', finito: 'Finito', controtelaio: 'Controtelaio',
+};
+
+// All door color IDs → readable names
 const COLOR_LABELS: Record<string, string> = {
+  // Window colors
   bianco: 'Bianco', avorio: 'Avorio', grigio_chiaro: 'Grigio chiaro',
   grigio_antracite: 'Grigio antracite', marrone: 'Marrone', noce: 'Noce',
   verde_scuro: 'Verde scuro', blu_notte: 'Blu notte', rosso_mattone: 'Rosso mattone', nero: 'Nero',
+  // Door laccato opaco
+  lo_bianco_optical: 'Bianco Optical', lo_bianco: 'Bianco', lo_grigio_lux: 'Grigio Lux', lo_tortora: 'Tortora',
+  // Door laccato ultra opaco
+  uo_tortora: 'Tortora', uo_bianco_optical: 'Bianco Optical', uo_bianco: 'Bianco',
+  uo_grigio_lux: 'Grigio Lux', uo_corallo_light: 'Corallo Light', uo_corallo_pure: 'Corallo Pure',
+  uo_metallo_light: 'Metallo Light', uo_metallo_pure: 'Metallo Pure', uo_metallo_dark: 'Metallo Dark',
+  uo_laguna_light: 'Laguna Light', uo_laguna_pure: 'Laguna Pure', uo_laguna_dark: 'Laguna Dark',
+  uo_lichene_light: 'Lichene Light', uo_lichene_pure: 'Lichene Pure',
+  uo_terra_light: 'Terra Light', uo_terra_pure: 'Terra Pure',
+  uo_oliva_light: 'Oliva Light', uo_oliva_pure: 'Oliva Pure', uo_oliva_dark: 'Oliva Dark',
+  uo_ombra_light: 'Ombra Light', uo_ombra_pure: 'Ombra Pure', uo_ombra_dark: 'Ombra Dark',
+  uo_malva_light: 'Malva Light', uo_malva_pure: 'Malva Pure', uo_nero_profondo: 'Nero Profondo',
+};
+
+const FRAME_LABELS: Record<string, string> = {
+  pvc: 'PVC', alluminio: 'Alluminio', legno: 'Legno', legno_alluminio: 'Legno/Alluminio',
+  evoluto_eleva: 'Evoluto Eleva', minimal_eleva: 'Minimal Eleva', quality_eleva: 'Quality Eleva',
+  dorico: 'Dorico', flat: 'Flat', genius_eleva: 'Genius Eleva', oval_eleva: 'Oval Eleva',
+  a_filo: 'A Filo', concept: 'Concept',
+};
+
+const HANDLE_FINISH_LABELS: Record<string, string> = {
+  cromo_satinato: 'Cromo Satinato', cromo_lucido: 'Cromo Lucido',
+  bianco_optical: 'Bianco Optical', nero: 'Nero', grigio_alluminio: 'Grigio Alluminio',
+  grafite_satinato: 'Grafite Satinato', oro_satinato: 'Oro Satinato',
+  oro_antico_lucido: 'Oro Antico Lucido', ottone_lucido: 'Ottone Lucido',
+  nikel_lucido: 'Nikel Lucido', bronzo_satinato: 'Bronzo Satinato',
+  cromo_lucido_satinato: 'Cromo Lucido + Satinato', cromo_lucido_bianco: 'Cromo Lucido + Bianco Optical',
+  cromo_lucido_nero: 'Cromo Lucido + Nero', bianco: 'Bianco',
 };
 
 const GLASS_LABELS: Record<string, string> = {
@@ -33,17 +71,21 @@ const GLASS_LABELS: Record<string, string> = {
   sicurezza: 'Vetro sicurezza', cieca: 'Cieca',
 };
 
-const FRAME_LABELS: Record<string, string> = {
-  pvc: 'PVC', alluminio: 'Alluminio', legno: 'Legno', legno_alluminio: 'Legno/Alluminio',
+const resolveLabel = (id: string, maps: Record<string, string>[]): string => {
+  for (const map of maps) {
+    if (map[id]) return map[id];
+  }
+  return id;
 };
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   try {
-    const { userId, measurementId, clientName, clientAddress, productType, surveyType, dimensions, estimatedPrice, measurement } = await req.json();
+    const { userId, measurementId, clientName, clientAddress, productType, surveyType, dimensions, estimatedPrice, measurement, doorModelName, status } = await req.json();
 
-    const productLabel = PRODUCT_LABELS[productType] || productType || 'Prodotto';
+    const statusLabel = STATUS_LABELS[status || 'submitted'] || 'Nuova richiesta preventivo';
+    const productLabel = doorModelName || PRODUCT_LABELS[productType] || productType || 'Prodotto';
     const surveyLabel = SURVEY_LABELS[surveyType] || surveyType || null;
     const priceText = estimatedPrice ? `€${Number(estimatedPrice).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : null;
 
@@ -73,11 +115,11 @@ serve(async (req) => {
 
     const detailRows: [string, string][] = [
       measurement?.material && ['Materiale', FRAME_LABELS[measurement.material] || measurement.material],
-      measurement?.color_internal && ['Colore interno', COLOR_LABELS[measurement.color_internal] || measurement.color_internal],
-      measurement?.color_external && ['Colore esterno', COLOR_LABELS[measurement.color_external] || measurement.color_external],
+      measurement?.color_internal && ['Colore interno', resolveLabel(measurement.color_internal, [COLOR_LABELS])],
+      measurement?.color_external && ['Colore esterno', resolveLabel(measurement.color_external, [COLOR_LABELS])],
       measurement?.frame_type && ['Tipo telaio', FRAME_LABELS[measurement.frame_type] || measurement.frame_type],
       measurement?.glass_type && ['Vetro', GLASS_LABELS[measurement.glass_type] || measurement.glass_type],
-      measurement?.handle_type && ['Maniglia', measurement.handle_type],
+      measurement?.handle_type && ['Maniglia', HANDLE_FINISH_LABELS[measurement.handle_type] || measurement.handle_type],
       installationLabel && [installationLabel, layingLabel || ''],
       measurement?.notes && ['Note', measurement.notes],
     ].filter(Boolean) as [string, string][];
@@ -90,16 +132,13 @@ serve(async (req) => {
 
   <div style="background:#1a1a2e;padding:28px 32px">
     <p style="color:#f97316;font-size:13px;font-weight:600;margin:0 0 4px">PRATELLI RAPPRESENTANZE</p>
-    <h1 style="color:white;font-size:22px;margin:0">📐 Nuova misurazione ricevuta</h1>
+    <h1 style="color:white;font-size:22px;margin:0">📐 ${statusLabel}</h1>
   </div>
 
   ${resellerName ? `
   <div style="padding:16px 32px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
     ${resellerLogoUrl ? `<img src="${resellerLogoUrl}" alt="${resellerName}" style="height:36px;width:36px;object-fit:contain;border-radius:6px;border:1px solid #eee" />` : ''}
-    <div>
-      <p style="font-size:11px;color:#888;margin:0">RIVENDITORE</p>
-      <p style="font-size:15px;font-weight:700;color:#1a1a2e;margin:4px 0 0">${resellerName}</p>
-    </div>
+    <p style="font-size:15px;font-weight:700;color:#1a1a2e;margin:0">${resellerName}</p>
   </div>` : ''}
 
   <div style="padding:32px">
@@ -155,7 +194,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: ADMIN_EMAIL,
-        subject: `[Pratelli] Nuova misurazione — ${resellerName || 'Cliente'} • ${clientName || ''} • ${productLabel}`,
+        subject: `[Pratelli] ${statusLabel} — ${resellerName || 'Cliente'} • ${clientName || ''} • ${productLabel}`,
         html,
       }),
     });

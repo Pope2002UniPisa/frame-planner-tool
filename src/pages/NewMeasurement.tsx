@@ -377,6 +377,8 @@ export default function NewMeasurement() {
               ? `${multiItems.length} prodotti`
               : `${form.width_mm}×${form.height_mm} mm`,
             estimatedPrice: getEstimatedPrice(),
+            status: 'submitted',
+            doorModelName: getDoorModel(form.door_model)?.name || '',
             measurement: {
               material: form.material,
               color_internal: form.color_internal,

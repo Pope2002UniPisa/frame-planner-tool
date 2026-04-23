@@ -12,6 +12,31 @@ import { productLabels } from '@/lib/constants';
 
 const surveyLabels: Record<string, string> = {
   foro_muro: 'Foro muro', luce_netta: 'Luce netta', controtelaio: 'Controtelaio', vecchio_infisso: 'Vecchio infisso',
+  grezzo: 'Grezzo', finito: 'Finito',
+};
+
+const glassLabels: Record<string, string> = {
+  doppio_vetro: 'Doppio vetro', triplo_vetro: 'Triplo vetro', sicurezza: 'Vetro sicurezza', cieca: 'Cieca',
+};
+
+const layingLabels: Record<string, string> = {
+  standard: 'Standard', certificata: 'Certificata',
+};
+
+const panelTypeLabels: Record<string, string> = {
+  battente: 'Battente', scorrevole: 'Scorrevole', a_libro: 'A libro', fisso: 'Fisso',
+  vasistas: 'Vasistas', anta_e_vasistas: 'Anta e vasistas', bilico: 'Bilico', ribalta: 'Ribalta',
+};
+
+const openingDirectionLabels: Record<string, string> = {
+  sinistra: 'Sinistra', destra: 'Destra', interno: 'Interno', esterno: 'Esterno',
+  sx_interno: 'Sinistra interno', sx_esterno: 'Sinistra esterno',
+  dx_interno: 'Destra interno', dx_esterno: 'Destra esterno',
+};
+
+const materialLabels: Record<string, string> = {
+  pvc: 'PVC', alluminio: 'Alluminio', legno: 'Legno', legno_alluminio: 'Legno/Alluminio',
+  ferro: 'Ferro', acciaio: 'Acciaio',
 };
 
 const isQuoteStatus = (status: string) => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(status);
@@ -101,24 +126,24 @@ export default function MeasurementPrint() {
     ['Altezza', `${m.height_mm} mm`],
     ...(m.depth_mm ? [['Profondità muro', `${m.depth_mm} mm`] as [string, string]] : []),
     ...(!isDoor && m.num_panels ? [['Numero ante', `${m.num_panels}`] as [string, string]] : []),
-    ...(m.panel_type ? [['Tipologia apertura', m.panel_type] as [string, string]] : []),
-    ...(m.opening_direction ? [['Direzione apertura', m.opening_direction] as [string, string]] : []),
+    ...(m.panel_type ? [['Tipologia apertura', panelTypeLabels[m.panel_type] || m.panel_type] as [string, string]] : []),
+    ...(m.opening_direction ? [['Direzione apertura', openingDirectionLabels[m.opening_direction] || m.opening_direction] as [string, string]] : []),
     ...(m.frame_type ? [['Tipo telaio', resolveFrame(m.frame_type)] as [string, string]] : []),
-    ...(m.material ? [['Materiale', m.material] as [string, string]] : []),
+    ...(m.material ? [['Materiale', materialLabels[m.material] || m.material] as [string, string]] : []),
     ...(m.color_internal ? [['Colore interno', resolveColor(m.color_internal)] as [string, string]] : []),
     ...(m.color_external ? [['Colore esterno', resolveColor(m.color_external)] as [string, string]] : []),
     ...(doorColorName ? [['Colore porta', doorColorName] as [string, string]] : []),
     ...(m.handle_type ? [['Tipo maniglia', resolveHandleType(m.handle_type)] as [string, string]] : []),
     ...(doorHandleModel ? [['Modello maniglia', resolveHandleModel(doorHandleModel)] as [string, string]] : []),
     ...(doorHandleFinish ? [['Finitura maniglia', resolveHandleType(doorHandleFinish)] as [string, string]] : []),
-    ...(m.glass_type ? [['Tipo vetro', m.glass_type] as [string, string]] : []),
+    ...(m.glass_type ? [['Tipo vetro', glassLabels[m.glass_type] || m.glass_type] as [string, string]] : []),
     ...(m.is_square === false ? [['Fuori squadro', `${m.out_of_square_mm || 0} mm`] as [string, string]] : []),
     ...(m.is_plumb === false ? [['A piombo', 'No'] as [string, string]] : []),
     ...(m.is_level === false ? [['Livellato', 'No'] as [string, string]] : []),
     ...(m.internal_space_mm ? [['Spazio interno', `${m.internal_space_mm} mm`] as [string, string]] : []),
     ...(m.external_space_mm ? [['Spazio esterno', `${m.external_space_mm} mm`] as [string, string]] : []),
     ...(m.installation_type ? [['Tipo fornitura', m.installation_type === 'con_installazione' ? 'Con installazione' : 'Solo fornitura'] as [string, string]] : []),
-    ...(m.laying_type ? [['Tipo posa', m.laying_type] as [string, string]] : []),
+    ...(m.laying_type ? [['Tipo posa', layingLabels[m.laying_type] || m.laying_type] as [string, string]] : []),
     ...(m.remove_old ? [['Rimozione vecchio', 'Sì'] as [string, string]] : []),
     ...(m.has_mosquito_net ? [['Accessorio', 'Zanzariera'] as [string, string]] : []),
     ...(m.has_shutter ? [['Accessorio', 'Tapparella'] as [string, string]] : []),
@@ -158,7 +183,7 @@ export default function MeasurementPrint() {
 
           {/* Centered diagram */}
           <div className="mb-6 flex justify-center">
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-lg">
               <ProductDiagram
                 productType={m.product_type}
                 widthMm={String(m.width_mm)}
