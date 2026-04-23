@@ -73,6 +73,10 @@ export default function Dashboard() {
 
   const [addMode, setAddMode] = useState(false);
   const [clock, setClock] = useState('');
+  const [emailNotifyDialog, setEmailNotifyDialog] = useState<{ measurement: any; newStatus: string } | null>(null);
+  const [emailSelected, setEmailSelected] = useState<string[]>(['2002lavoro@gmail.com']);
+  const [emailCustom, setEmailCustom] = useState('');
+  const [sendingEmails, setSendingEmails] = useState(false);
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     tick();
@@ -173,6 +177,11 @@ export default function Dashboard() {
     setQuoteResponseDialog(null);
     setModificationNotes('');
     toast.success(accept ? 'Ordine confermato! Ti contatteremo per procedere.' : 'Richiesta di modifiche inviata.');
+    if (accept && measurement) {
+      setEmailSelected(['2002lavoro@gmail.com']);
+      setEmailCustom('');
+      setEmailNotifyDialog({ measurement: { ...measurement, ...updates }, newStatus: 'ordered' });
+    }
 
     if (user && measurement) {
       const label = accept ? 'Ordine confermato' : 'Modifiche richieste';
@@ -185,6 +194,55 @@ export default function Dashboard() {
         whatsappMessage: `🔄 *${label}*\nCliente: ${measurement.client_name}\nProdotto: ${productLabels[measurement.product_type] || measurement.product_type}${!accept && modificationNotes ? `\nNote: ${modificationNotes}` : ''}`,
       });
     }
+  };
+
+  const handleConfirmOrder = async (m: any) => {
+    const { error } = await supabase.from('measurements').update({ status: 'ordered' }).eq('id', m.id);
+    if (error) { toast.error(error.message); return; }
+    setMeasurements(prev => prev.map(x => x.id === m.id ? { ...x, status: 'ordered' } : x));
+    toast.success('Ordine confermato!');
+    setEmailSelected(['2002lavoro@gmail.com']);
+    setEmailCustom('');
+    setEmailNotifyDialog({ measurement: m, newStatus: 'ordered' });
+  };
+
+  const handleStatusAdvanceWithEmail = async (m: any, newStatus: string) => {
+    const { error } = await supabase.from('measurements').update({ status: newStatus }).eq('id', m.id);
+    if (error) { toast.error(error.message); return; }
+    setMeasurements(prev => prev.map(x => x.id === m.id ? { ...x, status: newStatus } : x));
+    setEmailSelected(['2002lavoro@gmail.com']);
+    setEmailCustom('');
+    setEmailNotifyDialog({ measurement: m, newStatus });
+  };
+
+  const sendEmailNotifications = async () => {
+    if (emailSelected.length === 0 && !emailCustom.trim()) return;
+    setSendingEmails(true);
+    const allEmails = [...emailSelected, ...(emailCustom.trim() ? [emailCustom.trim()] : [])];
+    const m = emailNotifyDialog?.measurement;
+    const statusLabelMap: Record<string, string> = {
+      ordered: 'Ordine confermato', in_production: 'In produzione',
+      delivering: 'Pronta per consegna', completed: 'Completata', quoted: 'Preventivo inviato',
+    };
+    for (const email of allEmails) {
+      try {
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            toEmail: email,
+            toName: '',
+            newStatus: emailNotifyDialog?.newStatus,
+            productType: m?.product_type,
+            clientName: m?.client_name,
+            estimatedPrice: m?.estimated_price,
+            estimatedDelivery: m?.estimated_delivery_date,
+            notes: m?.notes,
+          },
+        });
+      } catch (e) { console.log('Email failed:', e); }
+    }
+    setSendingEmails(false);
+    setEmailNotifyDialog(null);
+    toast.success(`Notifica inviata a ${allEmails.length} destinatario${allEmails.length > 1 ? 'i' : ''}`);
   };
 
   const APPOINTMENT_TYPES: Record<string, { label: string; color: string }> = {
@@ -962,6 +1020,13 @@ export default function Dashboard() {
                             </Button>
                           </div>
                         )}
+                        {m.status === 'quote_accepted' && (
+                          <div className="flex gap-2 mt-2">
+                            <Button size="sm" className="gap-1.5" onClick={(e) => { e.stopPropagation(); handleConfirmOrder(m); }}>
+                              <Package className="h-3.5 w-3.5" /> Conferma ordine
+                            </Button>
+                          </div>
+                        )}
                         {m.status === 'quote_modifications' && !String(m.notes || '').startsWith('Accessorio di') && (
                           <div className="flex gap-2 mt-2">
                             <Button size="sm" variant="outline" className="gap-1.5" onClick={(e) => { e.stopPropagation(); navigate(`/misurazione/${m.id}/modifica`); }}>
@@ -1022,6 +1087,83 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+{/* Email notify dialog */}
+      <Dialog open={!!emailNotifyDialog} onOpenChange={open => { if (!open) setEmailNotifyDialog(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Invia notifica via email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Seleziona o aggiungi i destinatari a cui inviare la conferma di stato.
+            </p>
+
+            {/* Preset contacts */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground">CONTATTI RAPIDI</p>
+              {[
+                { label: 'Admin Pratelli', email: '2002lavoro@gmail.com' },
+                { label: 'Leo Pratelli', email: 'leo.prate02@gmail.com' },
+              ].map(({ label, email }) => (
+                <button
+                  key={email}
+                  type="button"
+                  onClick={() => setEmailSelected(prev =>
+                    prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
+                  )}
+                  className={`w-full flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+                    emailSelected.includes(email)
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border hover:bg-muted'
+                  }`}
+                >
+                  <span className="font-medium">{label}</span>
+                  <span className="text-xs text-muted-foreground">{email}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Custom email */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground">AGGIUNGI EMAIL</p>
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  placeholder="altra@email.com"
+                  value={emailCustom}
+                  onChange={e => setEmailCustom(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && emailCustom.trim()) {
+                      setEmailSelected(prev => prev.includes(emailCustom.trim()) ? prev : [...prev, emailCustom.trim()]);
+                      setEmailCustom('');
+                    }
+                  }}
+                />
+                <Button variant="outline" onClick={() => {
+                  if (emailCustom.trim()) {
+                    setEmailSelected(prev => prev.includes(emailCustom.trim()) ? prev : [...prev, emailCustom.trim()]);
+                    setEmailCustom('');
+                  }
+                }}>Aggiungi</Button>
+              </div>
+              {emailSelected.filter(e => !['2002lavoro@gmail.com', 'leo.prate02@gmail.com'].includes(e)).map(email => (
+                <div key={email} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+                  <span>{email}</span>
+                  <button type="button" onClick={() => setEmailSelected(prev => prev.filter(e => e !== email))} className="text-muted-foreground hover:text-destructive text-xs">✕</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEmailNotifyDialog(null)}>Salta</Button>
+            <Button onClick={sendEmailNotifications} disabled={sendingEmails || emailSelected.length === 0} className="gap-1.5">
+              <Send className="h-3.5 w-3.5" />
+              {sendingEmails ? 'Invio...' : `Invia a ${emailSelected.length} destinatar${emailSelected.length === 1 ? 'io' : 'i'}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
 {/* Footer */}
       <footer className="border-t border-border bg-card mt-8">
