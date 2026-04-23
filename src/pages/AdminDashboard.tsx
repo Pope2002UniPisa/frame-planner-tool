@@ -65,7 +65,7 @@ export default function AdminDashboard() {
   // News form
   const [newsDialog, setNewsDialog] = useState(false);
   const [editingNews, setEditingNews] = useState<any>(null);
-  const [newsForm, setNewsForm] = useState({ title: '', summary: '', tag: 'Novità', image_url: '', link: '', social_link: '', published: true });
+  const [newsForm, setNewsForm] = useState({ title: '', summary: '', tag: 'Novità', image_url: '', image_position: '50% 50%', link: '', social_link: '', published: true });
 
   // Portfolio form
   const [portfolioDialog, setPortfolioDialog] = useState(false);
@@ -316,7 +316,7 @@ export default function AdminDashboard() {
       }
       setNewsDialog(false);
       setEditingNews(null);
-      setNewsForm({ title: '', summary: '', tag: 'Novità', image_url: '', link: '', social_link: '', published: true });
+      setNewsForm({ title: '', summary: '', tag: 'Novità', image_url: '', image_position: '50% 50%', link: '', social_link: '', published: true });
     } catch (err: any) { toast.error(err.message); }
   };
 
@@ -838,7 +838,7 @@ export default function AdminDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="font-heading flex items-center gap-2"><Newspaper className="h-5 w-5 text-accent" /> Gestione News</CardTitle>
-                  <Button size="sm" className="gap-1.5" onClick={() => { setEditingNews(null); setNewsForm({ title: '', summary: '', tag: 'Novità', image_url: '', link: '', social_link: '', published: true }); setNewsDialog(true); }}>
+                  <Button size="sm" className="gap-1.5" onClick={() => { setEditingNews(null); setNewsForm({ title: '', summary: '', tag: 'Novità', image_url: '', image_position: '50% 50%', link: '', social_link: '', published: true }); setNewsDialog(true); }}>
                     <Plus className="h-3.5 w-3.5" /> Nuova news
                   </Button>
                 </div>
@@ -858,7 +858,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
                           setEditingNews(n);
-                          setNewsForm({ title: n.title, summary: n.summary, tag: n.tag, image_url: n.image_url || '', link: n.link || '', social_link: n.social_link || '', published: n.published });
+                          setNewsForm({ title: n.title, summary: n.summary, tag: n.tag, image_url: n.image_url || '', image_position: n.image_position || '50% 50%', link: n.link || '', social_link: n.social_link || '', published: n.published });
                           setNewsDialog(true);
                         }}>
                           <Edit3 className="h-3.5 w-3.5" />
@@ -908,7 +908,40 @@ export default function AdminDashboard() {
                         <Button variant="outline" size="sm" asChild><label htmlFor="news-img-upload" className="cursor-pointer">Carica</label></Button>
                       </div>
                     </div>
-                    {newsForm.image_url && <img src={newsForm.image_url} alt="Preview" className="h-20 rounded-lg object-cover" />}
+                    {newsForm.image_url && (
+                      <div className="space-y-2">
+                        <div className="relative h-24 rounded-lg overflow-hidden border border-border">
+                          <img
+                            src={newsForm.image_url}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                            style={{ objectPosition: newsForm.image_position }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/20">
+                            <span className="text-white text-xs font-medium">Anteprima ritaglio</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Posizione inquadratura</Label>
+                          <div className="grid grid-cols-3 gap-1">
+                            {[
+                              { label: '↖', pos: '0% 0%' }, { label: '↑', pos: '50% 0%' }, { label: '↗', pos: '100% 0%' },
+                              { label: '←', pos: '0% 50%' }, { label: '⊙', pos: '50% 50%' }, { label: '→', pos: '100% 50%' },
+                              { label: '↙', pos: '0% 100%' }, { label: '↓', pos: '50% 100%' }, { label: '↘', pos: '100% 100%' },
+                            ].map(({ label, pos }) => (
+                              <button
+                                key={pos}
+                                type="button"
+                                onClick={() => setNewsForm(f => ({ ...f, image_position: pos }))}
+                                className={`h-8 rounded text-sm font-mono transition-colors ${newsForm.image_position === pos ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80 text-muted-foreground'}`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Link articolo</Label><Input value={newsForm.link} onChange={e => setNewsForm(f => ({ ...f, link: e.target.value }))} placeholder="https://..." /></div>

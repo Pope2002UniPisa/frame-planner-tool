@@ -24,6 +24,7 @@ interface NewsItem {
   tag: string;
   summary: string;
   image_url?: string | null;
+  image_position?: string | null;
   link?: string | null;
   social_link?: string | null;
 }
@@ -365,6 +366,7 @@ export default function Dashboard() {
                           src={n.image_url}
                           alt={n.title}
                           className="w-full h-20 object-cover rounded-md mb-2"
+                          style={{ objectPosition: n.image_position || '50% 50%' }}
                         />
                       )}
                       <div className="flex items-center gap-1.5 mb-1.5">

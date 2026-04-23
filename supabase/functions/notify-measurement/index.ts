@@ -1,118 +1,108 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-const corsHeaders = {
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!;
+const FROM_EMAIL = 'onboarding@resend.dev';
+const ADMIN_EMAIL = '2002lavoro@gmail.com';
+
+const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const ADMIN_EMAIL = 'leo.prate02@gmail.com';
+const PRODUCT_LABELS: Record<string, string> = {
+  finestra: 'Finestra', porta_finestra: 'Porta finestra', porta: 'Porta',
+  basculante: 'Basculante', zanzariera: 'Zanzariera', persiana: 'Persiana',
+  porta_finestrata: 'Porta finestrata', porta_filomuro: 'Porta filomuro',
+};
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   try {
-    const { measurement, clientName, clientAddress, productType, dimensions, estimatedPrice } = await req.json();
+    const { clientName, clientAddress, productType, dimensions, estimatedPrice, measurement } = await req.json();
 
-    const productLabels: Record<string, string> = {
-      finestra: 'Finestra', porta_finestra: 'Porta Finestra', porta: 'Porta',
-      basculante: 'Basculante', zanzariera: 'Zanzariera', persiana: 'Persiana',
-    };
+    const productLabel = PRODUCT_LABELS[productType] || productType || 'Prodotto';
+    const priceText = estimatedPrice ? `€${Number(estimatedPrice).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : null;
 
-    const subject = `📐 Nuova misurazione ricevuta — ${clientName || 'Cliente'} • ${productLabels[productType] || productType}`;
+    const detailRows = measurement ? [
+      measurement.material && ['Materiale', measurement.material],
+      measurement.color_internal && ['Colore interno', measurement.color_internal],
+      measurement.color_external && ['Colore esterno', measurement.color_external],
+      measurement.glass_type && ['Vetro', measurement.glass_type],
+      measurement.frame_type && ['Telaio', measurement.frame_type],
+      measurement.handle_type && ['Maniglia', measurement.handle_type],
+      measurement.installation_type && ['Installazione', measurement.installation_type],
+      measurement.notes && ['Note', measurement.notes],
+    ].filter(Boolean) as [string, string][] : [];
 
-    const htmlBody = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: system-ui, sans-serif; padding: 0; margin: 0; background: #f8f8fc; }
-          .container { max-width: 600px; margin: 0 auto; padding: 30px 20px; }
-          .header { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; padding: 30px; border-radius: 16px 16px 0 0; }
-          .header h1 { margin: 0; font-size: 22px; }
-          .header p { margin: 8px 0 0; opacity: 0.8; font-size: 14px; }
-          .body { background: white; padding: 30px; border-radius: 0 0 16px 16px; border: 1px solid #e5e7eb; border-top: none; }
-          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
-          .info-box { background: #f8f8fc; border-radius: 12px; padding: 16px; }
-          .info-box .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-          .info-box .value { font-size: 18px; font-weight: bold; color: #1a1a2e; margin-top: 4px; }
-          .badge { display: inline-block; background: #f97316; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-          .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #999; }
-          .cta { display: inline-block; background: #f97316; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 16px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>📐 Nuova misurazione ricevuta</h1>
-            <p>Un cliente ha appena inviato una nuova misurazione dal portale</p>
-          </div>
-          <div class="body">
-            <span class="badge">${productLabels[productType] || productType}</span>
-            
-            <div class="info-grid">
-              <div class="info-box">
-                <div class="label">Cliente</div>
-                <div class="value">${clientName || '—'}</div>
-              </div>
-              <div class="info-box">
-                <div class="label">Indirizzo</div>
-                <div class="value" style="font-size: 14px;">${clientAddress || '—'}</div>
-              </div>
-              <div class="info-box">
-                <div class="label">Dimensioni</div>
-                <div class="value">${dimensions || '—'}</div>
-              </div>
-              <div class="info-box">
-                <div class="label">Prezzo stimato</div>
-                <div class="value" style="color: #f97316;">€${estimatedPrice ? Number(estimatedPrice).toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '—'}</div>
-              </div>
-            </div>
+    const html = `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="font-family:system-ui,sans-serif;background:#f8f8fc;margin:0;padding:32px">
+<div style="max-width:580px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+  <div style="background:#1a1a2e;padding:28px 32px">
+    <p style="color:#f97316;font-size:13px;font-weight:600;margin:0 0 4px">PRATELLI RAPPRESENTANZE</p>
+    <h1 style="color:white;font-size:22px;margin:0">📐 Nuova misurazione ricevuta</h1>
+    <p style="color:rgba(255,255,255,.7);font-size:13px;margin:8px 0 0">Un cliente ha inviato una nuova misurazione</p>
+  </div>
+  <div style="padding:32px">
+    <div style="background:#f0f9ff;border-left:4px solid #f97316;border-radius:8px;padding:16px;margin-bottom:24px">
+      <p style="font-size:13px;color:#666;margin:0 0 4px">PRODOTTO</p>
+      <p style="font-size:20px;font-weight:700;color:#1a1a2e;margin:0">${productLabel}</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+      <tr style="border-bottom:1px solid #f0f0f0">
+        <td style="padding:10px 0;font-size:13px;color:#888">Cliente</td>
+        <td style="padding:10px 0;font-size:13px;font-weight:600;color:#1a1a2e;text-align:right">${clientName || '—'}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f0f0f0">
+        <td style="padding:10px 0;font-size:13px;color:#888">Indirizzo installazione</td>
+        <td style="padding:10px 0;font-size:13px;font-weight:600;color:#1a1a2e;text-align:right">${clientAddress || '—'}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f0f0f0">
+        <td style="padding:10px 0;font-size:13px;color:#888">Dimensioni</td>
+        <td style="padding:10px 0;font-size:13px;font-weight:600;color:#1a1a2e;text-align:right">${dimensions || '—'}</td>
+      </tr>
+      ${priceText ? `<tr>
+        <td style="padding:10px 0;font-size:13px;color:#888">Prezzo stimato</td>
+        <td style="padding:10px 0;font-size:13px;font-weight:600;color:#f97316;text-align:right">${priceText}</td>
+      </tr>` : ''}
+    </table>
+    ${detailRows.length > 0 ? `
+    <p style="font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:8px">Configurazione</p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+      ${detailRows.map(([label, value]) => `
+      <tr style="border-bottom:1px solid #f0f0f0">
+        <td style="padding:8px 0;font-size:12px;color:#888">${label}</td>
+        <td style="padding:8px 0;font-size:12px;font-weight:500;color:#1a1a2e;text-align:right">${value}</td>
+      </tr>`).join('')}
+    </table>` : ''}
+    <p style="font-size:13px;color:#888;margin:0">Accedi al pannello admin per gestire la misurazione.</p>
+  </div>
+  <div style="background:#f8f8fc;padding:20px 32px;text-align:center">
+    <p style="font-size:11px;color:#aaa;margin:0">Pratelli Rappresentanze SRL — Notifica automatica</p>
+  </div>
+</div>
+</body></html>`;
 
-            ${measurement ? `
-            <h3 style="margin-top: 24px; color: #1a1a2e;">Dettagli configurazione</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-              ${measurement.material ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Materiale</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500;">${measurement.material}</td></tr>` : ''}
-              ${measurement.color_internal ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Colore interno</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500;">${measurement.color_internal}</td></tr>` : ''}
-              ${measurement.color_external ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Colore esterno</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500;">${measurement.color_external}</td></tr>` : ''}
-              ${measurement.glass_type ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Vetro</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500;">${measurement.glass_type}</td></tr>` : ''}
-              ${measurement.frame_type ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Telaio</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500;">${measurement.frame_type}</td></tr>` : ''}
-              ${measurement.handle_type ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Maniglia</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500;">${measurement.handle_type}</td></tr>` : ''}
-              ${measurement.installation_type ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Installazione</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500;">${measurement.installation_type}</td></tr>` : ''}
-              ${measurement.notes ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Note</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 500;">${measurement.notes}</td></tr>` : ''}
-            </table>
-            ` : ''}
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: ADMIN_EMAIL,
+        subject: `[Pratelli] Nuova misurazione — ${clientName || 'Cliente'} • ${productLabel}`,
+        html,
+      }),
+    });
 
-            <div class="footer">
-              <p>Portale Misurazioni — Notifica automatica</p>
-              <p>Accedi al pannello admin per visualizzare i dettagli completi</p>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    if (!res.ok) {
+      const err = await res.text();
+      return new Response(JSON.stringify({ error: err }), { status: 500, headers: CORS });
+    }
 
-    // Send email using Supabase's built-in email
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    // Use the Supabase Auth admin API to send an email via the inbuilt mailer
-    // Since we don't have a full email service yet, we'll log and store the notification
-    console.log(`📧 Notification email would be sent to: ${ADMIN_EMAIL}`);
-    console.log(`📧 Subject: ${subject}`);
-    console.log(`📧 Body length: ${htmlBody.length} chars`);
-
-    return new Response(
-      JSON.stringify({ success: true, message: 'Notification logged', to: ADMIN_EMAIL, subject }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Error in notify-measurement:', error);
-    return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...CORS } });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: CORS });
   }
 });
