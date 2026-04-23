@@ -41,7 +41,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   try {
-    const { userId, clientName, clientAddress, productType, surveyType, dimensions, estimatedPrice, measurement } = await req.json();
+    const { userId, measurementId, clientName, clientAddress, productType, surveyType, dimensions, estimatedPrice, measurement } = await req.json();
 
     const productLabel = PRODUCT_LABELS[productType] || productType || 'Prodotto';
     const surveyLabel = SURVEY_LABELS[surveyType] || surveyType || null;
@@ -143,6 +143,7 @@ serve(async (req) => {
   </div>
 
   <div style="background:#f8f8fc;padding:20px 32px;text-align:center">
+    ${measurementId ? `<a href="https://frame-planner-tool.vercel.app/misurazione/${measurementId}/stampa" style="display:inline-block;background:#f97316;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-bottom:16px">📄 Apri PDF misurazione</a><br>` : ''}
     <p style="font-size:11px;color:#aaa;margin:0">Pratelli Rappresentanze SRL</p>
   </div>
 </div>

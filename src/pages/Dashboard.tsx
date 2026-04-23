@@ -962,7 +962,7 @@ export default function Dashboard() {
                             </Button>
                           </div>
                         )}
-                        {m.status === 'quote_modifications' && (
+                        {m.status === 'quote_modifications' && !String(m.notes || '').startsWith('Accessorio di') && (
                           <div className="flex gap-2 mt-2">
                             <Button size="sm" variant="outline" className="gap-1.5" onClick={(e) => { e.stopPropagation(); navigate(`/misurazione/${m.id}/modifica`); }}>
                               <Edit3 className="h-3.5 w-3.5" /> Modifica misurazione

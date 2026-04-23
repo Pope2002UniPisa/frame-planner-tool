@@ -347,17 +347,19 @@ export default function NewMeasurement() {
         }
       }
 
+      let insertedId: string | undefined;
       if (isMultiProduct) {
         const groupId = crypto.randomUUID();
         for (let i = 0; i < multiItems.length; i++) {
-        const { error } = await supabase.from('measurements').insert(
+          const { error } = await supabase.from('measurements').insert(
             buildInsertData('submitted', photo_urls, multiItems[i], groupId, i + 1, multiItems.length)
           );
           if (error) throw error;
         }
       } else {
-        const { error } = await supabase.from('measurements').insert(buildInsertData('submitted', photo_urls));
+        const { data: insertedData, error } = await supabase.from('measurements').insert(buildInsertData('submitted', photo_urls)).select('id').single();
         if (error) throw error;
+        insertedId = insertedData?.id;
         await createAccessoryRecords('submitted');
       }
 
@@ -366,6 +368,7 @@ export default function NewMeasurement() {
         await supabase.functions.invoke('notify-measurement', {
           body: {
             userId: user.id,
+            measurementId: insertedId,
             clientName: form.client_name,
             clientAddress: form.client_address,
             productType: form.product_type,
