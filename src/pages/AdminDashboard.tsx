@@ -243,6 +243,27 @@ export default function AdminDashboard() {
     const { error } = await supabase.from('measurements').update(updates).eq('id', manageMeasurement.id);
     if (error) { toast.error(error.message); return; }
     setMeasurements(prev => prev.map(m => m.id === manageMeasurement.id ? { ...m, ...updates } : m));
+
+    // Invia notifica email al cliente
+    const clientProfile = profiles.find(p => p.user_id === manageMeasurement.user_id);
+    if (clientProfile?.email) {
+      supabase.functions.invoke('send-notification', {
+        body: {
+          toEmail: clientProfile.email,
+          toName: clientProfile.company_name || null,
+          newStatus,
+          productType: manageMeasurement.product_type,
+          clientName: manageMeasurement.client_name,
+          estimatedPrice: updates.estimated_price || manageMeasurement.estimated_price || null,
+          estimatedDelivery: updates.estimated_delivery_date || manageMeasurement.estimated_delivery_date || null,
+          notes: updates.notes || null,
+        },
+      }).then(({ error: fnErr }) => {
+        if (fnErr) console.error('Email non inviata:', fnErr);
+        else toast.success('Email di notifica inviata al cliente');
+      });
+    }
+
     setManageMeasurement(null);
     const labels: Record<string, string> = { quoted: 'Preventivo inviato', ordered: 'Ordine confermato', in_review: 'In revisione', completed: 'Completata' };
     toast.success(labels[newStatus] || `Stato aggiornato a ${newStatus}`);
