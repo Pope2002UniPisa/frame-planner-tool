@@ -154,11 +154,8 @@ export default function MeasurementPrint() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Minimal floating toolbar — hidden when printing */}
-      <div className="print:hidden fixed top-4 right-4 z-50 flex gap-2">
-        <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="gap-1.5 shadow-sm bg-card">
-          <ArrowLeft className="h-4 w-4" /> Indietro
-        </Button>
+      {/* Floating print button — hidden when printing */}
+      <div className="print:hidden fixed top-4 right-4 z-50">
         <Button onClick={handlePrint} size="sm" className="gap-1.5 shadow-sm">
           <Printer className="h-4 w-4" /> Stampa / PDF
         </Button>
@@ -199,6 +196,7 @@ export default function MeasurementPrint() {
                 colorExternal={m.color_external || ''}
                 doorColorHex={isDoor ? (getColorLabel(acc?.door_color_id)?.hex) : undefined}
                 doorHandleFinishId={isDoor ? (acc?.door_handle_finish_id || undefined) : undefined}
+                doorHandleModelId={isDoor ? (acc?.door_handle_model_id || undefined) : undefined}
                 doorModelId={isDoor ? (acc?.door_model || undefined) : undefined}
                 internalSpaceMm={String(m.internal_space_mm || '')}
                 externalSpaceMm={String(m.external_space_mm || '')}

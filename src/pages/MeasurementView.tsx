@@ -262,6 +262,7 @@ export default function MeasurementView() {
               colorExternal={m.color_external || ''}
               doorColorHex={isDoor ? (getColorLabel(acc?.door_color_id)?.hex) : undefined}
               doorHandleFinishId={isDoor ? (acc?.door_handle_finish_id || undefined) : undefined}
+              doorHandleModelId={isDoor ? (acc?.door_handle_model_id || undefined) : undefined}
               doorModelId={isDoor ? (acc?.door_model || undefined) : undefined}
             />
           </CardContent>
