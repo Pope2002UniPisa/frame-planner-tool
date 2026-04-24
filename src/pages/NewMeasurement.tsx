@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -120,6 +120,58 @@ export default function NewMeasurement() {
   const [multiItems, setMultiItems] = useState<ProductItem[]>([{ ...emptyItem }]);
   const [activeItemIndex, setActiveItemIndex] = useState(0);
 
+  // Real-time DB pricing
+  const [dbPrice, setDbPrice] = useState<number | null>(null);
+  const pricingKey = [
+    form.door_model, form.width_mm, form.height_mm,
+    form.door_frame_id, form.door_color_id, form.door_handle_finish_id,
+    form.glass_type, form.installation_type, form.laying_type,
+  ].join('|');
+  useEffect(() => {
+    const doorModelId = form.door_model;
+    const w = parseInt(form.width_mm);
+    const h = parseInt(form.height_mm);
+    if (!doorModelId || !w || !h) { setDbPrice(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data: baseRow } = await supabase
+        .from('price_catalog' as any)
+        .select('base_price')
+        .eq('door_model_id', doorModelId)
+        .lte('width_min_mm', w)
+        .gte('width_max_mm', w)
+        .lte('height_min_mm', h)
+        .gte('height_max_mm', h)
+        .maybeSingle();
+      if (cancelled || !baseRow) { if (!cancelled) setDbPrice(null); return; }
+      let price = Number((baseRow as any).base_price);
+      const { data: modifiers } = await supabase
+        .from('price_modifiers' as any)
+        .select('modifier_type, modifier_id, adjustment_type, adjustment_value')
+        .or(`door_model_id.is.null,door_model_id.eq.${doorModelId}`);
+      if (!cancelled && modifiers) {
+        const selected: Record<string, string> = {
+          frame: form.door_frame_id || '',
+          color: form.door_color_id || '',
+          handle_finish: form.door_handle_finish_id || '',
+          glass: form.glass_type || '',
+          installation: form.installation_type || '',
+          laying: form.laying_type || '',
+        };
+        let pctBonus = 0;
+        for (const mod of (modifiers as any[])) {
+          if (selected[mod.modifier_type] && selected[mod.modifier_type] === mod.modifier_id) {
+            if (mod.adjustment_type === 'fixed') price += Number(mod.adjustment_value);
+            else if (mod.adjustment_type === 'percentage') pctBonus += Number(mod.adjustment_value);
+          }
+        }
+        price *= (1 + pctBonus / 100);
+        setDbPrice(Math.round(price * 100) / 100);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [pricingKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -217,6 +269,8 @@ export default function NewMeasurement() {
   };
 
   const getEstimatedPrice = (widthStr?: string, heightStr?: string) => {
+    // Use catalog price for single-door products when available and no per-item override
+    if (dbPrice !== null && !widthStr && !heightStr && isDoorType(form.product_type)) return dbPrice;
     const basePrices: Record<string, [number, number]> = {
       finestra: [280, 650], porta_finestra: [450, 950], porta: [350, 1200],
       basculante: [400, 900], zanzariera: [80, 250], persiana: [200, 500],
@@ -1700,6 +1754,22 @@ export default function NewMeasurement() {
             )}
           </CardContent>
         </Card>
+
+        {/* Live price indicator */}
+        {(dbPrice !== null || (!isDoorType(form.product_type) && form.width_mm && form.height_mm)) && (
+          <div className="mt-4 rounded-lg border border-accent/25 bg-accent/5 px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">Prezzo stimato</p>
+              {dbPrice !== null
+                ? <p className="text-xs text-muted-foreground/70 mt-0.5">Basato sul catalogo prezzi</p>
+                : <p className="text-xs text-muted-foreground/70 mt-0.5">Stima indicativa</p>
+              }
+            </div>
+            <span className="text-xl font-bold text-accent">
+              € {getEstimatedPrice().toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="mt-6 flex flex-wrap justify-between gap-3">
