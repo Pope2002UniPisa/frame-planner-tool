@@ -247,7 +247,23 @@ export default function MeasurementView() {
 
         <Card>
           <CardContent className="py-4">
-            <ProductDiagram productType={m.product_type} widthMm={String(m.width_mm)} heightMm={String(m.height_mm)} depthMm={String(m.depth_mm || 70)} numPanels={String(m.num_panels || 1)} panelType={m.panel_type || ''} openingDirection={m.opening_direction || ''} handleType={m.handle_type || ''} glassType={m.glass_type || ''} frameType={m.frame_type || 'standard'} colorInternal={m.color_internal || ''} colorExternal={m.color_external || ''} />
+            <ProductDiagram
+              productType={m.product_type}
+              widthMm={String(m.width_mm)}
+              heightMm={String(m.height_mm)}
+              depthMm={String(m.depth_mm || 70)}
+              numPanels={String(m.num_panels || 1)}
+              panelType={m.panel_type || ''}
+              openingDirection={m.opening_direction || ''}
+              handleType={m.handle_type || ''}
+              glassType={m.glass_type || ''}
+              frameType={isDoor ? (acc?.door_frame_id || m.frame_type || 'standard') : (m.frame_type || 'standard')}
+              colorInternal={m.color_internal || ''}
+              colorExternal={m.color_external || ''}
+              doorColorHex={isDoor ? (getColorLabel(acc?.door_color_id)?.hex) : undefined}
+              doorHandleFinishId={isDoor ? (acc?.door_handle_finish_id || undefined) : undefined}
+              doorModelId={isDoor ? (acc?.door_model || undefined) : undefined}
+            />
           </CardContent>
         </Card>
         <Card>

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
-import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel } from '@/data/doorCatalog';
+import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel, getHandleFinishHex } from '@/data/doorCatalog';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 import ferreroLegnoLogo from '@/assets/ferrerolegno-logo.png';
 import { productLabels } from '@/lib/constants';
@@ -154,14 +154,14 @@ export default function MeasurementPrint() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="print:hidden border-b border-border bg-card shadow-card">
-        <div className="container flex h-16 items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5" /></Button>
-          <h1 className="text-lg font-bold font-heading text-foreground">Anteprima di stampa</h1>
-          <div className="ml-auto">
-            <Button onClick={handlePrint} className="gap-2"><Printer className="h-4 w-4" /> Stampa / PDF</Button>
-          </div>
-        </div>
+      {/* Minimal floating toolbar — hidden when printing */}
+      <div className="print:hidden fixed top-4 right-4 z-50 flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="gap-1.5 shadow-sm bg-card">
+          <ArrowLeft className="h-4 w-4" /> Indietro
+        </Button>
+        <Button onClick={handlePrint} size="sm" className="gap-1.5 shadow-sm">
+          <Printer className="h-4 w-4" /> Stampa / PDF
+        </Button>
       </div>
 
       <div ref={printRef} className="container max-w-4xl py-8 print:py-0 print:max-w-full">
@@ -194,9 +194,12 @@ export default function MeasurementPrint() {
                 openingDirection={m.opening_direction || ''}
                 handleType={m.handle_type || ''}
                 glassType={m.glass_type || ''}
-                frameType={m.frame_type || 'standard'}
+                frameType={isDoor ? (acc?.door_frame_id || m.frame_type || 'standard') : (m.frame_type || 'standard')}
                 colorInternal={m.color_internal || ''}
                 colorExternal={m.color_external || ''}
+                doorColorHex={isDoor ? (getColorLabel(acc?.door_color_id)?.hex) : undefined}
+                doorHandleFinishId={isDoor ? (acc?.door_handle_finish_id || undefined) : undefined}
+                doorModelId={isDoor ? (acc?.door_model || undefined) : undefined}
                 internalSpaceMm={String(m.internal_space_mm || '')}
                 externalSpaceMm={String(m.external_space_mm || '')}
               />
