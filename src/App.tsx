@@ -14,6 +14,7 @@ import MeasurementPrint from "./pages/MeasurementPrint";
 import EditMeasurement from "./pages/EditMeasurement";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
+import PriceCatalogAdmin from "./pages/PriceCatalogAdmin";
 import NotFound from "./pages/NotFound";
 import ClientSummary from "./pages/ClientSummary";
 import DeliverySummary from "./pages/DeliverySummary";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/misurazione/:id/modifica" element={<EditMeasurement />} />
               <Route path="/profilo" element={<Profile />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/prezziario" element={<PriceCatalogAdmin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
