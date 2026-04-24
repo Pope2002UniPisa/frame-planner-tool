@@ -383,6 +383,7 @@ export default function NewMeasurement() {
               material: form.material,
               color_internal: form.color_internal,
               color_external: form.color_external,
+              door_color_name: (accessoriesConfig as any).door_color_name || '',
               glass_type: form.glass_type,
               frame_type: form.frame_type,
               handle_type: form.handle_type,

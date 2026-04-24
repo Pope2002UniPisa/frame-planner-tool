@@ -29,24 +29,31 @@ const SURVEY_LABELS: Record<string, string> = {
   grezzo: 'Grezzo', finito: 'Finito', controtelaio: 'Controtelaio',
 };
 
-// All door color IDs → readable names
+// Full names including finish prefix (matching getColorLabel logic)
 const COLOR_LABELS: Record<string, string> = {
-  // Window colors
+  // Window colors (no finish prefix)
   bianco: 'Bianco', avorio: 'Avorio', grigio_chiaro: 'Grigio chiaro',
   grigio_antracite: 'Grigio antracite', marrone: 'Marrone', noce: 'Noce',
   verde_scuro: 'Verde scuro', blu_notte: 'Blu notte', rosso_mattone: 'Rosso mattone', nero: 'Nero',
-  // Door laccato opaco
-  lo_bianco_optical: 'Bianco Optical', lo_bianco: 'Bianco', lo_grigio_lux: 'Grigio Lux', lo_tortora: 'Tortora',
-  // Door laccato ultra opaco
-  uo_tortora: 'Tortora', uo_bianco_optical: 'Bianco Optical', uo_bianco: 'Bianco',
-  uo_grigio_lux: 'Grigio Lux', uo_corallo_light: 'Corallo Light', uo_corallo_pure: 'Corallo Pure',
-  uo_metallo_light: 'Metallo Light', uo_metallo_pure: 'Metallo Pure', uo_metallo_dark: 'Metallo Dark',
-  uo_laguna_light: 'Laguna Light', uo_laguna_pure: 'Laguna Pure', uo_laguna_dark: 'Laguna Dark',
-  uo_lichene_light: 'Lichene Light', uo_lichene_pure: 'Lichene Pure',
-  uo_terra_light: 'Terra Light', uo_terra_pure: 'Terra Pure',
-  uo_oliva_light: 'Oliva Light', uo_oliva_pure: 'Oliva Pure', uo_oliva_dark: 'Oliva Dark',
-  uo_ombra_light: 'Ombra Light', uo_ombra_pure: 'Ombra Pure', uo_ombra_dark: 'Ombra Dark',
-  uo_malva_light: 'Malva Light', uo_malva_pure: 'Malva Pure', uo_nero_profondo: 'Nero Profondo',
+  // Laccato Opaco (lo_)
+  lo_bianco_optical: 'Laccato Opaco Bianco Optical', lo_bianco: 'Laccato Opaco Bianco',
+  lo_grigio_lux: 'Laccato Opaco Grigio Lux', lo_tortora: 'Laccato Opaco Tortora',
+  // Laccato ULTRA Opaco (uo_)
+  uo_tortora: 'Laccato ULTRA Opaco Tortora', uo_bianco_optical: 'Laccato ULTRA Opaco Bianco Optical',
+  uo_bianco: 'Laccato ULTRA Opaco Bianco', uo_grigio_lux: 'Laccato ULTRA Opaco Grigio Lux',
+  uo_corallo_light: 'Laccato ULTRA Opaco Corallo Light', uo_corallo_pure: 'Laccato ULTRA Opaco Corallo Pure',
+  uo_metallo_light: 'Laccato ULTRA Opaco Metallo Light', uo_metallo_pure: 'Laccato ULTRA Opaco Metallo Pure',
+  uo_metallo_dark: 'Laccato ULTRA Opaco Metallo Dark',
+  uo_laguna_light: 'Laccato ULTRA Opaco Laguna Light', uo_laguna_pure: 'Laccato ULTRA Opaco Laguna Pure',
+  uo_laguna_dark: 'Laccato ULTRA Opaco Laguna Dark',
+  uo_lichene_light: 'Laccato ULTRA Opaco Lichene Light', uo_lichene_pure: 'Laccato ULTRA Opaco Lichene Pure',
+  uo_terra_light: 'Laccato ULTRA Opaco Terra Light', uo_terra_pure: 'Laccato ULTRA Opaco Terra Pure',
+  uo_oliva_light: 'Laccato ULTRA Opaco Oliva Light', uo_oliva_pure: 'Laccato ULTRA Opaco Oliva Pure',
+  uo_oliva_dark: 'Laccato ULTRA Opaco Oliva Dark',
+  uo_ombra_light: 'Laccato ULTRA Opaco Ombra Light', uo_ombra_pure: 'Laccato ULTRA Opaco Ombra Pure',
+  uo_ombra_dark: 'Laccato ULTRA Opaco Ombra Dark',
+  uo_malva_light: 'Laccato ULTRA Opaco Malva Light', uo_malva_pure: 'Laccato ULTRA Opaco Malva Pure',
+  uo_nero_profondo: 'Laccato ULTRA Opaco Nero Profondo',
 };
 
 const FRAME_LABELS: Record<string, string> = {
@@ -69,13 +76,6 @@ const HANDLE_FINISH_LABELS: Record<string, string> = {
 const GLASS_LABELS: Record<string, string> = {
   doppio_vetro: 'Doppio vetro', triplo_vetro: 'Triplo vetro',
   sicurezza: 'Vetro sicurezza', cieca: 'Cieca',
-};
-
-const resolveLabel = (id: string, maps: Record<string, string>[]): string => {
-  for (const map of maps) {
-    if (map[id]) return map[id];
-  }
-  return id;
 };
 
 serve(async (req) => {
@@ -115,8 +115,9 @@ serve(async (req) => {
 
     const detailRows: [string, string][] = [
       measurement?.material && ['Materiale', FRAME_LABELS[measurement.material] || measurement.material],
-      measurement?.color_internal && ['Colore interno', resolveLabel(measurement.color_internal, [COLOR_LABELS])],
-      measurement?.color_external && ['Colore esterno', resolveLabel(measurement.color_external, [COLOR_LABELS])],
+      measurement?.color_internal && ['Colore interno', COLOR_LABELS[measurement.color_internal] || measurement.color_internal],
+      measurement?.color_external && ['Colore esterno', COLOR_LABELS[measurement.color_external] || measurement.color_external],
+      measurement?.door_color_name && ['Colore porta', measurement.door_color_name],
       measurement?.frame_type && ['Tipo telaio', FRAME_LABELS[measurement.frame_type] || measurement.frame_type],
       measurement?.glass_type && ['Vetro', GLASS_LABELS[measurement.glass_type] || measurement.glass_type],
       measurement?.handle_type && ['Maniglia', HANDLE_FINISH_LABELS[measurement.handle_type] || measurement.handle_type],
@@ -136,9 +137,13 @@ serve(async (req) => {
   </div>
 
   ${resellerName ? `
-  <div style="padding:16px 32px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
-    ${resellerLogoUrl ? `<img src="${resellerLogoUrl}" alt="${resellerName}" style="height:36px;width:36px;object-fit:contain;border-radius:6px;border:1px solid #eee" />` : ''}
-    <p style="font-size:15px;font-weight:700;color:#1a1a2e;margin:0">${resellerName}</p>
+  <div style="padding:16px 32px;border-bottom:1px solid #f0f0f0">
+    <table style="border-collapse:collapse">
+      <tr>
+        ${resellerLogoUrl ? `<td style="vertical-align:middle;padding-right:12px"><img src="${resellerLogoUrl}" alt="${resellerName}" style="height:36px;width:36px;object-fit:contain;border-radius:6px;border:1px solid #eee;display:block" /></td>` : ''}
+        <td style="vertical-align:middle"><p style="font-size:15px;font-weight:700;color:#1a1a2e;margin:0">${resellerName}</p></td>
+      </tr>
+    </table>
   </div>` : ''}
 
   <div style="padding:32px">
