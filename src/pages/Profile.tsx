@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro, Target, ExternalLink } from 'lucide-react';
+import { Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Building2, Users, Upload, Phone, Mail, BookOpen, Download, AlertTriangle, CreditCard, RefreshCw, Euro, Target, ExternalLink } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 import { productLabels, WORKFLOW_STEPS, getWorkflowIndex, statusLabels } from '@/lib/constants';
@@ -323,22 +324,10 @@ export default function Profile() {
   };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
-  if (!user) return <Navigate to="/auth" replace />;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card shadow-card relative">
-        <div className="container flex h-16 items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}><ArrowLeft className="h-5 w-5" /></Button>
-          <User className="h-5 w-5 text-accent" />
-          <h1 className="text-lg font-bold font-heading text-foreground">Area Personale</h1>
-          <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none select-none">
-            <span className="text-xl font-mono font-bold text-foreground tabular-nums tracking-widest">{clock}</span>
-          </div>
-        </div>
-      </header>
-
-      <main className="container max-w-6xl py-8">
+    <AppLayout>
+      <div className="container max-w-6xl py-8">
         <Dialog open={logoPreview} onOpenChange={setLogoPreview}>
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle className="font-heading">Logo aziendale</DialogTitle></DialogHeader>
@@ -865,7 +854,7 @@ export default function Profile() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

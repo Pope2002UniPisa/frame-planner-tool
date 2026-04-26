@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/lib/auth';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { supabase } from '@/integrations/supabase/client';
@@ -417,19 +418,20 @@ export default function AdminDashboard() {
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card shadow-card relative">
-        <div className="container flex h-16 items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}><ArrowLeft className="h-5 w-5" /></Button>
-          <Shield className="h-5 w-5 text-accent" />
-          <h1 className="text-lg font-bold font-heading text-foreground">Pannello Amministrazione</h1>
-          <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none select-none">
-            <span className="text-xl font-mono font-bold text-foreground tabular-nums tracking-widest">{clock}</span>
+    <AppLayout>
+      <div className="container max-w-7xl py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-accent/15 flex items-center justify-center">
+              <Shield className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold font-heading text-foreground">Pannello Amministrazione</h1>
+              <p className="text-sm text-muted-foreground">Gestione completa del portale</p>
+            </div>
           </div>
+          <span className="text-xl font-mono font-bold text-foreground tabular-nums tracking-widest select-none">{clock}</span>
         </div>
-      </header>
-
-      <main className="container max-w-7xl py-8">
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Panoramica</TabsTrigger>
@@ -1257,8 +1259,8 @@ export default function AdminDashboard() {
             })()}
           </DialogContent>
         </Dialog>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
 

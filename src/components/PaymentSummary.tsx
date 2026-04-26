@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import {
-  CreditCard, Search, Filter, Eye, DollarSign, CheckCircle2,
+  CreditCard, Search, Filter, Eye, Euro, CheckCircle2,
   AlertCircle, Clock, Receipt, Download, Plus, Banknote
 } from 'lucide-react';
 import { productLabels } from '@/lib/constants';
@@ -193,7 +193,7 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         {[
-          { label: 'Totale dovuto', value: `€${Math.round(stats.totalDue).toLocaleString('it-IT')}`, color: 'text-foreground', icon: DollarSign },
+          { label: 'Totale dovuto', value: `€${Math.round(stats.totalDue).toLocaleString('it-IT')}`, color: 'text-foreground', icon: Euro },
           { label: 'Incassato', value: `€${Math.round(stats.totalPaid).toLocaleString('it-IT')}`, color: 'text-green-600', icon: CheckCircle2 },
           { label: 'Residuo', value: `€${Math.round(stats.totalRemaining).toLocaleString('it-IT')}`, color: 'text-destructive', icon: AlertCircle },
           { label: 'Saldati', value: stats.paidCount, color: 'text-green-600', icon: CheckCircle2 },

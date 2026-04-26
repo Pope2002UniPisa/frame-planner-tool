@@ -1,30 +1,25 @@
-import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import PaymentSummary from '@/components/PaymentSummary';
+import AppLayout from '@/components/AppLayout';
 
 export default function PaymentSummaryPage() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
-  if (!user) return <Navigate to="/auth" replace />;
+  const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card shadow-card">
-        <div className="container flex h-16 items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <CreditCard className="h-5 w-5 text-green-600" />
-          <h1 className="text-lg font-bold font-heading text-foreground">Riepilogo Pagamenti</h1>
+    <AppLayout>
+      <div className="p-6 max-w-5xl mx-auto space-y-2">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-10 w-10 rounded-xl bg-accent/15 flex items-center justify-center">
+            <CreditCard className="h-5 w-5 text-accent" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold font-heading text-foreground">Pagamenti</h1>
+            <p className="text-sm text-muted-foreground">Gestisci e traccia i pagamenti dei tuoi ordini</p>
+          </div>
         </div>
-      </header>
-      <main className="container py-8">
-        <PaymentSummary userId={user.id} />
-      </main>
-    </div>
+        {user && <PaymentSummary userId={user.id} />}
+      </div>
+    </AppLayout>
   );
 }

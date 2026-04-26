@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import ClientSummary from "./pages/ClientSummary";
 import DeliverySummary from "./pages/DeliverySummary";
 import PaymentSummaryPage from "./pages/PaymentSummaryPage";
+import { ChatBot } from "./components/ChatBot";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
       <BrowserRouter>
         <ErrorBoundary>
           <AuthProvider>
+            <ChatBot />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />

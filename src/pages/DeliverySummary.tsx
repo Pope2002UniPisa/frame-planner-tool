@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Truck, Search, Filter, Eye, MapPin, Clock, AlertTriangle, CheckCircle2, Package } from 'lucide-react';
+import { Truck, Search, Filter, Eye, MapPin, Clock, AlertTriangle, CheckCircle2, Package } from 'lucide-react';
 import { productLabels, statusLabels } from '@/lib/constants';
+import AppLayout from '@/components/AppLayout';
+import { useNavigate } from 'react-router-dom';
 
 function getDaysRemaining(dateStr: string | null): number | null {
   if (!dateStr) return null;
@@ -98,21 +98,19 @@ export default function DeliverySummary() {
   }, [measurements]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
-  if (!user) return <Navigate to="/auth" replace />;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card shadow-card">
-        <div className="container flex h-16 items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <Truck className="h-5 w-5 text-accent" />
-          <h1 className="text-lg font-bold font-heading text-foreground">Riepilogo Consegne</h1>
+    <AppLayout>
+      <div className="p-6 max-w-5xl mx-auto space-y-4">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-10 w-10 rounded-xl bg-accent/15 flex items-center justify-center">
+            <Truck className="h-5 w-5 text-accent" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold font-heading text-foreground">Consegne</h1>
+            <p className="text-sm text-muted-foreground">Monitora lo stato e le scadenze delle consegne</p>
+          </div>
         </div>
-      </header>
-
-      <main className="container py-8 space-y-4">
         {/* Stats cards */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
@@ -238,7 +236,7 @@ export default function DeliverySummary() {
         <p className="text-xs text-muted-foreground text-center pt-2">
           Totale: {sorted.length} consegne visualizzate su {measurements.length}
         </p>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

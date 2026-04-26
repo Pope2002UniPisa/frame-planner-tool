@@ -85,6 +85,7 @@ export default function Dashboard() {
   const [appointmentForm, setAppointmentForm] = useState({ type: 'consegna', title: '', time: '', location: '', description: '' });
   const [isDark, setIsDark] = useState(false);
   const [todayMapOpen, setTodayMapOpen] = useState(false);
+  const [policyModal, setPolicyModal] = useState<'privacy' | 'cookie' | null>(null);
 
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -357,10 +358,20 @@ export default function Dashboard() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
-          <p className="text-sm font-medium text-foreground capitalize">{todayLabel}</p>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-sm tabular-nums text-foreground font-semibold tracking-wider">{clock}</span>
+        <header className="shrink-0 border-b border-border bg-card px-6 py-3 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-base font-bold font-heading text-foreground leading-tight truncate">
+              {(() => {
+                const h = new Date().getHours();
+                const name = profile?.full_name?.split(' ')[0] || '';
+                const greeting = h < 12 ? 'Buongiorno' : h < 18 ? 'Buon pomeriggio' : 'Buonasera';
+                return name ? `${greeting}, ${name}` : greeting;
+              })()}
+            </p>
+            <p className="text-xs text-muted-foreground capitalize">{todayLabel}</p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="font-mono text-sm tabular-nums text-foreground font-semibold tracking-wider hidden sm:block">{clock}</span>
             <NotificationBell />
           </div>
         </header>
@@ -859,8 +870,8 @@ export default function Dashboard() {
               <div className="border-t border-border pt-4 flex items-center justify-between flex-wrap gap-2">
                 <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} FAREWELL SRL — Tutti i diritti riservati</p>
                 <div className="flex gap-4 text-xs text-muted-foreground">
-                  <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
-                  <a href="#" className="hover:text-foreground transition-colors">Cookie Policy</a>
+                  <button onClick={() => setPolicyModal('privacy')} className="hover:text-foreground transition-colors">Privacy Policy</button>
+                  <button onClick={() => setPolicyModal('cookie')} className="hover:text-foreground transition-colors">Cookie Policy</button>
                 </div>
               </div>
             </div>
@@ -1027,6 +1038,37 @@ export default function Dashboard() {
               {sendingEmails ? 'Invio...' : `Invia a ${emailSelected.length} destinatar${emailSelected.length === 1 ? 'io' : 'i'}`}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Privacy / Cookie Policy modals */}
+      <Dialog open={policyModal === 'privacy'} onOpenChange={o => !o && setPolicyModal(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="font-heading">Privacy Policy</DialogTitle></DialogHeader>
+          <div className="text-sm text-muted-foreground space-y-3 max-h-96 overflow-y-auto pr-1">
+            <p><strong className="text-foreground">Titolare del trattamento:</strong> FAREWELL SRL — P. IVA 02484510504, Via Livornese Ovest 22/A, 56035 Casciana Terme Lari (PI) — PEC: farewellsrl@pec.cgn.it</p>
+            <p><strong className="text-foreground">Finalità del trattamento:</strong> I dati personali (nome, email, telefono, indirizzo) sono trattati per la gestione delle misurazioni, la generazione di preventivi e le comunicazioni operative tra l'azienda e i rivenditori autorizzati.</p>
+            <p><strong className="text-foreground">Base giuridica:</strong> Esecuzione di un contratto o di misure precontrattuali (art. 6.1.b GDPR) e legittimo interesse aziendale.</p>
+            <p><strong className="text-foreground">Conservazione:</strong> I dati sono conservati per il tempo necessario all'erogazione del servizio e non oltre 10 anni dalla cessazione del rapporto contrattuale, nel rispetto degli obblighi di legge.</p>
+            <p><strong className="text-foreground">Diritti dell'interessato:</strong> Ai sensi degli artt. 15-22 GDPR hai diritto di accesso, rettifica, cancellazione, limitazione, portabilità e opposizione al trattamento. Puoi esercitare tali diritti scrivendo a farewellsrl@pec.cgn.it.</p>
+            <p><strong className="text-foreground">Comunicazione a terzi:</strong> I dati non sono ceduti a terzi, salvo obbligo di legge o fornitori tecnici necessari alla gestione del servizio (es. Supabase per la gestione del database, in conformità al GDPR).</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={policyModal === 'cookie'} onOpenChange={o => !o && setPolicyModal(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="font-heading">Cookie Policy</DialogTitle></DialogHeader>
+          <div className="text-sm text-muted-foreground space-y-3 max-h-96 overflow-y-auto pr-1">
+            <p><strong className="text-foreground">Tipologie di cookie utilizzati:</strong></p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong className="text-foreground">Cookie tecnici necessari:</strong> usati per mantenere attiva la sessione di autenticazione (Supabase session token). Non richiedono consenso.</li>
+              <li><strong className="text-foreground">Cookie di preferenza:</strong> memorizzano le impostazioni dell'utente come la modalità scura (dark mode). Non profilano l'utente.</li>
+            </ul>
+            <p><strong className="text-foreground">Cookie di profilazione o di terze parti:</strong> questa piattaforma non utilizza cookie di profilazione né cookie di terze parti per finalità pubblicitarie.</p>
+            <p><strong className="text-foreground">Gestione dei cookie:</strong> Puoi gestire o disabilitare i cookie tramite le impostazioni del tuo browser. La disabilitazione dei cookie tecnici potrebbe compromettere il corretto funzionamento del portale.</p>
+            <p><strong className="text-foreground">Contatti:</strong> Per qualsiasi informazione relativa ai cookie scrivi a farewellsrl@pec.cgn.it.</p>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

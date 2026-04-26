@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Users, Search, Filter, ChevronDown, ChevronUp, Eye, User } from 'lucide-react';
+import { Users, Search, Filter, ChevronDown, ChevronUp, Eye, User } from 'lucide-react';
 import { productLabels, statusLabels } from '@/lib/constants';
+import AppLayout from '@/components/AppLayout';
 
 export default function ClientSummary() {
   const { user, loading } = useAuth();
@@ -101,21 +102,19 @@ export default function ClientSummary() {
   }, [filteredMeasurements, searchText]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
-  if (!user) return <Navigate to="/auth" replace />;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card shadow-card">
-        <div className="container flex h-16 items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <Users className="h-5 w-5 text-accent" />
-          <h1 className="text-lg font-bold font-heading text-foreground">Riepilogo Clienti</h1>
+    <AppLayout>
+      <div className="p-6 max-w-5xl mx-auto space-y-4">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-10 w-10 rounded-xl bg-accent/15 flex items-center justify-center">
+            <Users className="h-5 w-5 text-accent" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold font-heading text-foreground">Clienti</h1>
+            <p className="text-sm text-muted-foreground">Riepilogo nominativi con andamento ordini e pagamenti</p>
+          </div>
         </div>
-      </header>
-
-      <main className="container py-8 space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Filtri riepilogo</CardTitle>
@@ -238,7 +237,7 @@ export default function ClientSummary() {
             })}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
