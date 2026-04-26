@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Plus, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter,
   Printer, Eye, Newspaper, Calendar, CalendarDays, ExternalLink, Instagram,
-  Camera, Truck, ThumbsUp, MessageSquare,
+  Camera, Truck, ThumbsUp, MessageSquare, Maximize2,
   ChevronLeft, ChevronRight, Trash2, TrendingUp, MapPin, Facebook, Linkedin,
 } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
@@ -84,6 +84,7 @@ export default function Dashboard() {
   const [sendingEmails, setSendingEmails] = useState(false);
   const [appointmentForm, setAppointmentForm] = useState({ type: 'consegna', title: '', time: '', location: '', description: '' });
   const [isDark, setIsDark] = useState(false);
+  const [todayMapOpen, setTodayMapOpen] = useState(false);
 
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -189,6 +190,13 @@ export default function Dashboard() {
       .filter(a => a.date >= todayStr)
       .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
       .slice(0, 7);
+  }, [calendarAppointments]);
+
+  const todayAllAppointments = useMemo(() => {
+    const todayStr = formatDateKey(new Date());
+    return calendarAppointments
+      .filter(a => a.date === todayStr)
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   }, [calendarAppointments]);
 
   const todayMapAppointments = useMemo(() => {
@@ -370,10 +378,10 @@ export default function Dashboard() {
             </div>
 
             {/* Main grid: content left + sidebar right */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
               {/* LEFT col */}
-              <div className="xl:col-span-2 space-y-6">
+              <div className="xl:col-span-2 flex flex-col gap-6">
 
                 {/* Ordini per stato chart */}
                 <Card>
@@ -429,8 +437,8 @@ export default function Dashboard() {
 
 
                 {/* News */}
-                <Card>
-                  <CardContent className="p-4">
+                <Card className="flex-1">
+                  <CardContent className="p-4 h-full flex flex-col">
                     <div className="flex items-center gap-2 mb-3">
                       <Newspaper className="h-4 w-4 text-accent" />
                       <h3 className="text-sm font-heading font-semibold text-foreground">Novità e Promozioni</h3>
@@ -503,13 +511,36 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2 mb-3">
                       <MapPin className="h-4 w-4 text-accent" />
                       <h3 className="text-sm font-semibold text-foreground">Giro di oggi</h3>
-                      {todayMapAppointments.length > 0 && (
-                        <span className="ml-auto text-[10px] text-muted-foreground">{todayMapAppointments.length} tappe</span>
+                      <span className="text-[10px] text-muted-foreground ml-1">{todayAllAppointments.length} tappe</span>
+                      {todayAllAppointments.length > 0 && (
+                        <button onClick={() => setTodayMapOpen(true)} className="ml-auto flex items-center gap-1 text-[10px] text-accent hover:underline">
+                          <Maximize2 className="h-3 w-3" /> Espandi mappa
+                        </button>
                       )}
                     </div>
-                    <div style={{ height: '200px' }}>
-                      <AppointmentMap appointments={todayMapAppointments} />
-                    </div>
+                    {todayAllAppointments.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-4 italic">Nessun appuntamento per oggi.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {todayAllAppointments.slice(0, 4).map(appt => (
+                          <div key={appt.id} className="flex items-start gap-2.5 rounded-lg border border-border/60 p-2.5">
+                            <span className="mt-0.5 h-2.5 w-2.5 rounded-full shrink-0" style={{ background: appt.color || '#94a3b8' }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-foreground truncate">{appt.title}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {APPOINTMENT_TYPES[appt.type]?.label}{appt.time ? ` · ${appt.time}` : ''}
+                              </p>
+                              {appt.location && <p className="text-[10px] text-muted-foreground truncate">📍 {appt.location}</p>}
+                            </div>
+                          </div>
+                        ))}
+                        {todayAllAppointments.length > 4 && (
+                          <button onClick={() => setTodayMapOpen(true)} className="w-full text-[10px] text-accent hover:underline py-1">
+                            + altri {todayAllAppointments.length - 4} appuntamenti
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -544,7 +575,7 @@ export default function Dashboard() {
                             <button key={i} type="button"
                               onClick={() => {
                                 if (addMode) { setAddMode(false); openAppointmentDialog(date); }
-                                else setSelectedDay(date);
+                                else setSelectedDay(prev => prev && formatDateKey(prev) === formatDateKey(date) ? null : date);
                               }}
                               className={`aspect-square rounded text-[10px] flex flex-col items-center justify-center transition-colors relative ${addMode ? 'cursor-crosshair' : ''} ${isSelected ? 'bg-accent/20 text-accent font-bold' : isToday ? 'border border-accent/50 text-accent font-semibold' : 'hover:bg-accent/10'}`}
                               style={firstColor && !isSelected ? { boxShadow: `inset 0 0 0 1.5px ${firstColor}` } : undefined}
@@ -801,8 +832,8 @@ export default function Dashboard() {
 
             {/* Footer */}
             <div className="border-t border-border pt-6 pb-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-                <div>
+              <div className="flex flex-wrap items-center justify-center gap-6 mb-6">
+                <div className="text-center">
                   <p className="text-sm font-semibold text-foreground mb-1">FAREWELL SRL</p>
                   <div className="text-xs text-muted-foreground space-y-0.5">
                     <p>P. IVA: 02484510504</p>
@@ -810,22 +841,19 @@ export default function Dashboard() {
                     <p>PEC: farewellsrl@pec.cgn.it</p>
                   </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground mb-3">Seguici</p>
-                  <div className="flex items-center gap-3">
-                    <a href="https://www.facebook.com/pratellirappresentanze?locale=it_IT" target="_blank" rel="noopener noreferrer"
-                      className="rounded-xl bg-muted p-3 hover:bg-[#1877F2]/15 hover:text-[#1877F2] transition-colors group" title="Facebook">
-                      <Facebook className="h-5 w-5 text-muted-foreground group-hover:text-[#1877F2]" />
-                    </a>
-                    <a href="https://www.instagram.com/pratellirappresentanze/?hl=it" target="_blank" rel="noopener noreferrer"
-                      className="rounded-xl bg-muted p-3 hover:bg-[#E1306C]/15 hover:text-[#E1306C] transition-colors group" title="Instagram">
-                      <Instagram className="h-5 w-5 text-muted-foreground group-hover:text-[#E1306C]" />
-                    </a>
-                    <a href="https://www.linkedin.com/company/pratellirappresentanze/posts/?feedView=all" target="_blank" rel="noopener noreferrer"
-                      className="rounded-xl bg-muted p-3 hover:bg-[#0A66C2]/15 transition-colors group" title="LinkedIn">
-                      <Linkedin className="h-5 w-5 text-muted-foreground group-hover:text-[#0A66C2]" />
-                    </a>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <a href="https://www.facebook.com/pratellirappresentanze?locale=it_IT" target="_blank" rel="noopener noreferrer"
+                    className="rounded-xl bg-muted p-3 hover:bg-[#1877F2]/15 hover:text-[#1877F2] transition-colors group" title="Facebook">
+                    <Facebook className="h-5 w-5 text-muted-foreground group-hover:text-[#1877F2]" />
+                  </a>
+                  <a href="https://www.instagram.com/pratellirappresentanze/?hl=it" target="_blank" rel="noopener noreferrer"
+                    className="rounded-xl bg-muted p-3 hover:bg-[#E1306C]/15 hover:text-[#E1306C] transition-colors group" title="Instagram">
+                    <Instagram className="h-5 w-5 text-muted-foreground group-hover:text-[#E1306C]" />
+                  </a>
+                  <a href="https://www.linkedin.com/company/pratellirappresentanze/posts/?feedView=all" target="_blank" rel="noopener noreferrer"
+                    className="rounded-xl bg-muted p-3 hover:bg-[#0A66C2]/15 transition-colors group" title="LinkedIn">
+                    <Linkedin className="h-5 w-5 text-muted-foreground group-hover:text-[#0A66C2]" />
+                  </a>
                 </div>
               </div>
               <div className="border-t border-border pt-4 flex items-center justify-between flex-wrap gap-2">
@@ -927,6 +955,37 @@ export default function Dashboard() {
             <Button variant="outline" onClick={() => setAppointmentDialogOpen(false)}>Annulla</Button>
             <Button onClick={handleSaveAppointment} disabled={!appointmentForm.title.trim()}>Salva appuntamento</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog mappa giro di oggi */}
+      <Dialog open={todayMapOpen} onOpenChange={setTodayMapOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-accent" /> Giro di oggi — {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              {todayAllAppointments.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nessun appuntamento.</p>
+              ) : todayAllAppointments.map(appt => (
+                <div key={appt.id} className="flex items-start gap-2.5 rounded-lg border border-border p-3">
+                  <span className="mt-0.5 h-2.5 w-2.5 rounded-full shrink-0" style={{ background: appt.color || '#94a3b8' }} />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{appt.title}</p>
+                    <p className="text-xs text-muted-foreground">{APPOINTMENT_TYPES[appt.type]?.label}{appt.time ? ` · ${appt.time}` : ''}</p>
+                    {appt.location && <p className="text-xs text-muted-foreground">📍 {appt.location}</p>}
+                    {appt.description && <p className="text-xs text-muted-foreground/70">{appt.description}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ height: '300px' }}>
+              {todayMapOpen && <AppointmentMap appointments={todayMapAppointments} />}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

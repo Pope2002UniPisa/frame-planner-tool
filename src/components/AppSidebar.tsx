@@ -24,7 +24,7 @@ const NAV = [
 
 export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDarkMode, onSignOut, onNavigate }: Props) {
   const location = useLocation();
-  const initials = (profile?.full_name || profile?.company_name || userEmail || '?')[0].toUpperCase();
+  const initials = (profile?.full_name || userEmail || '?')[0].toUpperCase();
 
   return (
     <aside
@@ -46,9 +46,9 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDark
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate leading-tight">
-              {profile?.full_name || profile?.company_name || 'Utente'}
+              {profile?.full_name || userEmail}
             </p>
-            {profile?.full_name && profile?.company_name && (
+            {profile?.company_name && (
               <p className="text-xs text-white/50 truncate mt-0.5">{profile.company_name}</p>
             )}
             <p className="text-[10px] text-white/35 truncate mt-0.5">{userEmail}</p>

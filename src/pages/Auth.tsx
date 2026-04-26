@@ -110,6 +110,7 @@ function LoginForm() {
 
 function RegisterForm() {
   const { signUp } = useAuth();
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({ email: '', password: '', full_name: '', company_name: '', phone: '', client_code: '' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -117,6 +118,7 @@ function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (step < 3) { setStep(s => s + 1); return; }
     setSubmitting(true);
     try {
       await signUp(form.email, form.password, {
@@ -133,41 +135,67 @@ function RegisterForm() {
     }
   };
 
+  const STEPS = ['Email', 'Dati operatore', 'Password'];
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-heading">Crea il tuo account</CardTitle>
-        <CardDescription>Registrati come rivenditore per accedere al portale</CardDescription>
+        <CardDescription>Passo {step} di 3 — {STEPS[step - 1]}</CardDescription>
+        {/* Step dots */}
+        <div className="flex items-center gap-2 pt-2">
+          {STEPS.map((_, i) => (
+            <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i + 1 <= step ? 'bg-primary' : 'bg-muted'}`} />
+          ))}
+        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="reg-fullname">Nome e cognome</Label>
-            <Input id="reg-fullname" value={form.full_name} onChange={e => update('full_name', e.target.value)} required placeholder="Es. Leonardo Pratelli" />
+          {step === 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="reg-email">Email</Label>
+              <Input id="reg-email" type="email" value={form.email} onChange={e => update('email', e.target.value)} required placeholder="info@azienda.it" autoFocus />
+            </div>
+          )}
+
+          {step === 2 && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="reg-fullname">Nome e cognome</Label>
+                <Input id="reg-fullname" value={form.full_name} onChange={e => update('full_name', e.target.value)} required placeholder="Es. Leonardo Pratelli" autoFocus />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reg-company">Nome Azienda</Label>
+                <Input id="reg-company" value={form.company_name} onChange={e => update('company_name', e.target.value)} required placeholder="La tua azienda S.r.l." />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reg-phone">Telefono</Label>
+                <Input id="reg-phone" type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} required placeholder="+39 333 1234567" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reg-code">Codice Cliente</Label>
+                <Input id="reg-code" value={form.client_code} onChange={e => update('client_code', e.target.value)} required placeholder="CLT-001" />
+              </div>
+            </>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-2">
+              <Label htmlFor="reg-password">Password</Label>
+              <Input id="reg-password" type="password" value={form.password} onChange={e => update('password', e.target.value)} required placeholder="Minimo 6 caratteri" minLength={6} autoFocus />
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            {step > 1 && (
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(s => s - 1)}>
+                Indietro
+              </Button>
+            )}
+            <Button type="submit" className="flex-1" disabled={submitting}>
+              {step < 3 ? 'Avanti' : submitting ? 'Registrazione...' : 'Registrati'}
+            </Button>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="reg-company">Nome Azienda</Label>
-            <Input id="reg-company" value={form.company_name} onChange={e => update('company_name', e.target.value)} required placeholder="La tua azienda S.r.l." />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reg-email">Email</Label>
-            <Input id="reg-email" type="email" value={form.email} onChange={e => update('email', e.target.value)} required placeholder="info@azienda.it" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reg-phone">Telefono</Label>
-            <Input id="reg-phone" type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} required placeholder="+39 333 1234567" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reg-code">Codice Cliente</Label>
-            <Input id="reg-code" value={form.client_code} onChange={e => update('client_code', e.target.value)} required placeholder="CLT-001" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reg-password">Password</Label>
-            <Input id="reg-password" type="password" value={form.password} onChange={e => update('password', e.target.value)} required placeholder="Minimo 6 caratteri" minLength={6} />
-          </div>
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? 'Registrazione...' : 'Registrati'}
-          </Button>
         </form>
       </CardContent>
     </Card>
