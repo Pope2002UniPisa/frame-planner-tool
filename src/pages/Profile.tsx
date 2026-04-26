@@ -51,7 +51,7 @@ export default function Profile() {
   const [objectives, setObjectives] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ company_name: '', phone: '', email: '', client_code: '', full_name: '' });
+  const [form, setForm] = useState({ company_name: '', phone: '', email: '', client_code: '' });
   const [orgContacts, setOrgContacts] = useState(DEFAULT_ORG_ROLES);
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function Profile() {
       ]);
       if (pData) {
         setProfile(pData);
-        setForm({ company_name: pData.company_name || '', phone: pData.phone || '', email: pData.email || '', client_code: pData.client_code || '', full_name: pData.full_name || '' });
+        setForm({ company_name: pData.company_name || '', phone: pData.phone || '', email: pData.email || '', client_code: pData.client_code || '' });
         if (pData.logo_url) setLogoUrl(pData.logo_url);
         if (Array.isArray(pData.org_contacts) && pData.org_contacts.length > 0) {
           setOrgContacts(pData.org_contacts as typeof DEFAULT_ORG_ROLES);
@@ -289,7 +289,6 @@ export default function Profile() {
     setSaving(true);
     try {
       const { error } = await supabase.from('profiles').update({
-        full_name: form.full_name,
         company_name: form.company_name,
         phone: form.phone,
         email: form.email,
@@ -411,7 +410,6 @@ export default function Profile() {
                 ) : (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Nome e cognome operatore</Label><Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Es. Mario Rossi" /></div>
                       <div className="space-y-2"><Label>Ragione sociale</Label><Input value={form.company_name} onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))} /></div>
                       <div className="space-y-2"><Label>Email</Label><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
                       <div className="space-y-2"><Label>Telefono</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>

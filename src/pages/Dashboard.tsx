@@ -12,8 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Plus, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter,
   Printer, Eye, Newspaper, Calendar, CalendarDays, ExternalLink, Instagram,
-  Camera, ArrowRight, Truck, CreditCard, ThumbsUp, MessageSquare,
-  ChevronLeft, ChevronRight, Trash2, TrendingUp, MapPin, Users, Facebook, Linkedin,
+  Camera, Truck, ThumbsUp, MessageSquare,
+  ChevronLeft, ChevronRight, Trash2, TrendingUp, MapPin, Facebook, Linkedin,
 } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { toast } from 'sonner';
@@ -350,18 +350,10 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
         <header className="h-14 shrink-0 border-b border-border bg-card flex items-center justify-between px-6">
-          <div>
-            <p className="font-semibold text-sm text-foreground">Dashboard</p>
-            <p className="text-xs text-muted-foreground capitalize">{todayLabel}</p>
-          </div>
+          <p className="text-sm font-medium text-foreground capitalize">{todayLabel}</p>
           <div className="flex items-center gap-3">
-            <span className="font-mono text-sm tabular-nums text-muted-foreground tracking-wider">{clock}</span>
+            <span className="font-mono text-sm tabular-nums text-foreground font-semibold tracking-wider">{clock}</span>
             <NotificationBell />
-            <Link to="/nuova-misurazione">
-              <Button size="sm" className="gap-1.5">
-                <Plus className="h-4 w-4" /> Nuova
-              </Button>
-            </Link>
           </div>
         </header>
 
@@ -435,25 +427,6 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Quick links */}
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Clienti', sub: `${clientSummaryCount} totali`, icon: Users, style: 'gradient-primary', fg: 'text-primary-foreground', path: '/dashboard/clienti' },
-                    { label: 'Consegne', sub: `${stats.ordered} attive`, icon: Truck, style: 'gradient-accent', fg: 'text-accent-foreground', path: '/dashboard/consegne' },
-                    { label: 'Pagamenti', sub: 'Riepilogo', icon: CreditCard, style: 'bg-green-500/10', fg: 'text-green-600', path: '/dashboard/pagamenti' },
-                  ].map(({ label, sub, icon: Icon, style, fg, path }) => (
-                    <Card key={path} className="cursor-pointer hover:shadow-card-hover transition-shadow" onClick={() => navigate(path)}>
-                      <CardContent className="flex items-center gap-3 py-4 px-4">
-                        <div className={`rounded-lg ${style} p-2 shrink-0`}><Icon className={`h-4 w-4 ${fg}`} /></div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-foreground">{label}</p>
-                          <p className="text-[10px] text-muted-foreground">{sub}</p>
-                        </div>
-                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground ml-auto shrink-0" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
 
                 {/* News */}
                 <Card>
@@ -826,26 +799,42 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Minimal footer info */}
-            <div className="border-t border-border pt-4 pb-2">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="text-xs text-muted-foreground space-y-0.5">
-                  <p className="font-medium text-foreground">FAREWELL SRL</p>
-                  <p>P. IVA: 02484510504 · Via Livornese Ovest 22/A, Casciana Terme Lari (PI)</p>
+            {/* Footer */}
+            <div className="border-t border-border pt-6 pb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <p className="text-sm font-semibold text-foreground mb-1">FAREWELL SRL</p>
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    <p>P. IVA: 02484510504</p>
+                    <p>Via Livornese Ovest 22/A – 56035 Casciana Terme Lari (PI)</p>
+                    <p>PEC: farewellsrl@pec.cgn.it</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <a href="https://www.facebook.com/pratellirappresentanze" target="_blank" rel="noopener noreferrer" className="rounded-lg bg-muted p-2 hover:bg-accent/10 transition-colors">
-                    <Facebook className="h-4 w-4 text-muted-foreground" />
-                  </a>
-                  <a href="https://www.instagram.com/pratellirappresentanze" target="_blank" rel="noopener noreferrer" className="rounded-lg bg-muted p-2 hover:bg-accent/10 transition-colors">
-                    <Instagram className="h-4 w-4 text-muted-foreground" />
-                  </a>
-                  <a href="https://www.linkedin.com/company/pratellirappresentanze" target="_blank" rel="noopener noreferrer" className="rounded-lg bg-muted p-2 hover:bg-accent/10 transition-colors">
-                    <Linkedin className="h-4 w-4 text-muted-foreground" />
-                  </a>
+                <div>
+                  <p className="text-sm font-semibold text-foreground mb-3">Seguici</p>
+                  <div className="flex items-center gap-3">
+                    <a href="https://www.facebook.com/pratellirappresentanze?locale=it_IT" target="_blank" rel="noopener noreferrer"
+                      className="rounded-xl bg-muted p-3 hover:bg-[#1877F2]/15 hover:text-[#1877F2] transition-colors group" title="Facebook">
+                      <Facebook className="h-5 w-5 text-muted-foreground group-hover:text-[#1877F2]" />
+                    </a>
+                    <a href="https://www.instagram.com/pratellirappresentanze/?hl=it" target="_blank" rel="noopener noreferrer"
+                      className="rounded-xl bg-muted p-3 hover:bg-[#E1306C]/15 hover:text-[#E1306C] transition-colors group" title="Instagram">
+                      <Instagram className="h-5 w-5 text-muted-foreground group-hover:text-[#E1306C]" />
+                    </a>
+                    <a href="https://www.linkedin.com/company/pratellirappresentanze/posts/?feedView=all" target="_blank" rel="noopener noreferrer"
+                      className="rounded-xl bg-muted p-3 hover:bg-[#0A66C2]/15 transition-colors group" title="LinkedIn">
+                      <Linkedin className="h-5 w-5 text-muted-foreground group-hover:text-[#0A66C2]" />
+                    </a>
+                  </div>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-3">© {new Date().getFullYear()} FAREWELL SRL — Tutti i diritti riservati</p>
+              <div className="border-t border-border pt-4 flex items-center justify-between flex-wrap gap-2">
+                <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} FAREWELL SRL — Tutti i diritti riservati</p>
+                <div className="flex gap-4 text-xs text-muted-foreground">
+                  <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
+                  <a href="#" className="hover:text-foreground transition-colors">Cookie Policy</a>
+                </div>
+              </div>
             </div>
           </div>
         </main>

@@ -110,7 +110,7 @@ function LoginForm() {
 
 function RegisterForm() {
   const { signUp } = useAuth();
-  const [form, setForm] = useState({ email: '', password: '', company_name: '', phone: '', client_code: '' });
+  const [form, setForm] = useState({ email: '', password: '', full_name: '', company_name: '', phone: '', client_code: '' });
   const [submitting, setSubmitting] = useState(false);
 
   const update = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
@@ -120,6 +120,7 @@ function RegisterForm() {
     setSubmitting(true);
     try {
       await signUp(form.email, form.password, {
+        full_name: form.full_name,
         company_name: form.company_name,
         phone: form.phone,
         client_code: form.client_code,
@@ -140,6 +141,10 @@ function RegisterForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="reg-fullname">Nome e cognome</Label>
+            <Input id="reg-fullname" value={form.full_name} onChange={e => update('full_name', e.target.value)} required placeholder="Es. Leonardo Pratelli" />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="reg-company">Nome Azienda</Label>
             <Input id="reg-company" value={form.company_name} onChange={e => update('company_name', e.target.value)} required placeholder="La tua azienda S.r.l." />

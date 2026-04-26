@@ -32,8 +32,10 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDark
       style={{ background: 'hsl(var(--sidebar-background))' }}
     >
       {/* Logo */}
-      <div className="px-5 pt-5 pb-4 border-b border-white/10">
-        <img src={pratelliLogo} alt="Pratelli" className="h-9 object-contain brightness-0 invert" />
+      <div className="px-4 pt-4 pb-3.5 border-b border-white/10">
+        <div className="bg-white/95 rounded-lg px-3 py-2 inline-flex items-center">
+          <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-8 object-contain" />
+        </div>
       </div>
 
       {/* Operator info */}
