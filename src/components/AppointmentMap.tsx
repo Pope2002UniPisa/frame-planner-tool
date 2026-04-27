@@ -17,12 +17,34 @@ interface ApptMarker {
   color: string | null;
 }
 
+async function nominatimSearch(q: string): Promise<[number, number] | null> {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=it&countrycodes=it`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'PratelliRappresentanze/1.0' } });
+  const data = await res.json();
+  return data?.[0] ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;
+}
+
 async function nominatimGeocode(address: string): Promise<[number, number] | null> {
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address + ', Italia')}&format=json&limit=1&accept-language=it`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data?.[0]) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    // 1st attempt: full address
+    const r1 = await nominatimSearch(address);
+    if (r1) return r1;
+
+    // 2nd attempt: remove house number (e.g. "Via Roma 12, Pisa" → "Via Roma, Pisa")
+    await new Promise(r => setTimeout(r, 1000));
+    const withoutNum = address.replace(/\s+\d+[/\w]*(?=\s*,)/, '').replace(/\s+\d+[/\w]*$/, '');
+    if (withoutNum !== address) {
+      const r2 = await nominatimSearch(withoutNum);
+      if (r2) return r2;
+    }
+
+    // 3rd attempt: locality only (after last comma)
+    await new Promise(r => setTimeout(r, 1000));
+    const parts = address.split(',');
+    if (parts.length > 1) {
+      const r3 = await nominatimSearch(parts[parts.length - 1].trim());
+      if (r3) return r3;
+    }
   } catch {}
   return null;
 }
@@ -41,18 +63,37 @@ async function getOSRMRoute(points: [number, number][]): Promise<[number, number
   }
 }
 
-function makeNumberedIcon(n: number, color: string) {
+function makeNumberedIcon(n: number, color: string, highlighted = false) {
+  const size = highlighted ? 32 : 24;
+  const fontSize = highlighted ? 13 : 11;
+  const border = highlighted ? '3px solid white' : '2px solid white';
+  const shadow = highlighted
+    ? '0 0 0 3px rgba(255,255,255,0.6), 0 3px 10px rgba(0,0,0,.5)'
+    : '0 2px 6px rgba(0,0,0,.4)';
   return L.divIcon({
-    html: `<div style="background:${color};width:24px;height:24px;border-radius:50%;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;font-family:system-ui">${n}</div>`,
+    html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:${border};box-shadow:${shadow};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:${fontSize}px;font-family:system-ui;transition:all .15s">${n}</div>`,
     className: '',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
 }
 
-export function AppointmentMap({ appointments }: { appointments: ApptMarker[] }) {
+interface MarkerEntry {
+  marker: L.Marker;
+  appt: ApptMarker;
+  seq: number;
+}
+
+export function AppointmentMap({
+  appointments,
+  hoveredId,
+}: {
+  appointments: ApptMarker[];
+  hoveredId?: string | null;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<Record<string, MarkerEntry>>({});
   const [status, setStatus] = useState<'idle' | 'loading' | 'routing' | 'done'>('idle');
   const depKey = appointments.map(a => a.id).join(',');
 
@@ -61,6 +102,7 @@ export function AppointmentMap({ appointments }: { appointments: ApptMarker[] })
 
     let cancelled = false;
     setStatus('loading');
+    markersRef.current = {};
 
     if (mapRef.current) {
       mapRef.current.remove();
@@ -87,14 +129,15 @@ export function AppointmentMap({ appointments }: { appointments: ApptMarker[] })
         if (coords) {
           const seq = points.length + 1;
           points.push(coords);
-          L.marker(coords, { icon: makeNumberedIcon(seq, appt.color || '#f59e0b') })
+          const marker = L.marker(coords, { icon: makeNumberedIcon(seq, appt.color || '#f59e0b') })
             .addTo(map)
             .bindPopup(
               `<strong>${seq}. ${appt.title}</strong>${appt.time ? `<br>🕐 ${appt.time}` : ''}<br>📍 ${appt.location}`
             );
+          markersRef.current[appt.id] = { marker, appt, seq };
         }
 
-        if (i < appointments.length - 1) await new Promise(r => setTimeout(r, 1200));
+        if (i < appointments.length - 1) await new Promise(r => setTimeout(r, 1300));
       }
 
       if (!cancelled && points.length > 0) {
@@ -105,23 +148,27 @@ export function AppointmentMap({ appointments }: { appointments: ApptMarker[] })
         setStatus('routing');
         const route = await getOSRMRoute(points);
         if (route && !cancelled) {
-          L.polyline(route, {
-            color: '#3b82f6',
-            weight: 3,
-            opacity: 0.75,
-            dashArray: '8, 5',
-          }).addTo(map);
+          L.polyline(route, { color: '#3b82f6', weight: 3, opacity: 0.75, dashArray: '8, 5' }).addTo(map);
         }
       }
 
       if (!cancelled) setStatus('done');
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [depKey]);
+
+  // Hover highlight effect
+  useEffect(() => {
+    Object.entries(markersRef.current).forEach(([id, { marker, appt, seq }]) => {
+      const isHovered = id === hoveredId;
+      marker.setIcon(makeNumberedIcon(seq, appt.color || '#f59e0b', isHovered));
+      if (isHovered && mapRef.current) {
+        marker.openPopup();
+      }
+    });
+  }, [hoveredId]);
 
   useEffect(() => {
     return () => {

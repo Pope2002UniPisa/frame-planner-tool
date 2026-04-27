@@ -88,6 +88,8 @@ export default function Dashboard() {
   const [policyModal, setPolicyModal] = useState<'privacy' | 'cookie' | null>(null);
   const [sendingWA, setSendingWA] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<typeof calendarAppointments[0] | null>(null);
+  const [hoveredApptId, setHoveredApptId] = useState<string | null>(null);
+  const [apptSearch, setApptSearch] = useState('');
 
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -372,6 +374,19 @@ export default function Dashboard() {
     }
   };
 
+  const searchedAppointments = useMemo(() => {
+    const q = apptSearch.trim().toLowerCase();
+    if (!q) return [];
+    return calendarAppointments
+      .filter(a =>
+        (a.title || '').toLowerCase().includes(q) ||
+        (a.location || '').toLowerCase().includes(q) ||
+        (a.description || '').toLowerCase().includes(q)
+      )
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 15);
+  }, [calendarAppointments, apptSearch]);
+
   const year = calendarDate.getFullYear();
   const month = calendarDate.getMonth();
   const firstDayOfMonth = new Date(year, month, 1);
@@ -619,7 +634,50 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2 mb-3">
                       <CalendarDays className="h-4 w-4 text-accent" />
                       <h3 className="text-sm font-heading font-semibold text-foreground">Calendario</h3>
+                      <div className="ml-auto relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                        <input
+                          value={apptSearch}
+                          onChange={e => setApptSearch(e.target.value)}
+                          placeholder="Cerca…"
+                          className="pl-6 pr-2 py-1 text-[11px] rounded-md border border-border bg-background text-foreground w-28 focus:outline-none focus:ring-1 focus:ring-accent"
+                        />
+                      </div>
                     </div>
+
+                    {/* Risultati ricerca */}
+                    {apptSearch.trim() && (
+                      <div className="mb-3 rounded-lg border border-border bg-muted/30 max-h-48 overflow-y-auto">
+                        {searchedAppointments.length === 0 ? (
+                          <p className="text-[10px] text-muted-foreground p-3 text-center">Nessun risultato.</p>
+                        ) : searchedAppointments.map(appt => {
+                          const d = new Date(appt.date + 'T00:00:00');
+                          return (
+                            <button
+                              key={appt.id}
+                              type="button"
+                              onClick={() => {
+                                setCalendarDate(new Date(appt.date + 'T00:00:00'));
+                                setSelectedDay(new Date(appt.date + 'T00:00:00'));
+                                setApptSearch('');
+                              }}
+                              className="w-full flex items-start gap-2 p-2 hover:bg-muted transition-colors text-left border-b border-border/50 last:border-0"
+                            >
+                              <span className="mt-0.5 h-2 w-2 rounded-full shrink-0" style={{ background: appt.color ?? '#94a3b8' }} />
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-semibold text-foreground truncate">{appt.title}</p>
+                                <p className="text-[9px] text-muted-foreground">
+                                  {d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                                  {appt.time ? ` · ${appt.time}` : ''}
+                                </p>
+                                {appt.location && <p className="text-[9px] text-muted-foreground truncate">📍 {appt.location}</p>}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between mb-2">
                       <button onClick={() => setCalendarDate(new Date(year, month - 1, 1))} className="rounded-md p-1 hover:bg-muted transition-colors">
                         <ChevronLeft className="h-4 w-4" />
@@ -1094,16 +1152,17 @@ export default function Dashboard() {
       <Dialog open={todayMapOpen} onOpenChange={setTodayMapOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle className="font-heading flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-accent" /> Giro di oggi — {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+            <div className="flex items-center gap-3 pr-8">
+              <DialogTitle className="font-heading flex items-center gap-2 flex-1 min-w-0">
+                <MapPin className="h-4 w-4 text-accent shrink-0" />
+                <span className="truncate">Giro di oggi — {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
               </DialogTitle>
               <button
                 onClick={() => sendWhatsAppGiro(todayAllAppointments)}
                 disabled={sendingWA}
-                className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
               >
-                <Smartphone className="h-3.5 w-3.5" /> {sendingWA ? 'Invio…' : 'Invia su WhatsApp'}
+                <Smartphone className="h-3.5 w-3.5" /> {sendingWA ? 'Invio…' : 'WhatsApp'}
               </button>
             </div>
           </DialogHeader>
@@ -1112,7 +1171,12 @@ export default function Dashboard() {
               {todayAllAppointments.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nessun appuntamento.</p>
               ) : todayAllAppointments.map(appt => (
-                <div key={appt.id} className="flex items-start gap-2.5 rounded-lg border border-border p-3">
+                <div
+                  key={appt.id}
+                  className={`flex items-start gap-2.5 rounded-lg border p-3 cursor-default transition-colors ${hoveredApptId === appt.id ? 'border-accent/60 bg-accent/5' : 'border-border'}`}
+                  onMouseEnter={() => setHoveredApptId(appt.id)}
+                  onMouseLeave={() => setHoveredApptId(null)}
+                >
                   <span className="mt-0.5 h-2.5 w-2.5 rounded-full shrink-0" style={{ background: appt.color || '#94a3b8' }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground">{appt.title}</p>
@@ -1127,7 +1191,7 @@ export default function Dashboard() {
               ))}
             </div>
             <div style={{ height: '300px' }}>
-              {todayMapOpen && <AppointmentMap appointments={todayMapAppointments} />}
+              {todayMapOpen && <AppointmentMap appointments={todayMapAppointments} hoveredId={hoveredApptId} />}
             </div>
           </div>
         </DialogContent>

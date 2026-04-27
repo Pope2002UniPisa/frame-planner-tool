@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Truck, Search, Filter, Eye, MapPin, Clock, AlertTriangle, CheckCircle2, Package } from 'lucide-react';
 import { productLabels, statusLabels } from '@/lib/constants';
 import AppLayout from '@/components/AppLayout';

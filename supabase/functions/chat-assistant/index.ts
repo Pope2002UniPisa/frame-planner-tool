@@ -33,10 +33,25 @@ serve(async (req) => {
     const { messages } = await req.json();
 
     // Convert from Anthropic format (user/assistant) to Gemini format (user/model)
-    const contents = messages.map((m: { role: string; content: string }) => ({
+    // Gemini requires: conversation starts with 'user', no consecutive same-role messages
+    const rawContents = messages.map((m: { role: string; content: string }) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }));
+
+    // Skip leading 'model' messages — Gemini requires first message to be 'user'
+    const firstUserIdx = rawContents.findIndex((m: { role: string }) => m.role === 'user');
+    const sliced = firstUserIdx >= 0 ? rawContents.slice(firstUserIdx) : rawContents;
+
+    // Merge consecutive same-role messages to avoid Gemini validation errors
+    const contents: { role: string; parts: { text: string }[] }[] = [];
+    for (const msg of sliced) {
+      if (contents.length > 0 && contents[contents.length - 1].role === msg.role) {
+        contents[contents.length - 1].parts[0].text += '\n' + msg.parts[0].text;
+      } else {
+        contents.push({ ...msg, parts: [{ text: msg.parts[0].text }] });
+      }
+    }
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${GEMINI_API_KEY}`,
