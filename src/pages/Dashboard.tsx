@@ -209,6 +209,7 @@ export default function Dashboard() {
     const dateStr = formatDateKey(giroDate);
     return calendarAppointments
       .filter(a => a.date === dateStr && !!a.location)
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
       .map(a => ({ id: a.id, title: a.title, time: a.time, location: a.location!, color: a.color }));
   }, [calendarAppointments, giroDate]);
 
@@ -1176,7 +1177,7 @@ export default function Dashboard() {
 
       {/* Dialog mappa giro di oggi */}
       <Dialog open={todayMapOpen} onOpenChange={o => { setTodayMapOpen(o); if (!o) setHoveredApptId(null); }}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-5xl w-[95vw]">
           <DialogHeader>
             <div className="flex items-center gap-3 pr-8">
               <DialogTitle className="font-heading flex items-center gap-2 flex-1 min-w-0">
@@ -1192,8 +1193,8 @@ export default function Dashboard() {
               </button>
             </div>
           </DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
               {todayAllAppointments.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nessun appuntamento.</p>
               ) : todayAllAppointments.map(appt => (
@@ -1216,7 +1217,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            <div style={{ height: '300px' }}>
+            <div className="sm:col-span-2" style={{ height: '480px' }}>
               {todayMapOpen && <AppointmentMap appointments={todayMapAppointments} hoveredId={hoveredApptId} />}
             </div>
           </div>

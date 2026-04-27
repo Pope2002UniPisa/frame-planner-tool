@@ -53,6 +53,8 @@ serve(async (req) => {
       }
     }
 
+    console.log('Calling Gemini, contents:', contents.length, 'messages');
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -67,13 +69,31 @@ serve(async (req) => {
     );
 
     const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Mi dispiace, non ho potuto elaborare la risposta.';
+    console.log('Gemini status:', response.status, 'ok:', response.ok);
+
+    if (!response.ok) {
+      const errMsg = data?.error?.message || `HTTP ${response.status}`;
+      console.error('Gemini API error:', JSON.stringify(data));
+      return new Response(JSON.stringify({ reply: `Errore Gemini (${response.status}): ${errMsg}` }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!reply) {
+      console.error('No candidates in Gemini response:', JSON.stringify(data));
+      const blockReason = data.promptFeedback?.blockReason;
+      return new Response(JSON.stringify({ reply: blockReason ? `Risposta bloccata: ${blockReason}` : 'Nessuna risposta generata. Riprova.' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     return new Response(JSON.stringify({ reply }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error('Edge function error:', String(err));
+    return new Response(JSON.stringify({ reply: `Errore interno: ${String(err)}` }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
