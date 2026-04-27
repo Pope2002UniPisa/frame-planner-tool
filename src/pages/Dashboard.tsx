@@ -406,9 +406,10 @@ export default function Dashboard() {
           <div className="min-w-0">
             <p className="text-base font-bold font-heading text-foreground leading-tight truncate">
               {(() => {
-                const h = new Date().getHours();
+                const now = new Date();
+                const totalMins = now.getHours() * 60 + now.getMinutes();
                 const name = profile?.full_name?.split(' ')[0] || '';
-                const greeting = h < 12 ? 'Buongiorno' : h < 18 ? 'Buon pomeriggio' : 'Buonasera';
+                const greeting = totalMins < 720 ? 'Buongiorno' : totalMins < 870 ? 'Buon pomeriggio' : 'Buonasera';
                 return name ? `${greeting}, ${name}` : greeting;
               })()}
             </p>
