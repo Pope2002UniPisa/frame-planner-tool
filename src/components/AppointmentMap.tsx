@@ -112,8 +112,11 @@ export function AppointmentMap({
     const map = L.map(containerRef.current, { zoomControl: true }).setView([43.7, 10.5], 9);
     mapRef.current = map;
 
+    map.attributionControl.setPrefix(
+      '<a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer">Leaflet</a>'
+    );
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
       maxZoom: 18,
     }).addTo(map);
 

@@ -90,6 +90,7 @@ export default function Dashboard() {
   const [editingAppointment, setEditingAppointment] = useState<typeof calendarAppointments[0] | null>(null);
   const [hoveredApptId, setHoveredApptId] = useState<string | null>(null);
   const [apptSearch, setApptSearch] = useState('');
+  const [giroDate, setGiroDate] = useState<Date>(() => new Date());
 
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -198,18 +199,18 @@ export default function Dashboard() {
   }, [calendarAppointments]);
 
   const todayAllAppointments = useMemo(() => {
-    const todayStr = formatDateKey(new Date());
+    const dateStr = formatDateKey(giroDate);
     return calendarAppointments
-      .filter(a => a.date === todayStr)
+      .filter(a => a.date === dateStr)
       .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-  }, [calendarAppointments]);
+  }, [calendarAppointments, giroDate]);
 
   const todayMapAppointments = useMemo(() => {
-    const todayStr = formatDateKey(new Date());
+    const dateStr = formatDateKey(giroDate);
     return calendarAppointments
-      .filter(a => a.date === todayStr && !!a.location)
+      .filter(a => a.date === dateStr && !!a.location)
       .map(a => ({ id: a.id, title: a.title, time: a.time, location: a.location!, color: a.color }));
-  }, [calendarAppointments]);
+  }, [calendarAppointments, giroDate]);
 
   const weeklyStats = useMemo(() => {
     const now = new Date();
@@ -402,6 +403,18 @@ export default function Dashboard() {
   if (!user) return <Navigate to="/auth" replace />;
 
   const todayLabel = new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+  const isGiroToday = formatDateKey(giroDate) === formatDateKey(new Date());
+  const giroLabelShort = isGiroToday
+    ? 'Giro di oggi'
+    : `Giro del ${giroDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}`;
+  const giroLabelFull = isGiroToday
+    ? `Giro di oggi — ${giroDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}`
+    : `Giro del ${giroDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+  const giroDateStr = giroDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const navigateGiro = (delta: number) => {
+    setGiroDate(d => { const n = new Date(d); n.setDate(n.getDate() + delta); return n; });
+    setHoveredApptId(null);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -576,28 +589,41 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Giro di oggi */}
+                {/* Giro di oggi / altro giorno */}
                 <Card>
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <MapPin className="h-4 w-4 text-accent" />
-                      <h3 className="text-sm font-semibold text-foreground">Giro di oggi</h3>
-                      <span className="text-[10px] text-muted-foreground ml-1">{todayAllAppointments.length} tappe</span>
-                      {todayAllAppointments.length > 0 && (
-                        <div className="ml-auto flex items-center gap-2">
-                          <button
-                            onClick={() => sendWhatsAppGiro(todayAllAppointments)}
-                            disabled={sendingWA}
-                            className="flex items-center gap-1 text-[10px] text-green-600 hover:underline disabled:opacity-50"
-                            title="Invia riepilogo su WhatsApp"
-                          >
-                            <Smartphone className="h-3 w-3" /> {sendingWA ? '…' : 'WhatsApp'}
+                    <div className="flex items-center gap-1 mb-3 flex-wrap">
+                      <MapPin className="h-4 w-4 text-accent shrink-0" />
+                      <h3 className="text-sm font-semibold text-foreground">{giroLabelShort}</h3>
+                      <span className="text-[10px] text-muted-foreground">{todayAllAppointments.length} tappe</span>
+                      <div className="ml-auto flex items-center gap-1">
+                        <button onClick={() => navigateGiro(-1)} className="rounded p-1 hover:bg-muted transition-colors" title="Giorno precedente">
+                          <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                        {!isGiroToday && (
+                          <button onClick={() => { setGiroDate(new Date()); setHoveredApptId(null); }} className="text-[10px] text-accent hover:underline px-0.5">
+                            Oggi
                           </button>
-                          <button onClick={() => setTodayMapOpen(true)} className="flex items-center gap-1 text-[10px] text-accent hover:underline">
-                            <Maximize2 className="h-3 w-3" /> Mappa
-                          </button>
-                        </div>
-                      )}
+                        )}
+                        <button onClick={() => navigateGiro(1)} className="rounded p-1 hover:bg-muted transition-colors" title="Giorno successivo">
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                        {todayAllAppointments.length > 0 && (
+                          <>
+                            <button
+                              onClick={() => sendWhatsAppGiro(todayAllAppointments, giroDateStr)}
+                              disabled={sendingWA}
+                              className="flex items-center gap-1 text-[10px] text-green-600 hover:underline disabled:opacity-50 ml-1"
+                              title="Invia riepilogo su WhatsApp"
+                            >
+                              <Smartphone className="h-3 w-3" /> {sendingWA ? '…' : 'WA'}
+                            </button>
+                            <button onClick={() => setTodayMapOpen(true)} className="flex items-center gap-1 text-[10px] text-accent hover:underline">
+                              <Maximize2 className="h-3 w-3" /> Mappa
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                     {todayAllAppointments.length === 0 ? (
                       <p className="text-xs text-muted-foreground text-center py-4 italic">Nessun appuntamento per oggi.</p>
@@ -688,7 +714,7 @@ export default function Dashboard() {
                       </button>
                     </div>
                     <div className="rounded-xl border border-border bg-muted/20 p-3">
-                      <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] text-muted-foreground mb-1.5">
+                      <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] font-semibold text-muted-foreground mb-1.5">
                         {['L','M','M','G','V','S','D'].map((d,i) => <div key={i}>{d}</div>)}
                       </div>
                       <div className="grid grid-cols-7 gap-0.5">
@@ -704,7 +730,7 @@ export default function Dashboard() {
                                 if (addMode) { setAddMode(false); openAppointmentDialog(date); }
                                 else setSelectedDay(prev => prev && formatDateKey(prev) === formatDateKey(date) ? null : date);
                               }}
-                              className={`aspect-square rounded text-[10px] flex flex-col items-center justify-center transition-colors relative ${addMode ? 'cursor-crosshair' : ''} ${isSelected ? 'bg-accent/20 text-accent font-bold' : isToday ? 'border border-accent/50 text-accent font-semibold' : 'hover:bg-accent/10'}`}
+                              className={`aspect-square rounded text-[11px] font-medium flex flex-col items-center justify-center transition-colors relative ${addMode ? 'cursor-crosshair' : ''} ${isSelected ? 'bg-accent/20 text-accent font-bold' : isToday ? 'border border-accent/50 text-accent font-semibold' : 'hover:bg-accent/10'}`}
                               style={firstColor && !isSelected ? { boxShadow: `inset 0 0 0 1.5px ${firstColor}` } : undefined}
                             >
                               {date.getDate()}
@@ -1149,16 +1175,16 @@ export default function Dashboard() {
       </Dialog>
 
       {/* Dialog mappa giro di oggi */}
-      <Dialog open={todayMapOpen} onOpenChange={setTodayMapOpen}>
+      <Dialog open={todayMapOpen} onOpenChange={o => { setTodayMapOpen(o); if (!o) setHoveredApptId(null); }}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <div className="flex items-center gap-3 pr-8">
               <DialogTitle className="font-heading flex items-center gap-2 flex-1 min-w-0">
                 <MapPin className="h-4 w-4 text-accent shrink-0" />
-                <span className="truncate">Giro di oggi — {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                <span className="truncate">{giroLabelFull}</span>
               </DialogTitle>
               <button
-                onClick={() => sendWhatsAppGiro(todayAllAppointments)}
+                onClick={() => sendWhatsAppGiro(todayAllAppointments, giroDateStr)}
                 disabled={sendingWA}
                 className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
               >
