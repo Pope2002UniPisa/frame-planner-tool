@@ -51,7 +51,7 @@ export function ChatBot() {
       <button
         onClick={() => setOpen(o => !o)}
         className={cn(
-          'fixed bottom-6 left-6 z-50 h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200',
+          'fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200',
           open ? 'bg-foreground text-background scale-95' : 'bg-accent text-white hover:scale-105'
         )}
         aria-label="Apri assistente"
@@ -61,7 +61,7 @@ export function ChatBot() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 left-6 z-50 w-80 sm:w-96 rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
+        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
           style={{ maxHeight: '70vh' }}>
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 bg-foreground text-background shrink-0">

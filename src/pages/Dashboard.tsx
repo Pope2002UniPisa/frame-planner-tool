@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Plus, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter,
   Printer, Eye, Newspaper, Calendar, CalendarDays, ExternalLink, Instagram,
-  Camera, Truck, ThumbsUp, MessageSquare, Maximize2,
+  Camera, Truck, ThumbsUp, MessageSquare, Maximize2, Smartphone,
   ChevronLeft, ChevronRight, Trash2, TrendingUp, MapPin, Facebook, Linkedin,
 } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
@@ -86,6 +86,7 @@ export default function Dashboard() {
   const [isDark, setIsDark] = useState(false);
   const [todayMapOpen, setTodayMapOpen] = useState(false);
   const [policyModal, setPolicyModal] = useState<'privacy' | 'cookie' | null>(null);
+  const [sendingWA, setSendingWA] = useState(false);
 
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -328,6 +329,30 @@ export default function Dashboard() {
     toast.success('Appuntamento eliminato');
   };
 
+  const sendWhatsAppGiro = async (appointments: typeof todayAllAppointments, dateLabel?: string) => {
+    if (appointments.length === 0) { toast.error('Nessun appuntamento da inviare'); return; }
+    setSendingWA(true);
+    const label = dateLabel || new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const lines = appointments.map((a, i) => {
+      const type = APPOINTMENT_TYPES[a.type]?.label || a.type;
+      const time = a.time ? `⏰ ${a.time}` : '';
+      const loc = a.location ? `📍 ${a.location}` : '';
+      const desc = a.description ? `📝 ${a.description}` : '';
+      return [`${i + 1}. *${a.title}* — ${type}`, time, loc, desc].filter(Boolean).join('\n   ');
+    });
+    const message = `📅 *Giro del ${label}*\n\n${lines.join('\n\n')}\n\n_Totale: ${appointments.length} appuntament${appointments.length === 1 ? 'o' : 'i'}_`;
+    try {
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', { body: { message } });
+      if (error || !data?.success) throw new Error(data?.error || 'Errore');
+      if (data?.skipped) toast.info('WhatsApp non configurato — messaggio simulato correttamente');
+      else toast.success('Riepilogo inviato su WhatsApp!');
+    } catch (err: any) {
+      toast.error(err.message || 'Errore invio WhatsApp');
+    } finally {
+      setSendingWA(false);
+    }
+  };
+
   const year = calendarDate.getFullYear();
   const month = calendarDate.getMonth();
   const firstDayOfMonth = new Date(year, month, 1);
@@ -524,9 +549,19 @@ export default function Dashboard() {
                       <h3 className="text-sm font-semibold text-foreground">Giro di oggi</h3>
                       <span className="text-[10px] text-muted-foreground ml-1">{todayAllAppointments.length} tappe</span>
                       {todayAllAppointments.length > 0 && (
-                        <button onClick={() => setTodayMapOpen(true)} className="ml-auto flex items-center gap-1 text-[10px] text-accent hover:underline">
-                          <Maximize2 className="h-3 w-3" /> Espandi mappa
-                        </button>
+                        <div className="ml-auto flex items-center gap-2">
+                          <button
+                            onClick={() => sendWhatsAppGiro(todayAllAppointments)}
+                            disabled={sendingWA}
+                            className="flex items-center gap-1 text-[10px] text-green-600 hover:underline disabled:opacity-50"
+                            title="Invia riepilogo su WhatsApp"
+                          >
+                            <Smartphone className="h-3 w-3" /> {sendingWA ? '…' : 'WhatsApp'}
+                          </button>
+                          <button onClick={() => setTodayMapOpen(true)} className="flex items-center gap-1 text-[10px] text-accent hover:underline">
+                            <Maximize2 className="h-3 w-3" /> Mappa
+                          </button>
+                        </div>
                       )}
                     </div>
                     {todayAllAppointments.length === 0 ? (
@@ -611,9 +646,23 @@ export default function Dashboard() {
                       </div>
                       {selectedDay && (
                         <div className="mt-2 rounded-lg border border-border bg-background p-2">
-                          <p className="text-[10px] font-semibold text-foreground mb-1.5">
-                            {selectedDay.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
-                          </p>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-[10px] font-semibold text-foreground">
+                              {selectedDay.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </p>
+                            {getAppointmentsForDay(selectedDay).length > 0 && (
+                              <button
+                                onClick={() => sendWhatsAppGiro(
+                                  getAppointmentsForDay(selectedDay),
+                                  selectedDay.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                                )}
+                                disabled={sendingWA}
+                                className="flex items-center gap-1 text-[9px] text-green-600 hover:underline disabled:opacity-50"
+                              >
+                                <Smartphone className="h-2.5 w-2.5" /> WhatsApp
+                              </button>
+                            )}
+                          </div>
                           {getAppointmentsForDay(selectedDay).length > 0 ? (
                             <div className="space-y-1.5">
                               {getAppointmentsForDay(selectedDay).map(appt => (
@@ -842,36 +891,35 @@ export default function Dashboard() {
             )}
 
             {/* Footer */}
-            <div className="border-t border-border pt-6 pb-4">
-              <div className="flex flex-wrap items-center justify-center gap-6 mb-6">
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-foreground mb-1">FAREWELL SRL</p>
-                  <div className="text-xs text-muted-foreground space-y-0.5">
-                    <p>P. IVA: 02484510504</p>
-                    <p>Via Livornese Ovest 22/A – 56035 Casciana Terme Lari (PI)</p>
-                    <p>PEC: farewellsrl@pec.cgn.it</p>
-                  </div>
+            <div className="mt-2 -mx-6 -mb-6 bg-foreground text-background">
+              <div className="px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+                {/* Brand */}
+                <div>
+                  <p className="text-sm font-bold tracking-wide">FAREWELL SRL</p>
+                  <p className="text-[11px] opacity-40 mt-0.5">P.IVA 02484510504 · Casciana Terme Lari (PI)</p>
+                  <p className="text-[11px] opacity-40">farewellsrl@pec.cgn.it</p>
                 </div>
-                <div className="flex items-center gap-3">
+                {/* Social */}
+                <div className="flex items-center gap-2">
                   <a href="https://www.facebook.com/pratellirappresentanze?locale=it_IT" target="_blank" rel="noopener noreferrer"
-                    className="rounded-xl bg-muted p-3 hover:bg-[#1877F2]/15 hover:text-[#1877F2] transition-colors group" title="Facebook">
-                    <Facebook className="h-5 w-5 text-muted-foreground group-hover:text-[#1877F2]" />
+                    className="h-9 w-9 rounded-lg bg-white/10 hover:bg-[#1877F2] flex items-center justify-center transition-colors" title="Facebook">
+                    <Facebook className="h-4 w-4" />
                   </a>
                   <a href="https://www.instagram.com/pratellirappresentanze/?hl=it" target="_blank" rel="noopener noreferrer"
-                    className="rounded-xl bg-muted p-3 hover:bg-[#E1306C]/15 hover:text-[#E1306C] transition-colors group" title="Instagram">
-                    <Instagram className="h-5 w-5 text-muted-foreground group-hover:text-[#E1306C]" />
+                    className="h-9 w-9 rounded-lg bg-white/10 hover:bg-[#E1306C] flex items-center justify-center transition-colors" title="Instagram">
+                    <Instagram className="h-4 w-4" />
                   </a>
                   <a href="https://www.linkedin.com/company/pratellirappresentanze/posts/?feedView=all" target="_blank" rel="noopener noreferrer"
-                    className="rounded-xl bg-muted p-3 hover:bg-[#0A66C2]/15 transition-colors group" title="LinkedIn">
-                    <Linkedin className="h-5 w-5 text-muted-foreground group-hover:text-[#0A66C2]" />
+                    className="h-9 w-9 rounded-lg bg-white/10 hover:bg-[#0A66C2] flex items-center justify-center transition-colors" title="LinkedIn">
+                    <Linkedin className="h-4 w-4" />
                   </a>
                 </div>
               </div>
-              <div className="border-t border-border pt-4 flex items-center justify-between flex-wrap gap-2">
-                <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} FAREWELL SRL — Tutti i diritti riservati</p>
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <button onClick={() => setPolicyModal('privacy')} className="hover:text-foreground transition-colors">Privacy Policy</button>
-                  <button onClick={() => setPolicyModal('cookie')} className="hover:text-foreground transition-colors">Cookie Policy</button>
+              <div className="border-t border-white/10 px-6 py-3 flex items-center justify-between flex-wrap gap-2">
+                <p className="text-[11px] opacity-35">© {new Date().getFullYear()} FAREWELL SRL — Tutti i diritti riservati</p>
+                <div className="flex gap-4 text-[11px] opacity-40">
+                  <button onClick={() => setPolicyModal('privacy')} className="hover:opacity-100 transition-opacity">Privacy Policy</button>
+                  <button onClick={() => setPolicyModal('cookie')} className="hover:opacity-100 transition-opacity">Cookie Policy</button>
                 </div>
               </div>
             </div>
@@ -973,9 +1021,18 @@ export default function Dashboard() {
       <Dialog open={todayMapOpen} onOpenChange={setTodayMapOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="font-heading flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-accent" /> Giro di oggi — {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="font-heading flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-accent" /> Giro di oggi — {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </DialogTitle>
+              <button
+                onClick={() => sendWhatsAppGiro(todayAllAppointments)}
+                disabled={sendingWA}
+                className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+              >
+                <Smartphone className="h-3.5 w-3.5" /> {sendingWA ? 'Invio…' : 'Invia su WhatsApp'}
+              </button>
+            </div>
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
