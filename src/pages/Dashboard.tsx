@@ -689,7 +689,7 @@ export default function Dashboard() {
                       <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] font-semibold text-muted-foreground mb-1.5">
                         {['L','M','M','G','V','S','D'].map((d,i) => <div key={i}>{d}</div>)}
                       </div>
-                      <div className="grid grid-cols-7 gap-0.5">
+                      <div className="calendar-grid grid grid-cols-7 gap-0.5">
                         {calendarCells.map((date, i) => {
                           if (!date) return <div key={i} className="aspect-square" />;
                           const dayAppts = getAppointmentsForDay(date);

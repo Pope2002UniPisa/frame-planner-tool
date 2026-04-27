@@ -57,7 +57,7 @@
   .dark {
     --background: 0 0% 8%;
     --foreground: 0 0% 94%;
-    --card: 0 0% 13%;
+    --card: 0 0% 12%;
     --card-foreground: 0 0% 94%;
     --popover: 0 0% 15%;
     --popover-foreground: 0 0% 94%;
@@ -65,13 +65,13 @@
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 20%;
     --secondary-foreground: 0 0% 94%;
-    --muted: 0 0% 20%;
+    --muted: 0 0% 18%;
     --muted-foreground: 0 0% 70%;
     --accent: 28 95% 52%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 40%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 24%;
+    --border: 0 0% 32%;
     --input: 0 0% 22%;
     --ring: 28 95% 52%;
     --sidebar-background: 0 0% 6%;
@@ -80,7 +80,7 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 16%;
+    --sidebar-border: 0 0% 22%;
     --sidebar-ring: 28 95% 52%;
   }
 }
@@ -114,6 +114,29 @@
   .shadow-card-hover {
     box-shadow: 0 10px 25px -5px hsl(220 30% 12% / 0.1), 0 4px 10px -3px hsl(220 30% 12% / 0.05);
   }
+}
+
+/* Dark mode — card borders and separators */
+.dark [class*="rounded"][class*="border"],
+.dark .card,
+.dark [data-slot="card"] {
+  border-color: hsl(0 0% 32%);
+}
+
+.dark [class*="border-border"] {
+  border-color: hsl(0 0% 32%);
+}
+
+/* Calendar grid lines in dark mode */
+.dark .calendar-grid {
+  background: hsl(0 0% 30%);
+  gap: 1px;
+  padding: 1px;
+}
+
+.dark .calendar-grid > button,
+.dark .calendar-grid > div {
+  background: hsl(0 0% 12%);
 }
 
 @media print {
