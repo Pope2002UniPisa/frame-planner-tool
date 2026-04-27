@@ -17,6 +17,35 @@ Aiuti i rivenditori autorizzati con domande relative a:
 Rispondi sempre in italiano, in modo professionale e conciso. Presentati come Silvia quando ti viene chiesto chi sei.
 Per domande che esulano dal portale, indirizza l'utente a contattare direttamente l'azienda via PEC o telefono.`;
 
+// Models tried in order until one responds successfully
+const GEMINI_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+];
+
+async function callGemini(
+  apiKey: string,
+  model: string,
+  contents: { role: string; parts: { text: string }[] }[]
+): Promise<{ ok: boolean; status: number; data: any }> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents,
+        generationConfig: { maxOutputTokens: 512, temperature: 0.7 },
+      }),
+    }
+  );
+  const data = await res.json();
+  return { ok: res.ok, status: res.status, data };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -25,25 +54,22 @@ serve(async (req) => {
   try {
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     if (!GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'API key non configurata. Contatta l\'amministratore.' }), {
+      return new Response(JSON.stringify({ reply: 'API key non configurata. Contatta l\'amministratore.' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     const { messages } = await req.json();
 
-    // Convert from Anthropic format (user/assistant) to Gemini format (user/model)
-    // Gemini requires: conversation starts with 'user', no consecutive same-role messages
+    // Convert to Gemini format: user/model roles, starts with user, no consecutive same-role
     const rawContents = messages.map((m: { role: string; content: string }) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }));
 
-    // Skip leading 'model' messages — Gemini requires first message to be 'user'
     const firstUserIdx = rawContents.findIndex((m: { role: string }) => m.role === 'user');
     const sliced = firstUserIdx >= 0 ? rawContents.slice(firstUserIdx) : rawContents;
 
-    // Merge consecutive same-role messages to avoid Gemini validation errors
     const contents: { role: string; parts: { text: string }[] }[] = [];
     for (const msg of sliced) {
       if (contents.length > 0 && contents[contents.length - 1].role === msg.role) {
@@ -53,44 +79,43 @@ serve(async (req) => {
       }
     }
 
-    console.log('Calling Gemini, contents:', contents.length, 'messages');
+    // Try each model until one works
+    let lastError = '';
+    for (const model of GEMINI_MODELS) {
+      console.log(`Trying model: ${model}`);
+      const { ok, status, data } = await callGemini(GEMINI_API_KEY, model, contents);
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents,
-          generationConfig: { maxOutputTokens: 512, temperature: 0.7 },
-        }),
+      if (status === 404 || status === 400) {
+        lastError = data?.error?.message || `HTTP ${status}`;
+        console.log(`Model ${model} not available (${status}), trying next...`);
+        continue;
       }
-    );
 
-    const data = await response.json();
-    console.log('Gemini status:', response.status, 'ok:', response.ok);
+      if (!ok) {
+        lastError = data?.error?.message || `HTTP ${status}`;
+        console.error(`Model ${model} error:`, JSON.stringify(data));
+        continue;
+      }
 
-    if (!response.ok) {
-      const errMsg = data?.error?.message || `HTTP ${response.status}`;
-      console.error('Gemini API error:', JSON.stringify(data));
-      return new Response(JSON.stringify({ reply: `Errore Gemini (${response.status}): ${errMsg}` }), {
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!reply) {
+        const blockReason = data.promptFeedback?.blockReason;
+        lastError = blockReason ? `Risposta bloccata: ${blockReason}` : 'Nessuna risposta';
+        console.log(`Model ${model} returned no reply:`, JSON.stringify(data));
+        continue;
+      }
+
+      console.log(`Success with model: ${model}`);
+      return new Response(JSON.stringify({ reply }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!reply) {
-      console.error('No candidates in Gemini response:', JSON.stringify(data));
-      const blockReason = data.promptFeedback?.blockReason;
-      return new Response(JSON.stringify({ reply: blockReason ? `Risposta bloccata: ${blockReason}` : 'Nessuna risposta generata. Riprova.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    return new Response(JSON.stringify({ reply }), {
+    // All models failed
+    return new Response(JSON.stringify({ reply: `Servizio temporaneamente non disponibile. Riprova tra qualche minuto. (${lastError})` }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+
   } catch (err) {
     console.error('Edge function error:', String(err));
     return new Response(JSON.stringify({ reply: `Errore interno: ${String(err)}` }), {
