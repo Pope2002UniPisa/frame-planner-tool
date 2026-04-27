@@ -14,7 +14,7 @@ export function ChatBot() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Ciao! Sono l\'assistente virtuale di Pratelli Rappresentanze. Come posso aiutarti?' }
+    { role: 'assistant', content: 'Ciao! Sono Silvia, l\'assistente virtuale di Pratelli Rappresentanze. Come posso aiutarti?' }
   ]);
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -69,8 +69,8 @@ export function ChatBot() {
               <Bot className="h-4 w-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold">Assistente Pratelli</p>
-              <p className="text-[10px] opacity-60">Powered by AI · risponde in italiano</p>
+              <p className="text-sm font-semibold">Silvia</p>
+              <p className="text-[10px] opacity-60">Assistente virtuale · risponde in italiano</p>
             </div>
           </div>
 

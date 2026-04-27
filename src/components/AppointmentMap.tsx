@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix default marker icons broken by Vite bundling
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -28,19 +27,33 @@ async function nominatimGeocode(address: string): Promise<[number, number] | nul
   return null;
 }
 
-function makeIcon(color: string) {
+async function getOSRMRoute(points: [number, number][]): Promise<[number, number][] | null> {
+  try {
+    const coords = points.map(([lat, lng]) => `${lng},${lat}`).join(';');
+    const res = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`
+    );
+    const data = await res.json();
+    if (data.code !== 'Ok' || !data.routes?.[0]) return null;
+    return data.routes[0].geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng] as [number, number]);
+  } catch {
+    return null;
+  }
+}
+
+function makeNumberedIcon(n: number, color: string) {
   return L.divIcon({
-    html: `<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+    html: `<div style="background:${color};width:24px;height:24px;border-radius:50%;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;font-family:system-ui">${n}</div>`,
     className: '',
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
   });
 }
 
 export function AppointmentMap({ appointments }: { appointments: ApptMarker[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'done'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'routing' | 'done'>('idle');
   const depKey = appointments.map(a => a.id).join(',');
 
   useEffect(() => {
@@ -49,7 +62,6 @@ export function AppointmentMap({ appointments }: { appointments: ApptMarker[] })
     let cancelled = false;
     setStatus('loading');
 
-    // Clean up previous map instance
     if (mapRef.current) {
       mapRef.current.remove();
       mapRef.current = null;
@@ -66,25 +78,42 @@ export function AppointmentMap({ appointments }: { appointments: ApptMarker[] })
     (async () => {
       const points: [number, number][] = [];
 
-      for (const appt of appointments) {
+      for (let i = 0; i < appointments.length; i++) {
         if (cancelled) break;
+        const appt = appointments[i];
         const coords = await nominatimGeocode(appt.location);
         if (cancelled) break;
 
         if (coords) {
-          L.marker(coords, { icon: makeIcon(appt.color || '#f59e0b') })
+          const seq = points.length + 1;
+          points.push(coords);
+          L.marker(coords, { icon: makeNumberedIcon(seq, appt.color || '#f59e0b') })
             .addTo(map)
             .bindPopup(
-              `<strong>${appt.title}</strong>${appt.time ? `<br>🕐 ${appt.time}` : ''}<br>📍 ${appt.location}`
+              `<strong>${seq}. ${appt.title}</strong>${appt.time ? `<br>🕐 ${appt.time}` : ''}<br>📍 ${appt.location}`
             );
-          points.push(coords);
         }
-        await new Promise(r => setTimeout(r, 1200));
+
+        if (i < appointments.length - 1) await new Promise(r => setTimeout(r, 1200));
       }
 
       if (!cancelled && points.length > 0) {
-        map.fitBounds(L.latLngBounds(points), { padding: [24, 24], maxZoom: 13 });
+        map.fitBounds(L.latLngBounds(points), { padding: [30, 30], maxZoom: 13 });
       }
+
+      if (!cancelled && points.length >= 2) {
+        setStatus('routing');
+        const route = await getOSRMRoute(points);
+        if (route && !cancelled) {
+          L.polyline(route, {
+            color: '#3b82f6',
+            weight: 3,
+            opacity: 0.75,
+            dashArray: '8, 5',
+          }).addTo(map);
+        }
+      }
+
       if (!cancelled) setStatus('done');
     })();
 
@@ -112,9 +141,9 @@ export function AppointmentMap({ appointments }: { appointments: ApptMarker[] })
   return (
     <div className="relative h-full">
       <div ref={containerRef} className="h-full w-full rounded-lg" style={{ minHeight: '180px' }} />
-      {status === 'loading' && (
+      {(status === 'loading' || status === 'routing') && (
         <div className="absolute bottom-2 left-2 rounded bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
-          Geocoding indirizzi…
+          {status === 'routing' ? 'Calcolo itinerario…' : 'Geocoding indirizzi…'}
         </div>
       )}
     </div>

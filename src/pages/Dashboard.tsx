@@ -87,6 +87,7 @@ export default function Dashboard() {
   const [todayMapOpen, setTodayMapOpen] = useState(false);
   const [policyModal, setPolicyModal] = useState<'privacy' | 'cookie' | null>(null);
   const [sendingWA, setSendingWA] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<typeof calendarAppointments[0] | null>(null);
 
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -327,6 +328,24 @@ export default function Dashboard() {
     if (error) { toast.error('Errore nella cancellazione'); return; }
     setCalendarAppointments(prev => prev.filter(a => a.id !== id));
     toast.success('Appuntamento eliminato');
+  };
+
+  const handleUpdateAppointment = async () => {
+    if (!editingAppointment) return;
+    const typeConfig = APPOINTMENT_TYPES[editingAppointment.type];
+    const updates = {
+      type: editingAppointment.type,
+      title: editingAppointment.title.trim(),
+      time: editingAppointment.time || null,
+      location: editingAppointment.location?.trim() || null,
+      description: editingAppointment.description?.trim() || null,
+      color: typeConfig.color,
+    };
+    const { error } = await supabase.from('appointments').update(updates).eq('id', editingAppointment.id);
+    if (error) { toast.error('Errore nella modifica'); return; }
+    setCalendarAppointments(prev => prev.map(a => a.id === editingAppointment.id ? { ...a, ...updates } : a));
+    setEditingAppointment(null);
+    toast.success('Appuntamento modificato');
   };
 
   const sendWhatsAppGiro = async (appointments: typeof todayAllAppointments, dateLabel?: string) => {
@@ -578,6 +597,9 @@ export default function Dashboard() {
                               </p>
                               {appt.location && <p className="text-[10px] text-muted-foreground truncate">📍 {appt.location}</p>}
                             </div>
+                            <button onClick={() => setEditingAppointment(appt)} className="text-muted-foreground hover:text-accent shrink-0 mt-0.5">
+                              <Edit3 className="h-3 w-3" />
+                            </button>
                           </div>
                         ))}
                         {todayAllAppointments.length > 4 && (
@@ -670,6 +692,9 @@ export default function Dashboard() {
                                   <div className="flex items-center gap-1.5">
                                     <span className="h-2 w-2 rounded-full shrink-0" style={{ background: appt.color ?? undefined }} />
                                     <span className="text-[10px] font-semibold text-foreground flex-1">{appt.title}</span>
+                                    <button onClick={() => setEditingAppointment(appt)} className="text-muted-foreground hover:text-accent">
+                                      <Edit3 className="h-3 w-3" />
+                                    </button>
                                     <button onClick={() => handleDeleteAppointment(appt.id)} className="text-muted-foreground hover:text-destructive">
                                       <Trash2 className="h-3 w-3" />
                                     </button>
@@ -1017,6 +1042,53 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog modifica appuntamento */}
+      <Dialog open={!!editingAppointment} onOpenChange={o => !o && setEditingAppointment(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="font-heading">Modifica appuntamento</DialogTitle></DialogHeader>
+          {editingAppointment && (
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                {new Date(editingAppointment.date + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tipo</label>
+                <Select value={editingAppointment.type} onValueChange={v => setEditingAppointment(prev => prev ? { ...prev, type: v } : null)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="consegna">Consegna</SelectItem>
+                    <SelectItem value="chiamata">Chiamata</SelectItem>
+                    <SelectItem value="pagamento">Pagamento</SelectItem>
+                    <SelectItem value="sopralluogo">Sopralluogo</SelectItem>
+                    <SelectItem value="altro">Altro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Titolo / Cliente</label>
+                <Input value={editingAppointment.title} onChange={e => setEditingAppointment(prev => prev ? { ...prev, title: e.target.value } : null)} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Orario</label>
+                <Input type="time" value={editingAppointment.time || ''} onChange={e => setEditingAppointment(prev => prev ? { ...prev, time: e.target.value } : null)} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Indirizzo</label>
+                <Input value={editingAppointment.location || ''} onChange={e => setEditingAppointment(prev => prev ? { ...prev, location: e.target.value } : null)} placeholder="Es. Via Roma 12, Pisa" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Descrizione</label>
+                <Textarea rows={2} value={editingAppointment.description || ''} onChange={e => setEditingAppointment(prev => prev ? { ...prev, description: e.target.value } : null)} placeholder="Note aggiuntive..." />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingAppointment(null)}>Annulla</Button>
+            <Button onClick={handleUpdateAppointment} disabled={!editingAppointment?.title?.trim()}>Salva modifiche</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog mappa giro di oggi */}
       <Dialog open={todayMapOpen} onOpenChange={setTodayMapOpen}>
         <DialogContent className="max-w-3xl">
@@ -1041,12 +1113,15 @@ export default function Dashboard() {
               ) : todayAllAppointments.map(appt => (
                 <div key={appt.id} className="flex items-start gap-2.5 rounded-lg border border-border p-3">
                   <span className="mt-0.5 h-2.5 w-2.5 rounded-full shrink-0" style={{ background: appt.color || '#94a3b8' }} />
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground">{appt.title}</p>
                     <p className="text-xs text-muted-foreground">{APPOINTMENT_TYPES[appt.type]?.label}{appt.time ? ` · ${appt.time}` : ''}</p>
                     {appt.location && <p className="text-xs text-muted-foreground">📍 {appt.location}</p>}
                     {appt.description && <p className="text-xs text-muted-foreground/70">{appt.description}</p>}
                   </div>
+                  <button onClick={() => setEditingAppointment(appt)} className="text-muted-foreground hover:text-accent shrink-0 mt-0.5">
+                    <Edit3 className="h-4 w-4" />
+                  </button>
                 </div>
               ))}
             </div>
