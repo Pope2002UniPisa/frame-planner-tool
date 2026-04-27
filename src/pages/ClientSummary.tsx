@@ -7,15 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Search, Filter, ChevronDown, ChevronUp, Eye, User } from 'lucide-react';
+import { Users, Search, Filter, ChevronDown, ChevronUp, Eye, User, Calendar } from 'lucide-react';
 import { productLabels, statusLabels } from '@/lib/constants';
 import AppLayout from '@/components/AppLayout';
+
+interface Appointment {
+  id: string; date: string; type: string; title: string;
+  time: string | null; location: string | null; description: string | null; color: string | null;
+}
 
 export default function ClientSummary() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   const [measurements, setMeasurements] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [expandedClientName, setExpandedClientName] = useState<string | null>(null);
 
@@ -28,12 +34,17 @@ export default function ClientSummary() {
 
   useEffect(() => {
     if (!user) return;
-    const fetchMeasurements = async () => {
-      const { data } = await supabase.from('measurements').select('*').order('created_at', { ascending: false });
-      setMeasurements(data || []);
+    const fetchAll = async () => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const [{ data: mData }, { data: aData }] = await Promise.all([
+        supabase.from('measurements').select('*').order('created_at', { ascending: false }),
+        supabase.from('appointments').select('*').gte('date', todayStr).order('date').order('time'),
+      ]);
+      setMeasurements(mData || []);
+      setAppointments(aData || []);
       setLoadingData(false);
     };
-    fetchMeasurements();
+    fetchAll();
   }, [user]);
 
   const filteredMeasurements = useMemo(() => {
@@ -179,6 +190,9 @@ export default function ClientSummary() {
           <div className="space-y-2">
             {clientSummary.map((cs: any) => {
               const isExpanded = expandedClientName === cs.name;
+              const clientAppts = appointments.filter(a =>
+                a.title.toLowerCase().includes(cs.name.toLowerCase())
+              );
               return (
                 <Card key={cs.name} className={isExpanded ? 'ring-2 ring-primary/20' : ''}>
                   <CardContent className="py-3 px-4">
@@ -208,6 +222,40 @@ export default function ClientSummary() {
                               <p className="text-[9px] text-muted-foreground">{st.label}</p>
                             </div>
                           ))}
+                        </div>
+
+                        {/* Prossime misurazioni dal calendario */}
+                        <div className="rounded-lg border border-border bg-muted/30 p-3">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Calendar className="h-3.5 w-3.5 text-accent" />
+                            <span className="text-xs font-semibold text-foreground">Prossime misurazioni</span>
+                            <span className="text-[10px] text-muted-foreground ml-auto">{clientAppts.length} appuntamenti</span>
+                          </div>
+                          {clientAppts.length === 0 ? (
+                            <p className="text-[11px] text-muted-foreground italic">Nessun appuntamento programmato.</p>
+                          ) : (
+                            <div className="space-y-0">
+                              {clientAppts.map(appt => {
+                                const d = new Date(appt.date + 'T00:00:00');
+                                return (
+                                  <div key={appt.id} className="flex items-start gap-2.5 py-2 border-b border-border/50 last:border-0">
+                                    <div className="text-center shrink-0 w-7 pt-0.5">
+                                      <p className="text-xs font-bold text-foreground leading-none">{d.getDate()}</p>
+                                      <p className="text-[9px] text-muted-foreground uppercase">{d.toLocaleDateString('it-IT', { month: 'short' })}</p>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: appt.color || '#94a3b8' }} />
+                                        <p className="text-xs font-medium text-foreground truncate">{appt.title}</p>
+                                      </div>
+                                      {appt.time && <p className="text-[10px] text-muted-foreground">🕐 {appt.time}</p>}
+                                      {appt.location && <p className="text-[10px] text-muted-foreground truncate">📍 {appt.location}</p>}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
 
                         <div className="space-y-1.5">

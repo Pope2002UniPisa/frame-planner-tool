@@ -191,14 +191,6 @@ export default function Dashboard() {
       .reduce((sum, m) => sum + (Number(m.estimated_price) || 0), 0);
   }, [measurements]);
 
-  const upcoming = useMemo(() => {
-    const todayStr = formatDateKey(new Date());
-    return calendarAppointments
-      .filter(a => a.date >= todayStr)
-      .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
-      .slice(0, 7);
-  }, [calendarAppointments]);
-
   const todayAllAppointments = useMemo(() => {
     const dateStr = formatDateKey(giroDate);
     return calendarAppointments
@@ -557,40 +549,6 @@ export default function Dashboard() {
               {/* RIGHT col */}
               <div className="space-y-4">
 
-                {/* Prossime misurazioni */}
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-foreground">Prossime misurazioni</h3>
-                      <span className="text-xs text-accent font-medium">{upcoming.length} appuntamenti</span>
-                    </div>
-                    <div>
-                      {upcoming.length === 0 ? (
-                        <p className="text-xs text-muted-foreground py-3 text-center">Nessun appuntamento programmato.</p>
-                      ) : upcoming.map(appt => {
-                        const d = new Date(appt.date + 'T00:00:00');
-                        return (
-                          <div key={appt.id} className="flex items-start gap-3 py-2.5 border-b border-border/60 last:border-0">
-                            <div className="text-center shrink-0 w-8 pt-0.5">
-                              <p className="text-sm font-bold text-foreground leading-none">{d.getDate()}</p>
-                              <p className="text-[9px] text-muted-foreground uppercase mt-0.5">{d.toLocaleDateString('it-IT', { month: 'short' })}</p>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: appt.color || '#94a3b8' }} />
-                                <p className="text-xs font-semibold text-foreground truncate">{appt.title}</p>
-                              </div>
-                              {appt.time && <p className="text-[10px] text-muted-foreground mt-0.5">🕐 {appt.time}</p>}
-                              {appt.location && <p className="text-[10px] text-muted-foreground truncate">📍 {appt.location}</p>}
-                              {appt.description && <p className="text-[10px] text-muted-foreground/60 truncate">{appt.description}</p>}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Giro di oggi / altro giorno */}
                 <Card>
                   <CardContent className="p-4">
@@ -814,15 +772,6 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               </div>
-            </div>
-
-            {/* Stats mini row */}
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-              <StatCard icon={FileText} label="Totale" value={stats.total} />
-              <StatCard icon={Edit3} label="Bozze" value={stats.drafts} />
-              <StatCard icon={Send} label="Preventivi" value={stats.quoted} />
-              <StatCard icon={Package} label="Ordini" value={stats.ordered} />
-              <StatCard icon={CheckCircle} label="Completate" value={stats.completed} />
             </div>
 
             {/* Measurements list */}
@@ -1336,16 +1285,3 @@ function KpiCard({ icon: Icon, label, value }: { icon: any; label: string; value
   );
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: number }) {
-  return (
-    <Card>
-      <CardContent className="flex items-center gap-3 py-4">
-        <div className="rounded-lg bg-muted p-2"><Icon className="h-5 w-5 text-muted-foreground" /></div>
-        <div>
-          <p className="text-2xl font-bold font-heading text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
