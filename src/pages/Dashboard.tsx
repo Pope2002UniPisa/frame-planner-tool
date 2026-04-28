@@ -1226,9 +1226,9 @@ export default function Dashboard() {
 
       {/* Dialog mappa giro di oggi */}
       <Dialog open={todayMapOpen} onOpenChange={o => { setTodayMapOpen(o); if (!o) setHoveredApptId(null); }}>
-        <DialogContent className="max-w-5xl w-[95vw]">
-          <DialogHeader>
-            <div className="flex items-center gap-3 pr-8">
+        <DialogContent className="max-w-5xl w-[95vw] flex flex-col" style={{ maxHeight: '90dvh' }}>
+          <DialogHeader className="shrink-0">
+            <div className="flex items-center gap-2 pr-8 flex-wrap">
               <DialogTitle className="font-heading flex items-center gap-2 flex-1 min-w-0">
                 <MapPin className="h-4 w-4 text-accent shrink-0" />
                 <span className="truncate">{giroLabelFull}</span>
@@ -1239,44 +1239,44 @@ export default function Dashboard() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors shrink-0"
               >
-                <Navigation className="h-4 w-4" /> Naviga
+                <Navigation className="h-3.5 w-3.5" /> Naviga
               </a>
               <button
                 onClick={() => sendWhatsAppGiro(todayAllAppointments, giroDateStr)}
                 disabled={sendingWA}
                 className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
               >
-                <WhatsAppIcon className="h-4 w-4" /> {sendingWA ? 'Invio…' : 'WhatsApp'}
+                <WhatsAppIcon className="h-3.5 w-3.5" /> {sendingWA ? 'Invio…' : 'WhatsApp'}
               </button>
             </div>
           </DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
-              {todayAllAppointments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nessun appuntamento.</p>
-              ) : todayAllAppointments.map(appt => (
-                <div
-                  key={appt.id}
-                  className={`flex items-start gap-2.5 rounded-lg border p-3 cursor-default transition-colors ${hoveredApptId === appt.id ? 'border-accent/60 bg-accent/5' : 'border-border'}`}
-                  onMouseEnter={() => setHoveredApptId(appt.id)}
-                  onMouseLeave={() => setHoveredApptId(null)}
-                >
-                  <span className="mt-0.5 h-2.5 w-2.5 rounded-full shrink-0" style={{ background: appt.color || '#94a3b8' }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{appt.title}</p>
-                    <p className="text-xs text-muted-foreground">{APPOINTMENT_TYPES[appt.type]?.label}{appt.time ? ` · ${appt.time}` : ''}</p>
-                    {appt.location && <p className="text-xs text-muted-foreground">📍 {appt.location}</p>}
-                    {appt.description && <p className="text-xs text-muted-foreground/70">{appt.description}</p>}
-                  </div>
-                  <button onClick={() => setEditingAppointment(appt)} className="text-muted-foreground hover:text-accent shrink-0 mt-0.5">
-                    <Edit3 className="h-4 w-4" />
-                  </button>
+
+          {/* Lista appuntamenti — compatta, scorribile, max 35% altezza */}
+          <div className="shrink-0 space-y-1.5 overflow-y-auto pr-1" style={{ maxHeight: '30dvh' }}>
+            {todayAllAppointments.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nessun appuntamento.</p>
+            ) : todayAllAppointments.map(appt => (
+              <div
+                key={appt.id}
+                className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 cursor-default transition-colors ${hoveredApptId === appt.id ? 'border-accent/60 bg-accent/5' : 'border-border'}`}
+                onMouseEnter={() => setHoveredApptId(appt.id)}
+                onMouseLeave={() => setHoveredApptId(null)}
+              >
+                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: appt.color || '#94a3b8' }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground leading-tight">{appt.title}</p>
+                  <p className="text-xs text-muted-foreground">{APPOINTMENT_TYPES[appt.type]?.label}{appt.time ? ` · ${appt.time}` : ''}{appt.location ? ` · ${appt.location}` : ''}</p>
                 </div>
-              ))}
-            </div>
-            <div className="sm:col-span-2">
-              {mapMounted && <AppointmentMap appointments={todayMapAppointments} hoveredId={hoveredApptId} />}
-            </div>
+                <button onClick={() => setEditingAppointment(appt)} className="text-muted-foreground hover:text-accent shrink-0">
+                  <Edit3 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Mappa — occupa tutto lo spazio rimanente */}
+          <div className="flex-1 min-h-0" style={{ minHeight: '200px' }}>
+            {mapMounted && <AppointmentMap appointments={todayMapAppointments} hoveredId={hoveredApptId} />}
           </div>
         </DialogContent>
       </Dialog>

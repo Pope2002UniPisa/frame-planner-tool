@@ -201,7 +201,7 @@ export function AppointmentMap({
   }
 
   return (
-    <div className="relative w-full" style={{ height: 'min(340px, 45vh)' }}>
+    <div className="relative w-full h-full" style={{ minHeight: '200px' }}>
       <div ref={containerRef} className="absolute inset-0 rounded-lg" />
       {(status === 'loading' || status === 'routing') && (
         <div className="absolute bottom-2 left-2 rounded bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
