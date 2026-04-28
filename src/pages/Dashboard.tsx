@@ -14,7 +14,7 @@ import {
   Plus, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter,
   Printer, Eye, Newspaper, Calendar, CalendarDays, ExternalLink, Instagram,
   Camera, Truck, ThumbsUp, MessageSquare, Maximize2, Smartphone,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, TrendingUp, MapPin, Facebook, Linkedin,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, TrendingUp, MapPin, Facebook, Linkedin, Navigation,
 } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { toast } from 'sonner';
@@ -50,6 +50,20 @@ function formatDateKey(date: Date) {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function buildGoogleMapsUrl(appointments: Array<{ location: string | null; time: string | null }>): string {
+  const withLoc = appointments.filter(a => a.location);
+  if (withLoc.length === 0) return 'https://maps.google.com';
+  if (withLoc.length === 1) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(withLoc[0].location!)}`;
+  }
+  const origin = encodeURIComponent(withLoc[0].location!);
+  const dest = encodeURIComponent(withLoc[withLoc.length - 1].location!);
+  const waypoints = withLoc.slice(1, -1).map(a => encodeURIComponent(a.location!)).join('|');
+  let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`;
+  if (waypoints) url += `&waypoints=${waypoints}`;
+  return url;
 }
 
 export default function Dashboard() {
@@ -1186,6 +1200,14 @@ export default function Dashboard() {
                 <MapPin className="h-4 w-4 text-accent shrink-0" />
                 <span className="truncate">{giroLabelFull}</span>
               </DialogTitle>
+              <a
+                href={buildGoogleMapsUrl(todayAllAppointments)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors shrink-0"
+              >
+                <Navigation className="h-4 w-4" /> Naviga
+              </a>
               <button
                 onClick={() => sendWhatsAppGiro(todayAllAppointments, giroDateStr)}
                 disabled={sendingWA}
