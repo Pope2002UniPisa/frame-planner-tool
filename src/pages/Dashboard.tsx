@@ -55,13 +55,10 @@ function formatDateKey(date: Date) {
 function buildGoogleMapsUrl(appointments: Array<{ location: string | null; time: string | null }>): string {
   const withLoc = appointments.filter(a => a.location);
   if (withLoc.length === 0) return 'https://maps.google.com';
-  if (withLoc.length === 1) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(withLoc[0].location!)}`;
-  }
-  const origin = encodeURIComponent(withLoc[0].location!);
+  // No origin — Google Maps chiede la posizione di partenza all'utente
   const dest = encodeURIComponent(withLoc[withLoc.length - 1].location!);
-  const waypoints = withLoc.slice(1, -1).map(a => encodeURIComponent(a.location!)).join('|');
-  let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`;
+  const waypoints = withLoc.slice(0, -1).map(a => encodeURIComponent(a.location!)).join('|');
+  let url = `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
   if (waypoints) url += `&waypoints=${waypoints}`;
   return url;
 }

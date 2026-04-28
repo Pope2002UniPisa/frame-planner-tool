@@ -17,40 +17,6 @@ Aiuti i rivenditori autorizzati con domande relative a:
 Rispondi sempre in italiano, in modo professionale e conciso. Presentati come Silvia quando ti viene chiesto chi sei.
 Per domande che esulano dal portale, indirizza l'utente a contattare direttamente l'azienda via PEC o telefono.`;
 
-// Preferred model name fragments, in order
-const MODEL_PREFS = ['gemini-2.0-flash', 'gemini-2.0', 'gemini-1.5-flash', 'gemini-1.5', 'gemini'];
-
-async function discoverModel(apiKey: string): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=50`
-    );
-    if (!res.ok) {
-      console.log('ListModels failed:', res.status);
-      return null;
-    }
-    const data = await res.json();
-    const models: any[] = data.models || [];
-    console.log('Available models:', models.map((m: any) => m.name).join(', '));
-
-    const capable = models.filter((m: any) =>
-      Array.isArray(m.supportedGenerationMethods) &&
-      m.supportedGenerationMethods.includes('generateContent')
-    );
-
-    for (const pref of MODEL_PREFS) {
-      const match = capable.find((m: any) => m.name?.includes(pref));
-      if (match) return match.name.replace('models/', '');
-    }
-
-    if (capable.length > 0) return capable[0].name.replace('models/', '');
-    return null;
-  } catch (e) {
-    console.log('discoverModel error:', String(e));
-    return null;
-  }
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,67 +29,51 @@ serve(async (req) => {
     });
 
   try {
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+    if (!GROQ_API_KEY) {
       return json({ reply: "Chiave API non configurata. Contatta l'amministratore." }, 500);
     }
 
     const { messages } = await req.json();
 
-    // Build Gemini conversation: starts with user, no consecutive same-role messages
-    const rawContents = messages.map((m: { role: string; content: string }) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
-    const firstUserIdx = rawContents.findIndex((m: any) => m.role === 'user');
-    const sliced = firstUserIdx >= 0 ? rawContents.slice(firstUserIdx) : rawContents;
-    const contents: { role: string; parts: { text: string }[] }[] = [];
-    for (const msg of sliced) {
-      if (contents.length > 0 && contents[contents.length - 1].role === msg.role) {
-        contents[contents.length - 1].parts[0].text += '\n' + msg.parts[0].text;
-      } else {
-        contents.push({ ...msg, parts: [{ text: msg.parts[0].text }] });
-      }
-    }
+    // Build conversation in OpenAI format (Groq is OpenAI-compatible)
+    const conversation = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...messages.map((m: { role: string; content: string }) => ({
+        role: m.role, // 'user' or 'assistant'
+        content: m.content,
+      })),
+    ];
 
-    // Discover which model is available for this API key
-    const model = await discoverModel(GEMINI_API_KEY);
-    if (!model) {
-      return json({ reply: 'Nessun modello Gemini disponibile per questa chiave API. Verifica che la chiave sia corretta e che l\'API "Generative Language" sia abilitata nel progetto Google Cloud.' });
-    }
+    console.log('Calling Groq, messages:', conversation.length);
 
-    console.log('Using model:', model, '— messages:', contents.length);
-
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents,
-          generationConfig: { maxOutputTokens: 512, temperature: 0.7 },
-        }),
-      }
-    );
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: conversation,
+        max_tokens: 512,
+        temperature: 0.7,
+      }),
+    });
 
     const data = await res.json();
+    console.log('Groq status:', res.status);
 
     if (!res.ok) {
-      const rawMsg: string = data?.error?.message || `HTTP ${res.status}`;
-      console.error('Gemini error:', rawMsg);
-      // Friendly message for quota errors
-      const isQuota = rawMsg.toLowerCase().includes('quota') || rawMsg.toLowerCase().includes('429') || res.status === 429;
-      const errMsg = isQuota
-        ? 'Quota API Gemini esaurita. Vai su aistudio.google.com, crea una nuova chiave API e aggiornala nei segreti Supabase (GEMINI_API_KEY).'
-        : rawMsg.split('.')[0].trim();
-      return json({ reply: errMsg });
+      const errMsg: string = data?.error?.message || `HTTP ${res.status}`;
+      console.error('Groq error:', errMsg);
+      const isQuota = res.status === 429;
+      return json({ reply: isQuota ? 'Troppe richieste. Riprova tra qualche secondo.' : `Errore: ${errMsg.split('.')[0]}` });
     }
 
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const reply = data.choices?.[0]?.message?.content;
     if (!reply) {
-      const blockReason = data.promptFeedback?.blockReason;
-      return json({ reply: blockReason ? `Risposta bloccata: ${blockReason}` : 'Nessuna risposta generata. Riprova.' });
+      return json({ reply: 'Nessuna risposta generata. Riprova.' });
     }
 
     return json({ reply });
