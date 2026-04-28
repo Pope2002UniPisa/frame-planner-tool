@@ -201,8 +201,8 @@ export function AppointmentMap({
   }
 
   return (
-    <div className="relative" style={{ width: '100%', height: '100%' }}>
-      <div ref={containerRef} style={{ width: '100%', height: '100%', minHeight: '180px' }} className="rounded-lg" />
+    <div className="relative w-full" style={{ height: 'min(340px, 45vh)' }}>
+      <div ref={containerRef} className="absolute inset-0 rounded-lg" />
       {(status === 'loading' || status === 'routing') && (
         <div className="absolute bottom-2 left-2 rounded bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
           {status === 'routing' ? 'Calcolo itinerario…' : 'Geocoding indirizzi…'}
