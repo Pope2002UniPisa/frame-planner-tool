@@ -98,6 +98,7 @@ export default function Dashboard() {
   const [appointmentForm, setAppointmentForm] = useState({ type: 'consegna', title: '', time: '', location: '', description: '' });
   const [isDark, setIsDark] = useState(false);
   const [todayMapOpen, setTodayMapOpen] = useState(false);
+  const [mapMounted, setMapMounted] = useState(false);
   const [policyModal, setPolicyModal] = useState<'privacy' | 'cookie' | null>(null);
   const [sendingWA, setSendingWA] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<typeof calendarAppointments[0] | null>(null);
@@ -140,6 +141,16 @@ export default function Dashboard() {
       document.documentElement.classList.toggle('dark', dark);
     }
   }, [profile?.dark_mode]);
+
+  // Monta la mappa solo dopo che l'animazione del dialog è completata (evita container 0px su iOS)
+  useEffect(() => {
+    if (todayMapOpen) {
+      const t = setTimeout(() => setMapMounted(true), 350);
+      return () => clearTimeout(t);
+    } else {
+      setMapMounted(false);
+    }
+  }, [todayMapOpen]);
 
   const toggleDarkMode = async () => {
     const newDark = !isDark;
@@ -1264,7 +1275,7 @@ export default function Dashboard() {
               ))}
             </div>
             <div className="sm:col-span-2 rounded-lg overflow-hidden" style={{ height: '320px' }}>
-              {todayMapOpen && <AppointmentMap appointments={todayMapAppointments} hoveredId={hoveredApptId} />}
+              {mapMounted && <AppointmentMap appointments={todayMapAppointments} hoveredId={hoveredApptId} />}
             </div>
           </div>
         </DialogContent>

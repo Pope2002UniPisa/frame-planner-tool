@@ -116,7 +116,7 @@ export function AppointmentMap({
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
       maxZoom: 18,
-      crossOrigin: '',
+      crossOrigin: 'anonymous',
     }).addTo(map);
 
     map.attributionControl.setPrefix(
