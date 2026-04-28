@@ -5,6 +5,7 @@ import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { supabase } from '@/integrations/supabase/client';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Menu } from 'lucide-react';
+import pratelliLogo from '@/assets/pratelli-logo.png';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -84,7 +85,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           >
             <Menu className="h-5 w-5 text-foreground" />
           </button>
-          <span className="font-semibold text-sm text-foreground truncate">Pratelli Rappresentanze</span>
+          <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-7 object-contain" />
         </div>
         {children}
       </main>

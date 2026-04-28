@@ -14,7 +14,7 @@ import {
   Plus, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter,
   Printer, Eye, Newspaper, Calendar, CalendarDays, ExternalLink, Instagram,
   Camera, Truck, ThumbsUp, MessageSquare, Maximize2, Smartphone,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, TrendingUp, MapPin, Facebook, Linkedin, Navigation,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, TrendingUp, MapPin, Facebook, Linkedin, Navigation, Menu,
 } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { toast } from 'sonner';
