@@ -1263,7 +1263,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            <div className="sm:col-span-2" style={{ height: '480px' }}>
+            <div className="sm:col-span-2 rounded-lg overflow-hidden" style={{ height: '320px' }}>
               {todayMapOpen && <AppointmentMap appointments={todayMapAppointments} hoveredId={hoveredApptId} />}
             </div>
           </div>

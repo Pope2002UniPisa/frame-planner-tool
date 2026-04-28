@@ -112,16 +112,25 @@ export function AppointmentMap({
     const map = L.map(containerRef.current, { zoomControl: true }).setView([43.7, 10.5], 9);
     mapRef.current = map;
 
-    // Fix: dialog animations can cause size=0 at mount; invalidate after render
-    setTimeout(() => { if (!cancelled) map.invalidateSize(); }, 250);
+    // Tiles — crossOrigin required for iOS Safari to render them
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
+      maxZoom: 18,
+      crossOrigin: '',
+    }).addTo(map);
 
     map.attributionControl.setPrefix(
       '<a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer">Leaflet</a>'
     );
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
-      maxZoom: 18,
-    }).addTo(map);
+
+    // Dialog zoom-in animation (200ms) + rendering lag: fire invalidateSize multiple times
+    [200, 400, 800].forEach(ms => {
+      setTimeout(() => {
+        if (!cancelled && mapRef.current) {
+          mapRef.current.invalidateSize({ animate: false });
+        }
+      }, ms);
+    });
 
     (async () => {
       const points: [number, number][] = [];
@@ -192,8 +201,8 @@ export function AppointmentMap({
   }
 
   return (
-    <div className="relative h-full">
-      <div ref={containerRef} className="h-full w-full rounded-lg" style={{ minHeight: '180px' }} />
+    <div className="relative" style={{ width: '100%', height: '100%' }}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%', minHeight: '180px' }} className="rounded-lg" />
       {(status === 'loading' || status === 'routing') && (
         <div className="absolute bottom-2 left-2 rounded bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
           {status === 'routing' ? 'Calcolo itinerario…' : 'Geocoding indirizzi…'}
