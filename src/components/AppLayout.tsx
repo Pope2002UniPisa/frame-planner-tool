@@ -76,7 +76,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       <main className="flex-1 overflow-y-auto min-w-0">
         {/* Top bar solo su mobile */}
-        <div className="lg:hidden sticky top-0 z-30 flex items-center h-13 px-4 py-3 bg-background border-b border-border gap-3">
+        <div className="lg:hidden sticky top-0 z-30 flex items-center h-12 px-4 py-2 bg-background border-b border-border gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0"

@@ -104,6 +104,7 @@ export default function Dashboard() {
   const [hoveredApptId, setHoveredApptId] = useState<string | null>(null);
   const [apptSearch, setApptSearch] = useState('');
   const [giroDate, setGiroDate] = useState<Date>(() => new Date());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -453,22 +454,38 @@ export default function Dashboard() {
         onToggleDarkMode={toggleDarkMode}
         onSignOut={signOut}
         onNavigate={navigate}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
+
+      {/* Backdrop mobile */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="shrink-0 border-b border-border bg-card px-6 py-3 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-base font-bold font-heading text-foreground leading-tight truncate">
-              {(() => {
-                const now = new Date();
-                const totalMins = now.getHours() * 60 + now.getMinutes();
-                const name = profile?.full_name?.split(' ')[0] || '';
-                const greeting = totalMins < 720 ? 'Buongiorno' : totalMins < 870 ? 'Buon pomeriggio' : 'Buonasera';
-                return name ? `${greeting}, ${name}` : greeting;
-              })()}
-            </p>
-            <p className="text-xs text-muted-foreground capitalize">{todayLabel}</p>
+        <header className="shrink-0 border-b border-border bg-card px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-1.5 -ml-1 rounded-lg hover:bg-muted transition-colors shrink-0"
+              aria-label="Apri menu"
+            >
+              <Menu className="h-5 w-5 text-foreground" />
+            </button>
+            <div className="min-w-0">
+              <p className="text-base font-bold font-heading text-foreground leading-tight truncate">
+                {(() => {
+                  const now = new Date();
+                  const totalMins = now.getHours() * 60 + now.getMinutes();
+                  const name = profile?.full_name?.split(' ')[0] || '';
+                  const greeting = totalMins < 720 ? 'Buongiorno' : totalMins < 870 ? 'Buon pomeriggio' : 'Buonasera';
+                  return name ? `${greeting}, ${name}` : greeting;
+                })()}
+              </p>
+              <p className="text-xs text-muted-foreground capitalize">{todayLabel}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <span className="font-mono text-sm tabular-nums text-foreground font-semibold tracking-wider hidden sm:block">{clock}</span>
@@ -482,10 +499,18 @@ export default function Dashboard() {
 
             {/* KPI row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard icon={Package} label="Ordini attivi" value={String(stats.ordered)} />
-              <KpiCard icon={Truck} label="Consegne settimana" value={String(consegneSettimana)} />
-              <KpiCard icon={FileText} label="Preventivi in attesa" value={String(stats.quoted)} />
-              <KpiCard icon={TrendingUp} label="Fatturato mese" value={`€ ${fatturatoMese.toLocaleString('it-IT', { minimumFractionDigits: 0 })}`} />
+              {loadingData ? (
+                [1,2,3,4].map(i => (
+                  <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+                ))
+              ) : (
+                <>
+                  <KpiCard icon={Package} label="Ordini attivi" value={String(stats.ordered)} />
+                  <KpiCard icon={Truck} label="Consegne settimana" value={String(consegneSettimana)} />
+                  <KpiCard icon={FileText} label="Preventivi in attesa" value={String(stats.quoted)} />
+                  <KpiCard icon={TrendingUp} label="Fatturato mese" value={`€ ${fatturatoMese.toLocaleString('it-IT', { minimumFractionDigits: 0 })}`} />
+                </>
+              )}
             </div>
 
             {/* Main grid: content left + sidebar right */}

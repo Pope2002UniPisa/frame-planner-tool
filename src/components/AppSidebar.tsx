@@ -12,8 +12,8 @@ interface Props {
   onToggleDarkMode: () => void;
   onSignOut: () => void;
   onNavigate: (path: string) => void;
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 const NAV = [
@@ -24,7 +24,7 @@ const NAV = [
   { icon: CreditCard, label: 'Pagamenti', href: '/dashboard/pagamenti' },
 ];
 
-export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDarkMode, onSignOut, onNavigate, isOpen, onClose }: Props) {
+export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDarkMode, onSignOut, onNavigate, isOpen = false, onClose = () => {} }: Props) {
   const location = useLocation();
   const initials = (profile?.full_name || userEmail || '?')[0].toUpperCase();
 

@@ -139,6 +139,13 @@
   background: hsl(0 0% 12%);
 }
 
+/* iOS safe area — evita che il contenuto finisca sotto la barra del browser */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  main {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 @media print {
   @page {
     margin: 15mm 10mm 20mm 10mm;
