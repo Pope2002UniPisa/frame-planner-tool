@@ -12,6 +12,8 @@ interface Props {
   onToggleDarkMode: () => void;
   onSignOut: () => void;
   onNavigate: (path: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const NAV = [
@@ -22,13 +24,21 @@ const NAV = [
   { icon: CreditCard, label: 'Pagamenti', href: '/dashboard/pagamenti' },
 ];
 
-export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDarkMode, onSignOut, onNavigate }: Props) {
+export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDarkMode, onSignOut, onNavigate, isOpen, onClose }: Props) {
   const location = useLocation();
   const initials = (profile?.full_name || userEmail || '?')[0].toUpperCase();
 
   return (
     <aside
-      className="w-60 shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden"
+      className={cn(
+        // Layout base
+        'w-60 shrink-0 flex flex-col overflow-hidden',
+        // Mobile: overlay fisso, si sposta fuori dallo schermo quando chiuso
+        'fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-in-out',
+        isOpen ? 'translate-x-0' : '-translate-x-full',
+        // Desktop (lg+): sempre visibile, sticky nel flex layout
+        'lg:relative lg:translate-x-0 lg:z-auto lg:sticky lg:top-0 lg:h-screen'
+      )}
       style={{ background: 'hsl(var(--sidebar-background))' }}
     >
       {/* Logo */}
@@ -66,6 +76,7 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDark
             <Link
               key={href}
               to={href}
+              onClick={onClose}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                 active
@@ -93,7 +104,7 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDark
         <div className="flex gap-1">
           {isAdmin && (
             <button
-              onClick={() => onNavigate('/admin')}
+              onClick={() => { onNavigate('/admin'); onClose(); }}
               title="Admin"
               className="flex-1 flex items-center justify-center rounded-lg py-2 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
             >
@@ -101,7 +112,7 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDark
             </button>
           )}
           <button
-            onClick={() => onNavigate('/profilo')}
+            onClick={() => { onNavigate('/profilo'); onClose(); }}
             title="Profilo"
             className="flex-1 flex items-center justify-center rounded-lg py-2 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
           >
