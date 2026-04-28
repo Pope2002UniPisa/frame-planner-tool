@@ -110,9 +110,14 @@ serve(async (req) => {
     const data = await res.json();
 
     if (!res.ok) {
-      const errMsg = data?.error?.message || `HTTP ${res.status}`;
-      console.error('Gemini error:', errMsg);
-      return json({ reply: `Errore Gemini: ${errMsg}` });
+      const rawMsg: string = data?.error?.message || `HTTP ${res.status}`;
+      console.error('Gemini error:', rawMsg);
+      // Friendly message for quota errors
+      const isQuota = rawMsg.toLowerCase().includes('quota') || rawMsg.toLowerCase().includes('429') || res.status === 429;
+      const errMsg = isQuota
+        ? 'Quota API Gemini esaurita. Vai su aistudio.google.com, crea una nuova chiave API e aggiornala nei segreti Supabase (GEMINI_API_KEY).'
+        : rawMsg.split('.')[0].trim();
+      return json({ reply: errMsg });
     }
 
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;

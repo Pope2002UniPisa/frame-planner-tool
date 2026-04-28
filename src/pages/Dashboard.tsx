@@ -14,7 +14,7 @@ import {
   Plus, Ruler, CheckCircle, FileText, Package, Send, Edit3, Search, Filter,
   Printer, Eye, Newspaper, Calendar, CalendarDays, ExternalLink, Instagram,
   Camera, Truck, ThumbsUp, MessageSquare, Maximize2, Smartphone,
-  ChevronLeft, ChevronRight, Trash2, TrendingUp, MapPin, Facebook, Linkedin,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, TrendingUp, MapPin, Facebook, Linkedin,
 } from 'lucide-react';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { toast } from 'sonner';
@@ -67,6 +67,7 @@ export default function Dashboard() {
   const [filterProduct, setFilterProduct] = useState('all');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
+  const [expandedProductTypes, setExpandedProductTypes] = useState<Set<string>>(new Set());
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [quoteResponseDialog, setQuoteResponseDialog] = useState<any>(null);
@@ -149,6 +150,13 @@ export default function Dashboard() {
     return names.size;
   }, [measurements]);
 
+  const toggleProductType = (type: string) =>
+    setExpandedProductTypes(prev => {
+      const next = new Set(prev);
+      next.has(type) ? next.delete(type) : next.add(type);
+      return next;
+    });
+
   const filteredMeasurements = useMemo(() => {
     return measurements.filter(m => {
       if (filterStatus !== 'all') {
@@ -167,6 +175,20 @@ export default function Dashboard() {
       return true;
     });
   }, [measurements, filterStatus, filterProduct, searchText, filterDateFrom, filterDateTo]);
+
+  const groupedMeasurements = useMemo(() => {
+    const order = ['finestra', 'porta', 'porta_finestra', 'basculante', 'persiana', 'zanzariera'];
+    const groups: Record<string, any[]> = {};
+    filteredMeasurements.forEach(m => {
+      const type = m.product_type || 'altro';
+      if (!groups[type]) groups[type] = [];
+      groups[type].push(m);
+    });
+    return Object.entries(groups).sort(([a], [b]) => {
+      const ai = order.indexOf(a); const bi = order.indexOf(b);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+  }, [filteredMeasurements]);
 
   const consegneSettimana = useMemo(() => {
     const now = new Date();
@@ -835,19 +857,33 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-3">
-                  {filteredMeasurements.map(m => {
-                    const pi = productIcons[m.product_type] || { emoji: '📦', color: '#6b7280' };
+                <div className="space-y-2">
+                  {groupedMeasurements.map(([type, items]) => {
+                    const pi = productIcons[type] || { emoji: '📦', color: '#6b7280' };
+                    const isOpen = expandedProductTypes.has(type);
+                    return (
+                      <div key={type} className="rounded-xl border border-border overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => toggleProductType(type)}
+                          className="w-full flex items-center gap-3 px-4 py-3.5 bg-card hover:bg-muted/40 transition-colors"
+                        >
+                          <div className="flex items-center justify-center rounded-lg w-9 h-9 shrink-0" style={{ backgroundColor: `${pi.color}20` }}>
+                            <span className="text-xl">{pi.emoji}</span>
+                          </div>
+                          <span className="font-semibold text-foreground flex-1 text-left">{productLabels[type] || type}</span>
+                          <Badge variant="outline" className="text-xs shrink-0">{items.length} {items.length === 1 ? 'misurazione' : 'misurazioni'}</Badge>
+                          {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground ml-1 shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground ml-1 shrink-0" />}
+                        </button>
+                        {isOpen && (
+                          <div className="border-t border-border divide-y divide-border">
+                            {items.map((m: any) => {
                     const photos: string[] = m.photo_urls || [];
                     const isGrouped = !!(m as any).order_group_id;
                     const itemIndex = (m as any).order_item_index;
                     const totalItems = (m as any).order_total_items;
                     return (
-                      <Card key={m.id} className={`transition-shadow hover:shadow-card-hover ${isGrouped ? 'border-l-4' : ''}`} style={isGrouped ? { borderLeftColor: pi.color } : undefined}>
-                        <CardContent className="flex items-center gap-4 py-4">
-                          <div className="hidden sm:flex items-center justify-center rounded-lg p-3" style={{ backgroundColor: `${pi.color}15` }}>
-                            <span className="text-xl">{pi.emoji}</span>
-                          </div>
+                      <div key={m.id} className="flex items-center gap-4 px-4 py-4 bg-card">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pi.color }} />
@@ -855,7 +891,7 @@ export default function Dashboard() {
                               <Badge variant={statusLabels[m.status]?.variant || 'default'}>{statusLabels[m.status]?.label || m.status}</Badge>
                               {isGrouped && <Badge variant="outline" className="text-[10px] gap-1">📦 {itemIndex}/{totalItems}</Badge>}
                             </div>
-                            <p className="text-sm text-muted-foreground">{productLabels[m.product_type] || m.product_type} · {m.width_mm}×{m.height_mm} mm</p>
+                            <p className="text-sm text-muted-foreground">{m.width_mm}×{m.height_mm} mm</p>
                             {m.client_address && <p className="text-xs text-muted-foreground">{m.client_address}</p>}
                             {(m as any).estimated_price > 0 && (
                               <p className="text-xs font-medium text-accent mt-0.5">Prezzo stimato: €{Number((m as any).estimated_price).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
@@ -932,8 +968,12 @@ export default function Dashboard() {
                           <div className="text-right text-sm text-muted-foreground whitespace-nowrap shrink-0">
                             {new Date(m.created_at).toLocaleDateString('it-IT')}
                           </div>
-                        </CardContent>
-                      </Card>
+                      </div>
+                    );
+                  })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
