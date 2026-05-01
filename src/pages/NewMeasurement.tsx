@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,6 +101,80 @@ const initialForm = {
   delivery_date: '',
   notes: '',
 };
+
+function ColorSelectField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger>
+          <div className="flex items-center gap-2">
+            {value && <div className="w-4 h-4 rounded-full border border-border" style={{ backgroundColor: COLOR_OPTIONS.find(c => c.value === value)?.hex }} />}
+            <SelectValue placeholder="Seleziona colore..." />
+          </div>
+        </SelectTrigger>
+        <SelectContent>
+          {COLOR_OPTIONS.map(c => (
+            <SelectItem key={c.value} value={c.value}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full border border-border" style={{ backgroundColor: c.hex }} />
+                {c.label}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+interface DiagramWithZoomProps {
+  diagramData: {
+    productType: string; widthMm: string; heightMm: string; depthMm: string;
+    numPanels: string; panelType: string; openingDirection: string; handleType: string;
+    glassType: string; frameType: string; colorInternal: string; colorExternal: string;
+    internalSpaceMm: string; externalSpaceMm: string; doorColorHex?: string;
+    doorHandleFinishId?: string; doorHandleModelId?: string; doorModelId?: string;
+    doorSpecialVariant?: string; hideHandle: boolean;
+    handleHoleMode: 'none' | 'foro_maniglia' | 'foro_chiave' | 'foro_maniglia_chiave';
+  };
+  view?: 'internal' | 'external';
+  zoom: number;
+  setZoom: (fn: (prev: number) => number) => void;
+}
+
+const DiagramWithZoom = memo(function DiagramWithZoom({ diagramData, view, zoom, setZoom }: DiagramWithZoomProps) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-heading">
+            {view === 'internal' ? 'Vista Interna' : view === 'external' ? 'Vista Esterna' : 'Anteprima'}
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.max(50, z - 10))}>
+              <ZoomOut className="h-3.5 w-3.5" />
+            </Button>
+            <span className="text-xs text-muted-foreground w-10 text-center">{zoom}%</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.min(200, z + 10))}>
+              <ZoomIn className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-auto" style={{ maxHeight: zoom > 100 ? '500px' : undefined }}>
+          <div className="flex justify-center">
+            <div style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
+              <ProductDiagram {...diagramData} view={view} />
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-center text-muted-foreground mt-2">Immagine a solo scopo illustrativo</p>
+      </CardContent>
+    </Card>
+  );
+});
 
 export default function NewMeasurement() {
   const { user, loading } = useAuth();
@@ -469,83 +543,37 @@ export default function NewMeasurement() {
   const showDiagram = step >= 3 && step <= 6 && !!form.product_type && !isStandaloneAccessory;
   const showDualDiagram = step === 5 && !isStandaloneAccessory;
 
-  const ColorSelectField = ({ label, value, field }: { label: string; value: string; field: string }) => (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Select value={value} onValueChange={v => update(field, v)}>
-        <SelectTrigger>
-          <div className="flex items-center gap-2">
-            {value && <div className="w-4 h-4 rounded-full border border-border" style={{ backgroundColor: COLOR_OPTIONS.find(c => c.value === value)?.hex }} />}
-            <SelectValue placeholder="Seleziona colore..." />
-          </div>
-        </SelectTrigger>
-        <SelectContent>
-          {COLOR_OPTIONS.map(c => (
-            <SelectItem key={c.value} value={c.value}>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full border border-border" style={{ backgroundColor: c.hex }} />
-                {c.label}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
-  const DiagramWithZoom = ({ view, zoom, setZoom }: { view?: 'internal' | 'external'; zoom: number; setZoom: (fn: (prev: number) => number) => void }) => (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-heading">
-            {view === 'internal' ? 'Vista Interna' : view === 'external' ? 'Vista Esterna' : 'Anteprima'}
-          </CardTitle>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.max(50, z - 10))}>
-              <ZoomOut className="h-3.5 w-3.5" />
-            </Button>
-            <span className="text-xs text-muted-foreground w-10 text-center">{zoom}%</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.min(200, z + 10))}>
-              <ZoomIn className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-auto" style={{ maxHeight: zoom > 100 ? '500px' : undefined }}>
-          <div className="flex justify-center">
-          <div style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
-            <ProductDiagram
-              productType={form.product_type}
-              widthMm={currentWidth}
-              heightMm={currentHeight}
-              depthMm={isMultiProduct ? (activeItem?.depth_mm || '') : form.depth_mm}
-              numPanels={form.num_panels}
-              panelType={form.panel_type}
-              openingDirection={form.opening_direction}
-              handleType={form.handle_type}
-              glassType={form.glass_type}
-              frameType={isDoorType(form.product_type) && form.door_frame_id ? form.door_frame_id : form.frame_type}
-              colorInternal={form.color_internal}
-              colorExternal={form.color_external}
-              internalSpaceMm={isMultiProduct ? (activeItem?.internal_space_mm || '') : form.internal_space_mm}
-              externalSpaceMm={isMultiProduct ? (activeItem?.external_space_mm || '') : form.external_space_mm}
-              view={view}
-              doorColorHex={isDoorType(form.product_type) && form.door_color_id ? (getDoorModel(form.door_model)?.colors.find(c => c.id === form.door_color_id)?.hex) : undefined}
-              doorHandleFinishId={isDoorType(form.product_type) ? form.door_handle_finish_id : undefined}
-              doorHandleModelId={isDoorType(form.product_type) ? form.door_handle_model_id : undefined}
-              doorModelId={isDoorType(form.product_type) ? form.door_model : undefined}
-              doorSpecialVariant={isDoorType(form.product_type) ? form.door_special_variant : undefined}
-              hideHandle={hasNoHandleSelection}
-              handleHoleMode={noHandleMode}
-            />
-          </div>
-          </div>
-        </div>
-        <p className="text-xs text-center text-muted-foreground mt-2">Immagine a solo scopo illustrativo</p>
-      </CardContent>
-    </Card>
-  );
+  const diagramData = useMemo(() => ({
+    productType: form.product_type,
+    widthMm: currentWidth,
+    heightMm: currentHeight,
+    depthMm: isMultiProduct ? (activeItem?.depth_mm || '') : form.depth_mm,
+    numPanels: form.num_panels,
+    panelType: form.panel_type,
+    openingDirection: form.opening_direction,
+    handleType: form.handle_type,
+    glassType: form.glass_type,
+    frameType: isDoorType(form.product_type) && form.door_frame_id ? form.door_frame_id : form.frame_type,
+    colorInternal: form.color_internal,
+    colorExternal: form.color_external,
+    internalSpaceMm: isMultiProduct ? (activeItem?.internal_space_mm || '') : form.internal_space_mm,
+    externalSpaceMm: isMultiProduct ? (activeItem?.external_space_mm || '') : form.external_space_mm,
+    doorColorHex: isDoorType(form.product_type) && form.door_color_id ? getDoorModel(form.door_model)?.colors.find(c => c.id === form.door_color_id)?.hex : undefined,
+    doorHandleFinishId: isDoorType(form.product_type) ? form.door_handle_finish_id : undefined,
+    doorHandleModelId: isDoorType(form.product_type) ? form.door_handle_model_id : undefined,
+    doorModelId: isDoorType(form.product_type) ? form.door_model : undefined,
+    doorSpecialVariant: isDoorType(form.product_type) ? form.door_special_variant : undefined,
+    hideHandle: hasNoHandleSelection,
+    handleHoleMode: noHandleMode,
+  }), [
+    form.product_type, currentWidth, currentHeight, isMultiProduct,
+    activeItem?.depth_mm, activeItem?.internal_space_mm, activeItem?.external_space_mm,
+    form.depth_mm, form.num_panels, form.panel_type, form.opening_direction,
+    form.handle_type, form.glass_type, form.door_frame_id, form.frame_type,
+    form.color_internal, form.color_external, form.internal_space_mm, form.external_space_mm,
+    form.door_color_id, form.door_model, form.door_handle_finish_id, form.door_handle_model_id,
+    form.door_special_variant, hasNoHandleSelection, noHandleMode,
+  ]);
 
   // Render multi-product dimensions for step 3
   const renderMultiDimensions = () => (
@@ -711,15 +739,15 @@ export default function NewMeasurement() {
         {/* Single diagram ABOVE the form */}
         {showDiagram && !showDualDiagram && (
           <div className="mb-6">
-            <DiagramWithZoom zoom={diagramZoom} setZoom={setDiagramZoom} />
+            <DiagramWithZoom diagramData={diagramData} zoom={diagramZoom} setZoom={setDiagramZoom} />
           </div>
         )}
 
         {/* Dual diagram for finishes step */}
         {showDualDiagram && (
           <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <DiagramWithZoom view="external" zoom={zoomExternal} setZoom={setZoomExternal} />
-            <DiagramWithZoom view="internal" zoom={zoomInternal} setZoom={setZoomInternal} />
+            <DiagramWithZoom diagramData={diagramData} view="external" zoom={zoomExternal} setZoom={setZoomExternal} />
+            <DiagramWithZoom diagramData={diagramData} view="internal" zoom={zoomInternal} setZoom={setZoomInternal} />
           </div>
         )}
 
@@ -1418,8 +1446,8 @@ export default function NewMeasurement() {
                 })() : (
                   <>
                     <div className="grid grid-cols-2 gap-4">
-                      <ColorSelectField label="Colore interno" value={form.color_internal} field="color_internal" />
-                      <ColorSelectField label="Colore esterno" value={form.color_external} field="color_external" />
+                      <ColorSelectField label="Colore interno" value={form.color_internal} onChange={v => update('color_internal', v)} />
+                      <ColorSelectField label="Colore esterno" value={form.color_external} onChange={v => update('color_external', v)} />
                     </div>
                     <div className="space-y-2">
                       <Label>Tipo maniglia</Label>

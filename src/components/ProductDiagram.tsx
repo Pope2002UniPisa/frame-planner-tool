@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { isDoorType, getDoorModel, ALL_HANDLE_MODELS, ALL_HANDLE_FINISHES } from '@/data/doorCatalog';
 
 // 10 predefined colors
@@ -57,7 +57,7 @@ interface ProductDiagramProps {
   handleHoleMode?: 'none' | 'foro_maniglia' | 'foro_chiave' | 'foro_maniglia_chiave';
 }
 
-export default function ProductDiagram({
+const ProductDiagram = memo(function ProductDiagram({
   productType,
   widthMm,
   heightMm,
@@ -1144,7 +1144,9 @@ export default function ProductDiagram({
       )}
     </svg>
   );
-}
+});
+
+export default ProductDiagram;
 
 // Accessory diagrams
 export function AccessoryDiagram({ type, config }: { type: string; config: any }) {

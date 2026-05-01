@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -84,7 +84,7 @@ interface MarkerEntry {
   seq: number;
 }
 
-export function AppointmentMap({
+export const AppointmentMap = memo(function AppointmentMap({
   appointments,
   hoveredId,
 }: {
@@ -210,4 +210,4 @@ export function AppointmentMap({
       )}
     </div>
   );
-}
+});
