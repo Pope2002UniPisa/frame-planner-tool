@@ -71,13 +71,14 @@ export default function MeasurementPrint() {
     });
   }, [user, id]);
 
-  // Set document title so browser print header shows this instead of URL
+  // Set document title → used as default filename when saving PDF
   useEffect(() => {
     const origTitle = document.title;
     if (m) {
       const isQ = isQuoteStatus(m.status);
       const isO = ['ordered', 'in_production', 'delivering', 'completed'].includes(m.status);
-      document.title = isO ? 'Conferma d\'Ordine' : isQ ? 'Preventivo' : 'Scheda Misurazione';
+      const docType = isO ? 'Conferma d\'Ordine' : isQ ? 'Preventivo' : 'Scheda Misurazione';
+      document.title = m.client_name ? `${docType} - ${m.client_name}` : docType;
     }
     return () => { document.title = origTitle; };
   }, [m]);
@@ -128,6 +129,18 @@ export default function MeasurementPrint() {
   const doorModelName = acc?.door_model_name || (doorModelId ? getDoorModel(doorModelId)?.name : null);
   const isDoor = ['porta', 'porta_finestrata', 'porta_filomuro'].includes(m.product_type);
 
+  // Supplier name for non-door products (no image asset → stylized text label)
+  const supplierLabel = (() => {
+    if (isDoor) return null; // Ferrero Legno shown via logo
+    if (m.product_type === 'basculante') return 'Denardi';
+    if (['pvc', 'alluminio'].includes(m.material)) {
+      if (m.supplier_id === 'nurith') return 'Nurith';
+      if (m.supplier_id === 'madrugada') return 'Madrugada';
+      return 'Nurith / Madrugada';
+    }
+    return 'Anger';
+  })();
+
   const rows: [string, string][] = [
     ['Prodotto', doorModelName || (productLabels[m.product_type] || m.product_type)],
     ['Tipo rilievo', surveyLabels[m.survey_type] || m.survey_type],
@@ -176,7 +189,14 @@ export default function MeasurementPrint() {
           <div className="flex flex-col sm:flex-row items-center justify-between mb-6 border-b border-border pb-4 gap-3">
             <div className="flex items-center gap-3 shrink-0">
               <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-8 object-contain" />
-              {isDoor && <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-8 object-contain" />}
+              {isDoor
+                ? <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-8 object-contain" />
+                : supplierLabel && (
+                  <div className="border border-border rounded px-2.5 py-1 text-sm font-bold text-foreground tracking-wide">
+                    {supplierLabel}
+                  </div>
+                )
+              }
             </div>
             <div className="text-center flex-1 sm:px-4">
               <h2 className="text-xl font-bold font-heading text-foreground leading-tight">{docTitle}</h2>
@@ -280,10 +300,17 @@ export default function MeasurementPrint() {
             </div>
           )}
 
-          {/* Footer with logos side by side, same size */}
+          {/* Footer */}
           <div className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-6">
             <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-9 object-contain" />
-            {isDoor && <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-9 object-contain" />}
+            {isDoor
+              ? <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-9 object-contain" />
+              : supplierLabel && (
+                <div className="border border-border rounded px-3 py-1.5 text-sm font-bold text-foreground tracking-wide">
+                  {supplierLabel}
+                </div>
+              )
+            }
           </div>
         </div>
       </div>

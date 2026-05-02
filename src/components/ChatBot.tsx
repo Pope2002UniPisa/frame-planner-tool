@@ -46,7 +46,7 @@ export function ChatBot() {
   };
 
   return (
-    <>
+    <div className="print:hidden">
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
@@ -122,6 +122,6 @@ export function ChatBot() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
