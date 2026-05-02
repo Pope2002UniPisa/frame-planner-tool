@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Trash2, BellRing } from 'lucide-react';
+import { Bell, Trash2, BellRing, MailOpen, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNotifications, type AppNotification } from '@/hooks/useNotifications';
@@ -21,13 +21,15 @@ function getNavigationPath(n: AppNotification): string | null {
 export function NotificationBell() {
   const {
     notifications, unreadCount, pushPermission,
-    markAsRead, markAllAsRead, deleteNotification, deleteAllRead, requestPushPermission,
+    markAsRead, markAsUnread, markAllAsRead,
+    deleteNotification, deleteAllRead,
+    requestPushPermission,
   } = useNotifications();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
-  const handleClickNotification = async (n: AppNotification) => {
-    if (!n.read) await markAsRead(n.id);
+  const handleClickNotification = (n: AppNotification) => {
+    if (!n.read) markAsRead(n.id);
     const path = getNavigationPath(n);
     if (path) {
       setOpen(false);
@@ -92,14 +94,13 @@ export function NotificationBell() {
                   {/* Area cliccabile principale */}
                   <button
                     onClick={() => handleClickNotification(n)}
-                    className="w-full text-left px-4 py-3 pr-10 hover:bg-muted/50 transition-colors"
+                    className="w-full text-left px-4 py-3 pr-20 hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-start gap-3">
                       <span className="text-base mt-0.5 shrink-0">
                         {typeIcon[n.type] ?? typeIcon.info}
                       </span>
                       <div className="flex-1 min-w-0">
-                        {/* Titolo + pallino non letta */}
                         <div className="flex items-start gap-2">
                           <p className={`text-sm leading-snug flex-1 ${!n.read ? 'font-semibold text-foreground' : 'text-foreground/80'}`}>
                             {n.title}
@@ -108,13 +109,11 @@ export function NotificationBell() {
                             <span className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />
                           )}
                         </div>
-                        {/* Body */}
                         {n.body && (
                           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                             {n.body}
                           </p>
                         )}
-                        {/* Data + link apri ordine */}
                         <div className="flex items-center gap-3 mt-1.5">
                           <p className="text-[10px] text-muted-foreground">
                             {new Date(n.created_at).toLocaleString('it-IT', {
@@ -132,14 +131,31 @@ export function NotificationBell() {
                     </div>
                   </button>
 
-                  {/* Pulsante elimina — visibile solo in hover */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }}
-                    className="absolute top-2.5 right-2 p-1.5 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                    title="Elimina notifica"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {/* Azioni hover — appaiono solo al passaggio del mouse */}
+                  <div className="absolute top-2.5 right-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Segna come non letta / letta */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        n.read ? markAsUnread(n.id) : markAsRead(n.id);
+                      }}
+                      className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title={n.read ? 'Segna come non letta' : 'Segna come letta'}
+                    >
+                      {n.read
+                        ? <Mail className="h-3.5 w-3.5" />
+                        : <MailOpen className="h-3.5 w-3.5" />
+                      }
+                    </button>
+                    {/* Elimina */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }}
+                      className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="Elimina notifica"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               );
             })

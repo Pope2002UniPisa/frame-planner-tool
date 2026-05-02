@@ -21,7 +21,6 @@ function showBrowserNotification(n: AppNotification) {
     icon: '/favicon.ico',
     tag: n.id,
   });
-  // Click sulla notifica browser → porta il focus alla tab
   notif.onclick = () => { window.focus(); notif.close(); };
 }
 
@@ -47,26 +46,33 @@ export function useNotifications() {
     setLoading(false);
   }, [user]);
 
+  // Optimistic: aggiorna la UI subito, salva nel DB in background
   const markAsRead = useCallback(async (id: string) => {
-    await supabase.from('notifications').update({ read: true }).eq('id', id);
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    supabase.from('notifications').update({ read: true }).eq('id', id);
+  }, []);
+
+  const markAsUnread = useCallback(async (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: false } : n));
+    supabase.from('notifications').update({ read: false }).eq('id', id);
   }, []);
 
   const markAllAsRead = useCallback(async () => {
     if (!user) return;
-    await supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
   }, [user]);
 
+  // Optimistic: rimuove dalla lista immediatamente, cancella nel DB in background
   const deleteNotification = useCallback(async (id: string) => {
-    await supabase.from('notifications').delete().eq('id', id);
     setNotifications(prev => prev.filter(n => n.id !== id));
+    supabase.from('notifications').delete().eq('id', id);
   }, []);
 
   const deleteAllRead = useCallback(async () => {
     if (!user) return;
-    await supabase.from('notifications').delete().eq('user_id', user.id).eq('read', true);
     setNotifications(prev => prev.filter(n => !n.read));
+    supabase.from('notifications').delete().eq('user_id', user.id).eq('read', true);
   }, [user]);
 
   const requestPushPermission = useCallback(async () => {
@@ -88,7 +94,6 @@ export function useNotifications() {
           const n = payload.new as AppNotification;
           setNotifications(prev => [n, ...prev]);
           toast(n.title, { description: n.body ?? undefined });
-          // Notifica browser se la tab non è in primo piano
           if (document.visibilityState !== 'visible') {
             showBrowserNotification(n);
           }
@@ -105,6 +110,7 @@ export function useNotifications() {
     loading,
     pushPermission,
     markAsRead,
+    markAsUnread,
     markAllAsRead,
     deleteNotification,
     deleteAllRead,
