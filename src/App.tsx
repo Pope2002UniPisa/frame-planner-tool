@@ -23,7 +23,15 @@ const ClientSummary = lazy(() => import("./pages/ClientSummary"));
 const DeliverySummary = lazy(() => import("./pages/DeliverySummary"));
 const PaymentSummaryPage = lazy(() => import("./pages/PaymentSummaryPage"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,   // dati considerati freschi per 5 min → nessun refetch inutile
+      gcTime: 1000 * 60 * 10,     // cache tenuta 10 min dopo che il componente si smonta
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

@@ -14,10 +14,24 @@ export interface AppNotification {
   created_at: string;
 }
 
+function showBrowserNotification(n: AppNotification) {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  const notif = new Notification(n.title, {
+    body: n.body ?? undefined,
+    icon: '/favicon.ico',
+    tag: n.id,
+  });
+  // Click sulla notifica browser → porta il focus alla tab
+  notif.onclick = () => { window.focus(); notif.close(); };
+}
+
 export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>(
+    typeof Notification !== 'undefined' ? Notification.permission : 'default'
+  );
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -44,11 +58,27 @@ export function useNotifications() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   }, [user]);
 
+  const deleteNotification = useCallback(async (id: string) => {
+    await supabase.from('notifications').delete().eq('id', id);
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
+  const deleteAllRead = useCallback(async () => {
+    if (!user) return;
+    await supabase.from('notifications').delete().eq('user_id', user.id).eq('read', true);
+    setNotifications(prev => prev.filter(n => !n.read));
+  }, [user]);
+
+  const requestPushPermission = useCallback(async () => {
+    if (typeof Notification === 'undefined') return;
+    const result = await Notification.requestPermission();
+    setPushPermission(result);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     fetchNotifications();
 
-    // Realtime: nuova notifica → toast automatico
     const channel = supabase
       .channel(`notifications:${user.id}`)
       .on(
@@ -58,6 +88,10 @@ export function useNotifications() {
           const n = payload.new as AppNotification;
           setNotifications(prev => [n, ...prev]);
           toast(n.title, { description: n.body ?? undefined });
+          // Notifica browser se la tab non è in primo piano
+          if (document.visibilityState !== 'visible') {
+            showBrowserNotification(n);
+          }
         }
       )
       .subscribe();
@@ -65,5 +99,15 @@ export function useNotifications() {
     return () => { supabase.removeChannel(channel); };
   }, [user, fetchNotifications]);
 
-  return { notifications, unreadCount, loading, markAsRead, markAllAsRead };
+  return {
+    notifications,
+    unreadCount,
+    loading,
+    pushPermission,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    deleteAllRead,
+    requestPushPermission,
+  };
 }

@@ -292,6 +292,7 @@ export default function Dashboard() {
         userId: user.id, type: 'status',
         title: `🔄 ${label}: ${measurement.client_name}`,
         body: `${productLabels[measurement.product_type] || measurement.product_type}${accept ? '' : modificationNotes ? ` — ${modificationNotes}` : ''}`,
+        metadata: { measurementId: measurement.id },
         whatsapp: true,
         whatsappMessage: `🔄 *${label}*\nCliente: ${measurement.client_name}\nProdotto: ${productLabels[measurement.product_type] || measurement.product_type}${!accept && modificationNotes ? `\nNote: ${modificationNotes}` : ''}`,
       });
@@ -360,6 +361,7 @@ export default function Dashboard() {
       userId: user.id, type: 'appointment',
       title: `📅 Nuovo appuntamento: ${newAppointment.title}`,
       body: `${newAppointment.date}${newAppointment.time ? ' alle ' + newAppointment.time : ''}${newAppointment.location ? ' — ' + newAppointment.location : ''}`,
+      metadata: { appointmentDate: newAppointment.date },
       whatsapp: true,
       whatsappMessage: `📅 *Nuovo appuntamento salvato*\n*${newAppointment.title}*\nData: ${newAppointment.date}${newAppointment.time ? '\nOra: ' + newAppointment.time : ''}${newAppointment.location ? '\nLuogo: ' + newAppointment.location : ''}`,
     });

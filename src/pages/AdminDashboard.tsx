@@ -210,25 +210,32 @@ export default function AdminDashboard() {
   const pendingCount = useMemo(() => profiles.filter(p => !p.approved).length, [profiles]);
 
   // Objective progress per client
-  const getObjectiveProgress = (userId: string) => {
-    const objs = salesObjectives.filter((o: any) => o.user_id === userId);
-    const clientMeasurements = measurements.filter(m => m.user_id === userId && m.status !== 'bozza');
-    return objs.map((obj: any) => {
-      const current = obj.product_type
-        ? clientMeasurements.filter(m => m.product_type === obj.product_type).length
-        : clientMeasurements.length;
-      const currentAmount = obj.product_type
-        ? clientMeasurements.filter(m => m.product_type === obj.product_type).reduce((s: number, m: any) => s + (Number(m.estimated_price) || 0), 0)
-        : clientMeasurements.reduce((s: number, m: any) => s + (Number(m.estimated_price) || 0), 0);
-      return {
-        ...obj,
-        currentCount: current,
-        currentAmount,
-        progressCount: obj.target_count > 0 ? Math.min(100, Math.round((current / obj.target_count) * 100)) : 0,
-        progressAmount: obj.target_amount > 0 ? Math.min(100, Math.round((currentAmount / obj.target_amount) * 100)) : 0,
-      };
-    });
-  };
+  const objectiveProgressByUser = useMemo(() => {
+    const map = new Map<string, any[]>();
+    const userIds = [...new Set(salesObjectives.map((o: any) => o.user_id as string))];
+    for (const userId of userIds) {
+      const objs = salesObjectives.filter((o: any) => o.user_id === userId);
+      const clientMeasurements = measurements.filter(m => m.user_id === userId && m.status !== 'bozza');
+      map.set(userId, objs.map((obj: any) => {
+        const current = obj.product_type
+          ? clientMeasurements.filter(m => m.product_type === obj.product_type).length
+          : clientMeasurements.length;
+        const currentAmount = obj.product_type
+          ? clientMeasurements.filter(m => m.product_type === obj.product_type).reduce((s: number, m: any) => s + (Number(m.estimated_price) || 0), 0)
+          : clientMeasurements.reduce((s: number, m: any) => s + (Number(m.estimated_price) || 0), 0);
+        return {
+          ...obj,
+          currentCount: current,
+          currentAmount,
+          progressCount: obj.target_count > 0 ? Math.min(100, Math.round((current / obj.target_count) * 100)) : 0,
+          progressAmount: obj.target_amount > 0 ? Math.min(100, Math.round((currentAmount / obj.target_amount) * 100)) : 0,
+        };
+      }));
+    }
+    return map;
+  }, [salesObjectives, measurements]);
+
+  const getObjectiveProgress = (userId: string) => objectiveProgressByUser.get(userId) ?? [];
 
   const openManageDialog = (m: any) => {
     setManageMeasurement(m);
