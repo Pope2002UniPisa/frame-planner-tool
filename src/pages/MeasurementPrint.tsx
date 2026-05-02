@@ -167,7 +167,7 @@ export default function MeasurementPrint() {
           <div className="flex items-start justify-between mb-6 border-b border-border pb-4">
             <div className="flex items-center gap-4">
               <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-9 object-contain" />
-              <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-9 object-contain" />
+              {isDoor && <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-9 object-contain" />}
             </div>
             <div className="text-center flex-1 px-4">
               <h2 className="text-2xl font-bold font-heading text-foreground">{docTitle}</h2>
@@ -274,7 +274,7 @@ export default function MeasurementPrint() {
           {/* Footer with logos side by side, same size */}
           <div className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-6">
             <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-9 object-contain" />
-            <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-9 object-contain" />
+            {isDoor && <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-9 object-contain" />}
           </div>
         </div>
       </div>

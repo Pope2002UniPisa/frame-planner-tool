@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Printer, Edit3, ThumbsUp, MessageSquare, Send } from 'lucide-react';
+import { ArrowLeft, Printer, Edit3, ThumbsUp, MessageSquare, Send, FileDown } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel } from '@/data/doorCatalog';
 import { toast } from 'sonner';
@@ -287,7 +287,12 @@ export default function MeasurementView() {
         {/* Price with IVA */}
         {price > 0 && (isQuote || isOrder) && (
           <Card>
-            <CardHeader><CardTitle className="font-heading">Riepilogo</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="font-heading">Riepilogo</CardTitle>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/misurazione/${id}/stampa`)}>
+                <FileDown className="h-4 w-4" /> Scarica PDF
+              </Button>
+            </CardHeader>
             <CardContent>
               <div className="rounded-lg border border-border overflow-hidden">
                 <table className="w-full text-sm">

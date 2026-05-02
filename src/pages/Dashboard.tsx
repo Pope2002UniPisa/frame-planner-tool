@@ -329,7 +329,7 @@ export default function Dashboard() {
       } catch (e) { console.log('Email failed:', e); }
     }
     setSendingEmails(false); setEmailNotifyDialog(null);
-    toast.success(`Notifica inviata a ${allEmails.length} destinatario${allEmails.length > 1 ? 'i' : ''}`);
+    toast.success(`Notifica inviata a ${allEmails.length} destinatar${allEmails.length === 1 ? 'io' : 'i'}`);
   };
 
   const getAppointmentsForDay = (date: Date) => {
