@@ -20,6 +20,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const PriceCatalogAdmin = lazy(() => import("./pages/PriceCatalogAdmin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ClientSummary = lazy(() => import("./pages/ClientSummary"));
+const ClientDetail = lazy(() => import("./pages/ClientDetail"));
 const DeliverySummary = lazy(() => import("./pages/DeliverySummary"));
 const PaymentSummaryPage = lazy(() => import("./pages/PaymentSummaryPage"));
 
@@ -48,6 +49,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/clienti" element={<ClientSummary />} />
+                <Route path="/dashboard/clienti/:id" element={<ClientDetail />} />
                 <Route path="/dashboard/consegne" element={<DeliverySummary />} />
                 <Route path="/dashboard/pagamenti" element={<PaymentSummaryPage />} />
                 <Route path="/nuova-misurazione" element={<NewMeasurement />} />

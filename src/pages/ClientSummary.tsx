@@ -22,8 +22,10 @@ export default function ClientSummary() {
 
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [endClients, setEndClients] = useState<{ id: string; name: string }[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [expandedClientName, setExpandedClientName] = useState<string | null>(null);
+  const [creatingClient, setCreatingClient] = useState<string | null>(null);
 
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -36,12 +38,14 @@ export default function ClientSummary() {
     if (!user) return;
     const fetchAll = async () => {
       const todayStr = new Date().toISOString().slice(0, 10);
-      const [{ data: mData }, { data: aData }] = await Promise.all([
+      const [{ data: mData }, { data: aData }, { data: ecData }] = await Promise.all([
         supabase.from('measurements').select('*').order('created_at', { ascending: false }),
         supabase.from('appointments').select('*').gte('date', todayStr).order('date').order('time'),
+        supabase.from('end_clients').select('id,name').eq('dealer_id', user.id),
       ]);
       setMeasurements(mData || []);
       setAppointments(aData || []);
+      setEndClients(ecData || []);
       setLoadingData(false);
     };
     fetchAll();
@@ -111,6 +115,23 @@ export default function ClientSummary() {
 
     return Object.values(map).sort((a: any, b: any) => a.name.localeCompare(b.name, 'it'));
   }, [filteredMeasurements, searchText]);
+
+  const createClientRecord = async (clientName: string) => {
+    if (!user) return;
+    setCreatingClient(clientName);
+    const { data, error } = await supabase
+      .from('end_clients')
+      .insert({ dealer_id: user.id, name: clientName })
+      .select()
+      .single();
+    if (error || !data) {
+      setCreatingClient(null);
+      return;
+    }
+    setEndClients(prev => [...prev, { id: data.id, name: data.name }]);
+    setCreatingClient(null);
+    navigate(`/dashboard/clienti/${data.id}`);
+  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
 
@@ -257,6 +278,19 @@ export default function ClientSummary() {
                             </div>
                           )}
                         </div>
+
+                        {(() => {
+                          const existingClient = endClients.find(ec => ec.name.toLowerCase() === cs.name.toLowerCase());
+                          return existingClient ? (
+                            <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/clienti/${existingClient.id}`)}>
+                              📋 Scheda
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline" disabled={creatingClient === cs.name} onClick={() => createClientRecord(cs.name)}>
+                              {creatingClient === cs.name ? 'Creazione...' : '+ Crea scheda'}
+                            </Button>
+                          );
+                        })()}
 
                         <div className="space-y-1.5">
                           {cs.measurements.map((m: any) => (
