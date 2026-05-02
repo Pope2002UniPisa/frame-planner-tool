@@ -831,7 +831,7 @@ export default function Profile() {
                                             e.stopPropagation();
                                             window.open(`mailto:?subject=${encodeURIComponent(`Catalogo ${cat.name} — ${s.name}`)}&body=${encodeURIComponent(`Ciao,\n\nti inviamo il catalogo ${cat.name} di ${s.name}:\n${cat.pdf_url}`)}`, '_blank');
                                           }}>
-                                          <span className="text-accent text-xs font-bold">✉</span>
+                                          <span className="text-accent text-sm font-bold">E</span>
                                         </Button>
                                       </div>
                                     ) : (
