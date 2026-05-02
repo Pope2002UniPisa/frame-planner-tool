@@ -49,6 +49,14 @@ export default function MeasurementPrint() {
   const [loading, setLoading] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Force light mode: PDF/stampa deve essere sempre chiaro
+  useEffect(() => {
+    const html = document.documentElement;
+    const wasDark = html.classList.contains('dark');
+    html.classList.remove('dark');
+    return () => { if (wasDark) html.classList.add('dark'); };
+  }, []);
+
   useEffect(() => {
     if (!user || !id) return;
     supabase
@@ -62,7 +70,8 @@ export default function MeasurementPrint() {
       setLoading(false);
     });
   }, [user, id]);
-  // Set document title so browser print header shows this instead of "Lovable App"
+
+  // Set document title so browser print header shows this instead of URL
   useEffect(() => {
     const origTitle = document.title;
     if (m) {
@@ -163,17 +172,17 @@ export default function MeasurementPrint() {
 
       <div ref={printRef} className="container max-w-4xl py-8 print:py-0 print:max-w-full">
         <div className="border border-border rounded-lg p-6 print:border-0 print:p-0 bg-card">
-          {/* Header with logos - same height, centered */}
-          <div className="flex items-start justify-between mb-6 border-b border-border pb-4">
-            <div className="flex items-center gap-4">
-              <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-9 object-contain" />
-              {isDoor && <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-9 object-contain" />}
+          {/* Header: stacked on mobile, row on desktop */}
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-6 border-b border-border pb-4 gap-3">
+            <div className="flex items-center gap-3 shrink-0">
+              <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-8 object-contain" />
+              {isDoor && <img src={ferreroLegnoLogo} alt="Ferrero Legno" className="h-8 object-contain" />}
             </div>
-            <div className="text-center flex-1 px-4">
-              <h2 className="text-2xl font-bold font-heading text-foreground">{docTitle}</h2>
+            <div className="text-center flex-1 sm:px-4">
+              <h2 className="text-xl font-bold font-heading text-foreground leading-tight">{docTitle}</h2>
               <p className="text-sm text-muted-foreground mt-1">{m.client_name} — {m.client_address}</p>
             </div>
-            <div className="text-right text-sm text-muted-foreground shrink-0">
+            <div className="text-center sm:text-right text-sm text-muted-foreground shrink-0">
               <p>Data: {new Date(m.created_at).toLocaleDateString('it-IT')}</p>
             </div>
           </div>
@@ -210,7 +219,7 @@ export default function MeasurementPrint() {
             const leftRows = rows.slice(0, midpoint);
             const rightRows = rows.slice(midpoint);
             return (
-              <div className="grid grid-cols-2 gap-x-6 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 text-sm">
                 <table className="w-full">
                   <tbody>
                     {leftRows.map(([label, value], i) => (

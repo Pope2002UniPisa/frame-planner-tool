@@ -1,7 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!;
-const FROM_EMAIL = 'onboarding@resend.dev'; // per test; sostituire con dominio verificato su Resend
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY')!;
+const FROM_EMAIL = '2002lavoro@gmail.com';
+const FROM_NAME = 'Pratelli Rappresentanze';
 
 const STATUS_LABELS: Record<string, string> = {
   quoted: 'Preventivo inviato',
@@ -43,7 +44,7 @@ serve(async (req) => {
       ? new Date(estimatedDelivery).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
       : null;
 
-    const html = `<!DOCTYPE html>
+    const htmlContent = `<!DOCTYPE html>
 <html lang="it">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:system-ui,sans-serif;background:#f8f8fc;margin:0;padding:32px">
@@ -88,14 +89,17 @@ serve(async (req) => {
 </div>
 </body></html>`;
 
-    const res = await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: {
+        'api-key': BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: toEmail,
+        sender: { email: FROM_EMAIL, name: FROM_NAME },
+        to: [{ email: toEmail, name: toName || '' }],
         subject: `[Pratelli] ${statusLabel} — ${productLabel}`,
-        html,
+        htmlContent,
       }),
     });
 

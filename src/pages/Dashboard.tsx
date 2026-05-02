@@ -92,9 +92,17 @@ export default function Dashboard() {
   const [addMode, setAddMode] = useState(false);
   const [clock, setClock] = useState('');
   const [emailNotifyDialog, setEmailNotifyDialog] = useState<{ measurement: any; newStatus: string } | null>(null);
-  const [emailSelected, setEmailSelected] = useState<string[]>(['2002lavoro@gmail.com']);
+  const [emailSelected, setEmailSelected] = useState<string[]>([]);
   const [emailCustom, setEmailCustom] = useState('');
   const [sendingEmails, setSendingEmails] = useState(false);
+
+  const ADMIN_EMAIL = '2002lavoro@gmail.com';
+  const buildDefaultEmails = () => {
+    const emails = [ADMIN_EMAIL];
+    const profileEmail = profile?.email;
+    if (profileEmail && profileEmail !== ADMIN_EMAIL) emails.push(profileEmail);
+    return emails;
+  };
   const [appointmentForm, setAppointmentForm] = useState({ type: 'consegna', title: '', time: '', location: '', description: '' });
   const [isDark, setIsDark] = useState(false);
   const [todayMapOpen, setTodayMapOpen] = useState(false);
@@ -283,7 +291,7 @@ export default function Dashboard() {
     setQuoteResponseDialog(null); setModificationNotes('');
     toast.success(accept ? 'Ordine confermato! Ti contatteremo per procedere.' : 'Richiesta di modifiche inviata.');
     if (accept && measurement) {
-      setEmailSelected(['2002lavoro@gmail.com']); setEmailCustom('');
+      setEmailSelected(buildDefaultEmails()); setEmailCustom('');
       setEmailNotifyDialog({ measurement: { ...measurement, ...updates }, newStatus: 'ordered' });
     }
     if (user && measurement) {
@@ -304,7 +312,7 @@ export default function Dashboard() {
     if (error) { toast.error(error.message); return; }
     setMeasurements(prev => prev.map(x => x.id === m.id ? { ...x, status: 'ordered' } : x));
     toast.success('Ordine confermato!');
-    setEmailSelected(['2002lavoro@gmail.com']); setEmailCustom('');
+    setEmailSelected(buildDefaultEmails()); setEmailCustom('');
     setEmailNotifyDialog({ measurement: m, newStatus: 'ordered' });
   };
 
@@ -312,7 +320,7 @@ export default function Dashboard() {
     const { error } = await supabase.from('measurements').update({ status: newStatus }).eq('id', m.id);
     if (error) { toast.error(error.message); return; }
     setMeasurements(prev => prev.map(x => x.id === m.id ? { ...x, status: newStatus } : x));
-    setEmailSelected(['2002lavoro@gmail.com']); setEmailCustom('');
+    setEmailSelected(buildDefaultEmails()); setEmailCustom('');
     setEmailNotifyDialog({ measurement: m, newStatus });
   };
 
@@ -1290,7 +1298,12 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground">Seleziona o aggiungi i destinatari a cui inviare la conferma di stato.</p>
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground">CONTATTI RAPIDI</p>
-              {[{ label: 'Admin Pratelli', email: '2002lavoro@gmail.com' }, { label: 'Leo Pratelli', email: 'leo.prate02@gmail.com' }].map(({ label, email }) => (
+              {([
+                { label: 'Pratelli Rappresentanze (admin)', email: ADMIN_EMAIL },
+                ...(profile?.email && profile.email !== ADMIN_EMAIL
+                  ? [{ label: profile.company_name || 'Tuo account', email: profile.email }]
+                  : []),
+              ] as { label: string; email: string }[]).map(({ label, email }) => (
                 <button key={email} type="button"
                   onClick={() => setEmailSelected(prev => prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email])}
                   className={`w-full flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors ${emailSelected.includes(email) ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:bg-muted'}`}>
@@ -1306,7 +1319,7 @@ export default function Dashboard() {
                   onKeyDown={e => { if (e.key === 'Enter' && emailCustom.trim()) { setEmailSelected(prev => prev.includes(emailCustom.trim()) ? prev : [...prev, emailCustom.trim()]); setEmailCustom(''); } }} />
                 <Button variant="outline" onClick={() => { if (emailCustom.trim()) { setEmailSelected(prev => prev.includes(emailCustom.trim()) ? prev : [...prev, emailCustom.trim()]); setEmailCustom(''); } }}>Aggiungi</Button>
               </div>
-              {emailSelected.filter(e => !['2002lavoro@gmail.com','leo.prate02@gmail.com'].includes(e)).map(email => (
+              {emailSelected.filter(e => e !== ADMIN_EMAIL && e !== profile?.email).map(email => (
                 <div key={email} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
                   <span>{email}</span>
                   <button type="button" onClick={() => setEmailSelected(prev => prev.filter(e => e !== email))} className="text-muted-foreground hover:text-destructive text-xs">✕</button>

@@ -16,30 +16,38 @@ import { productLabels, statusLabels } from '@/lib/constants';
 
 const isQuoteStatus = (status: string) => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(status);
 
+const ADMIN_EMAIL = '2002lavoro@gmail.com';
+
 export default function MeasurementView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [m, setM] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [modDialog, setModDialog] = useState(false);
   const [modNotes, setModNotes] = useState('');
   const [emailNotifyDialog, setEmailNotifyDialog] = useState(false);
-  const [emailSelected, setEmailSelected] = useState<string[]>(['2002lavoro@gmail.com']);
+  const [emailSelected, setEmailSelected] = useState<string[]>([]);
   const [emailCustom, setEmailCustom] = useState('');
   const [sendingEmails, setSendingEmails] = useState(false);
 
+  const buildDefaultEmails = () => {
+    const emails = [ADMIN_EMAIL];
+    const profileEmail = profile?.email;
+    if (profileEmail && profileEmail !== ADMIN_EMAIL) emails.push(profileEmail);
+    return emails;
+  };
+
   useEffect(() => {
     if (!user || !id) return;
-    supabase
-      .from('measurements')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-    setM(data);
-    setLoading(false);
+    Promise.all([
+      supabase.from('measurements').select('*').eq('id', id).eq('user_id', user.id).single(),
+      supabase.from('profiles').select('email, company_name').eq('user_id', user.id).single(),
+    ]).then(([{ data: mData }, { data: pData }]) => {
+      setM(mData);
+      setProfile(pData);
+      setLoading(false);
     });
   }, [user, id]);
 
@@ -48,7 +56,7 @@ export default function MeasurementView() {
     if (error) { toast.error(error.message); return; }
     setM((prev: any) => ({ ...prev, status: 'ordered' }));
     toast.success('Ordine confermato!');
-    setEmailSelected(['2002lavoro@gmail.com']);
+    setEmailSelected(buildDefaultEmails());
     setEmailCustom('');
     setEmailNotifyDialog(true);
   };
@@ -340,10 +348,12 @@ export default function MeasurementView() {
             <p className="text-sm text-muted-foreground">Seleziona o aggiungi i destinatari a cui inviare la conferma di stato.</p>
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground">CONTATTI RAPIDI</p>
-              {[
-                { label: 'Admin Pratelli', email: '2002lavoro@gmail.com' },
-                { label: 'Leo Pratelli', email: 'leo.prate02@gmail.com' },
-              ].map(({ label, email }) => (
+              {([
+                { label: 'Pratelli Rappresentanze (admin)', email: ADMIN_EMAIL },
+                ...(profile?.email && profile.email !== ADMIN_EMAIL
+                  ? [{ label: profile.company_name || 'Tuo account', email: profile.email }]
+                  : []),
+              ] as { label: string; email: string }[]).map(({ label, email }) => (
                 <button
                   key={email}
                   type="button"
@@ -383,7 +393,7 @@ export default function MeasurementView() {
                   }
                 }}>Aggiungi</Button>
               </div>
-              {emailSelected.filter(e => !['2002lavoro@gmail.com', 'leo.prate02@gmail.com'].includes(e)).map(email => (
+              {emailSelected.filter(e => e !== ADMIN_EMAIL && e !== profile?.email).map(email => (
                 <div key={email} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
                   <span>{email}</span>
                   <button type="button" onClick={() => setEmailSelected(prev => prev.filter(e => e !== email))} className="text-muted-foreground hover:text-destructive text-xs">✕</button>
