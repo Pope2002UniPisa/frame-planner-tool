@@ -19,7 +19,10 @@ function getNavigationPath(n: AppNotification): string | null {
 }
 
 export function NotificationBell() {
-  const { notifications, unreadCount, pushPermission, markAsRead, markAllAsRead, deleteNotification, deleteAllRead, requestPushPermission } = useNotifications();
+  const {
+    notifications, unreadCount, pushPermission,
+    markAsRead, markAllAsRead, deleteNotification, deleteAllRead, requestPushPermission,
+  } = useNotifications();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -46,57 +49,93 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+
+      <PopoverContent className="w-[400px] p-0" align="end">
+
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3">
           <span className="text-sm font-semibold">Notifiche</span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {unreadCount > 0 && (
-              <button onClick={markAllAsRead} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <button
+                onClick={markAllAsRead}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Segna tutte lette
               </button>
             )}
             {hasRead && (
-              <button onClick={deleteAllRead} className="text-xs text-destructive/70 hover:text-destructive transition-colors">
+              <button
+                onClick={deleteAllRead}
+                className="text-xs text-destructive/60 hover:text-destructive transition-colors"
+              >
                 Cancella lette
               </button>
             )}
           </div>
         </div>
 
-        {/* Lista notifiche */}
-        <div className="max-h-80 overflow-y-auto divide-y">
+        {/* Lista */}
+        <div className="max-h-[420px] overflow-y-auto divide-y">
           {notifications.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nessuna notifica</p>
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+              Nessuna notifica
+            </p>
           ) : (
             notifications.map(n => {
               const navigable = !!getNavigationPath(n);
               return (
-                <div key={n.id} className={`flex items-start gap-1 pr-2 ${!n.read ? 'bg-muted/30' : ''}`}>
+                <div
+                  key={n.id}
+                  className={`relative group ${!n.read ? 'bg-muted/30' : ''}`}
+                >
+                  {/* Area cliccabile principale */}
                   <button
                     onClick={() => handleClickNotification(n)}
-                    className={`flex-1 text-left px-4 py-3 hover:bg-muted/50 transition-colors ${navigable ? 'cursor-pointer' : ''}`}
+                    className="w-full text-left px-4 py-3 pr-10 hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      <span className="text-base mt-0.5">{typeIcon[n.type] ?? typeIcon.info}</span>
+                      <span className="text-base mt-0.5 shrink-0">
+                        {typeIcon[n.type] ?? typeIcon.info}
+                      </span>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${!n.read ? 'font-semibold text-foreground' : 'text-foreground/80'}`}>
-                          {n.title}
-                          {navigable && <span className="ml-1 text-[10px] text-accent">→</span>}
-                        </p>
+                        {/* Titolo + pallino non letta */}
+                        <div className="flex items-start gap-2">
+                          <p className={`text-sm leading-snug flex-1 ${!n.read ? 'font-semibold text-foreground' : 'text-foreground/80'}`}>
+                            {n.title}
+                          </p>
+                          {!n.read && (
+                            <span className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                          )}
+                        </div>
+                        {/* Body */}
                         {n.body && (
-                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{n.body}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {n.body}
+                          </p>
                         )}
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          {new Date(n.created_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                        {/* Data + link apri ordine */}
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <p className="text-[10px] text-muted-foreground">
+                            {new Date(n.created_at).toLocaleString('it-IT', {
+                              day: '2-digit', month: 'short',
+                              hour: '2-digit', minute: '2-digit',
+                            })}
+                          </p>
+                          {navigable && (
+                            <span className="text-[11px] text-accent font-medium">
+                              Apri ordine →
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {!n.read && <span className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />}
                     </div>
                   </button>
+
+                  {/* Pulsante elimina — visibile solo in hover */}
                   <button
-                    onClick={() => deleteNotification(n.id)}
-                    className="mt-3 p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                    onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }}
+                    className="absolute top-2.5 right-2 p-1.5 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
                     title="Elimina notifica"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -107,23 +146,33 @@ export function NotificationBell() {
           )}
         </div>
 
-        {/* Push notifications banner */}
+        {/* Banner attiva push */}
         {pushPermission === 'default' && (
-          <div className="border-t px-4 py-3 flex items-center justify-between gap-2 bg-muted/20">
+          <div className="border-t px-4 py-3 flex items-center justify-between gap-3 bg-muted/20">
             <div className="flex items-center gap-2 min-w-0">
               <BellRing className="h-4 w-4 text-accent shrink-0" />
-              <p className="text-xs text-muted-foreground leading-tight">Attiva le notifiche anche quando non sei sulla piattaforma</p>
+              <p className="text-xs text-muted-foreground leading-snug">
+                Ricevi notifiche anche quando non sei sulla piattaforma
+              </p>
             </div>
-            <Button size="sm" variant="outline" className="shrink-0 text-xs h-7 px-2" onClick={requestPushPermission}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 text-xs h-7 px-2.5"
+              onClick={requestPushPermission}
+            >
               Attiva
             </Button>
           </div>
         )}
         {pushPermission === 'denied' && (
-          <div className="border-t px-4 py-2">
-            <p className="text-[10px] text-muted-foreground text-center">Notifiche browser bloccate. Sblocca dal browser per attivarle.</p>
+          <div className="border-t px-4 py-2.5">
+            <p className="text-[10px] text-muted-foreground text-center">
+              Notifiche browser bloccate — sblocca dalle impostazioni del browser.
+            </p>
           </div>
         )}
+
       </PopoverContent>
     </Popover>
   );
