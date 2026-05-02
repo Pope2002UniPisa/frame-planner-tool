@@ -30,6 +30,25 @@ const SUPPLIERS = [
   { id: 'anger', name: 'Anger SRL', category: 'Infissi in legno', defaultLogo: '/images/logo-Anger.png' },
 ];
 
+// Prodotti porte → FerreroLegno
+const DOOR_PRODUCT_TYPES = ['porta', 'porta_finestrata', 'porta_filomuro'];
+// Prodotti finestra (con selezione materiale)
+const WINDOW_PRODUCT_TYPES = ['finestra', 'porta_finestra'];
+const PVC_MATERIALS = ['pvc', 'alluminio'];
+
+function getSupplierForMeasurement(m: any): string | null {
+  const pt: string = m.product_type || '';
+  const mat: string = m.material || '';
+  const sid: string = (m as any).supplier_id || '';
+  if (DOOR_PRODUCT_TYPES.includes(pt)) return 'ferrerolegno';
+  if (pt === 'basculante') return 'denardi';
+  if (WINDOW_PRODUCT_TYPES.includes(pt)) {
+    if (mat === 'legno') return 'anger';
+    if (PVC_MATERIALS.includes(mat)) return sid || null; // nurith o madrugada scelto dall'utente
+  }
+  return null;
+}
+
 const DEFAULT_ORG_ROLES = [
   { role: 'Titolare / Responsabile', name: '', phone: '', email: '' },
   { role: 'Venditore / Commerciale', name: '', phone: '', email: '' },
@@ -170,16 +189,19 @@ export default function Profile() {
     return Object.entries(byType).map(([name, d]) => ({ name, totale: Math.round(d.total), media: d.count > 0 ? Math.round(d.total / d.count) : 0 }));
   }, [filteredMeasurements]);
 
-  const supplierStats = useMemo(() => {
-    if (!selectedSupplier) return null;
-    return {
-      total: measurements.length,
-      drafts: measurements.filter(m => m.status === 'bozza').length,
-      sent: measurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted').length,
-      quoted: measurements.filter(m => m.status === 'quoted').length,
-      completed: measurements.filter(m => m.status === 'completed' || m.status === 'ordered').length,
-    };
-  }, [selectedSupplier, measurements]);
+  const supplierStatsMap = useMemo(() => {
+    const calcStats = (filtered: any[]) => ({
+      drafts:    filtered.filter(m => m.status === 'bozza').length,
+      sent:      filtered.filter(m => ['ricevuto', 'submitted'].includes(m.status)).length,
+      quoted:    filtered.filter(m => ['quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)).length,
+      completed: filtered.filter(m => ['ordered', 'in_production', 'delivering', 'completed'].includes(m.status)).length,
+    });
+    const map: Record<string, ReturnType<typeof calcStats>> = {};
+    for (const s of SUPPLIERS) {
+      map[s.id] = calcStats(measurements.filter(m => getSupplierForMeasurement(m) === s.id));
+    }
+    return map;
+  }, [measurements]);
 
   const handleSaveOrg = async () => {
     if (!profile) return;
@@ -766,35 +788,54 @@ export default function Profile() {
                       </div>
                       {selectedSupplier === s.id && (
                         <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2">
-                          {supplierStats && (
-                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                              {[
-                                { label: 'Bozze', value: supplierStats.drafts },
-                                { label: 'Inviate', value: supplierStats.sent },
-                                { label: 'Preventivate', value: supplierStats.quoted },
-                                { label: 'Completate', value: supplierStats.completed },
-                              ].map(st => (
-                                <div key={st.label} className="rounded-lg bg-muted p-3 text-center">
-                                  <p className="text-lg font-bold font-heading text-foreground">{st.value}</p>
-                                  <p className="text-[10px] text-muted-foreground">{st.label}</p>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          {/* Statistiche corrette per questo fornitore */}
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            {[
+                              { label: 'Bozze',       value: supplierStatsMap[s.id]?.drafts    ?? 0 },
+                              { label: 'Inviate',     value: supplierStatsMap[s.id]?.sent       ?? 0 },
+                              { label: 'Preventivo',  value: supplierStatsMap[s.id]?.quoted     ?? 0 },
+                              { label: 'Completate',  value: supplierStatsMap[s.id]?.completed  ?? 0 },
+                            ].map(st => (
+                              <div key={st.label} className="rounded-lg bg-muted p-3 text-center">
+                                <p className="text-lg font-bold font-heading text-foreground">{st.value}</p>
+                                <p className="text-[10px] text-muted-foreground">{st.label}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Cataloghi */}
                           <div>
-                            <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Cataloghi disponibili</p>
+                            <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-1.5">
+                              <BookOpen className="h-3.5 w-3.5" /> Cataloghi disponibili
+                            </p>
                             <div className="space-y-2">
                               {(supplierCatalogs[s.id] || []).length > 0 ? (
                                 supplierCatalogs[s.id].map(cat => (
-                                  <div key={cat.id} className="flex items-center justify-between rounded-lg border border-border p-3">
-                                    <span className="text-sm text-foreground">{cat.name}</span>
+                                  <div key={cat.id} className="flex items-center justify-between rounded-lg border border-border p-3 gap-2">
+                                    <span className="text-sm text-foreground flex-1 min-w-0 truncate">{cat.name}</span>
                                     {cat.pdf_url ? (
-                                      <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs"
-                                        onClick={e => { e.stopPropagation(); setPdfViewer({ url: cat.pdf_url!, name: cat.name }); }}>
-                                        <FileText className="h-3 w-3" /> Apri PDF
-                                      </Button>
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs"
+                                          onClick={e => { e.stopPropagation(); setPdfViewer({ url: cat.pdf_url!, name: cat.name }); }}>
+                                          <FileText className="h-3 w-3" /> Apri PDF
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Invia via WhatsApp"
+                                          onClick={e => {
+                                            e.stopPropagation();
+                                            window.open(`https://wa.me/?text=${encodeURIComponent(`📄 Catalogo ${cat.name} — ${s.name}\n${cat.pdf_url}`)}`, '_blank');
+                                          }}>
+                                          <span className="text-[#25D366] text-sm font-bold">W</span>
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Invia via Email"
+                                          onClick={e => {
+                                            e.stopPropagation();
+                                            window.open(`mailto:?subject=${encodeURIComponent(`Catalogo ${cat.name} — ${s.name}`)}&body=${encodeURIComponent(`Ciao,\n\nti inviamo il catalogo ${cat.name} di ${s.name}:\n${cat.pdf_url}`)}`, '_blank');
+                                          }}>
+                                          <span className="text-accent text-xs font-bold">✉</span>
+                                        </Button>
+                                      </div>
                                     ) : (
-                                      <Badge variant="outline" className="text-[10px]">PDF</Badge>
+                                      <Badge variant="outline" className="text-[10px]">PDF non disponibile</Badge>
                                     )}
                                   </div>
                                 ))

@@ -86,6 +86,7 @@ const initialForm = {
   opening_direction: '',
   frame_type: '',
   material: '',
+  supplier_id: '',
   color_internal: '',
   color_external: '',
   handle_type: '',
@@ -381,6 +382,7 @@ export default function NewMeasurement() {
     opening_direction: normalizeOpeningDirectionForDb(form.opening_direction),
     frame_type: form.frame_type || null,
     material: form.material || null,
+    supplier_id: form.supplier_id || null,
     color_internal: form.color_internal || null,
     color_external: form.color_external || null,
     handle_type: hasNoHandleSelection ? null : (form.handle_type || null),
@@ -1269,6 +1271,34 @@ export default function NewMeasurement() {
                         >
                           <RadioGroupItem value={opt.value} id={`mat-${opt.value}`} />
                           {opt.label}
+                        </Label>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                )}
+
+                {/* Selezione fornitore per finestre PVC/alluminio */}
+                {['finestra', 'porta_finestra'].includes(form.product_type) && ['pvc', 'alluminio'].includes(form.material) && (
+                  <div className="space-y-2">
+                    <Label>Fornitore infissi</Label>
+                    <p className="text-xs text-muted-foreground">Per questo tipo di infisso lavoriamo con due fornitori — seleziona quello di riferimento per questo ordine.</p>
+                    <RadioGroup value={form.supplier_id} onValueChange={v => update('supplier_id', v)} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {[
+                        { value: 'nurith', label: 'Nurith SPA', desc: 'Infissi, oscuranti e portoncini PVC' },
+                        { value: 'madrugada', label: 'Madrugada Group', desc: 'Infissi in PVC' },
+                      ].map(opt => (
+                        <Label
+                          key={opt.value}
+                          htmlFor={`sup-${opt.value}`}
+                          className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-all ${
+                            form.supplier_id === opt.value ? 'border-accent bg-accent/10' : 'border-border'
+                          }`}
+                        >
+                          <RadioGroupItem value={opt.value} id={`sup-${opt.value}`} className="mt-0.5" />
+                          <div>
+                            <span className="font-medium text-sm">{opt.label}</span>
+                            <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                          </div>
                         </Label>
                       ))}
                     </RadioGroup>
