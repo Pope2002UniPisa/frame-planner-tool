@@ -55,3 +55,21 @@ export const productIcons: Record<string, { emoji: string; color: string }> = {
   battiscopa: { emoji: '🪵', color: '#a16207' },
   maniglia: { emoji: '🔩', color: '#64748b' },
 };
+
+// Tipi appuntamento con colori associati
+export const APPOINTMENT_TYPES: Record<string, { label: string; color: string }> = {
+  consegna: { label: 'Consegna', color: '#f59e0b' },
+  chiamata: { label: 'Chiamata', color: '#10b981' },
+  pagamento: { label: 'Pagamento', color: '#ef4444' },
+  sopralluogo: { label: 'Sopralluogo', color: '#3b82f6' },
+  altro: { label: 'Altro', color: '#8b5cf6' },
+};
+
+// Nomi dei mesi in italiano
+export const MONTH_NAMES = [
+  'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+  'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre',
+];
+
+// Email amministratore
+export const ADMIN_EMAIL = '2002lavoro@gmail.com';

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -16,34 +16,22 @@ import {
   Camera, Truck, ThumbsUp, MessageSquare, Maximize2, Smartphone,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, TrendingUp, MapPin, Facebook, Linkedin, Navigation, Menu,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import {
+  useMeasurements, useProfile, useNewsItems, usePortfolioImages, useAppointments,
+  QUERY_KEYS,
+  type Measurement, type Appointment, type Profile, type NewsItem, type PortfolioItem,
+} from '@/hooks/useDashboardQueries';
+import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { productLabels, statusLabels, WORKFLOW_STEPS, getWorkflowIndex, productIcons } from '@/lib/constants';
+import { productLabels, statusLabels, WORKFLOW_STEPS, getWorkflowIndex, productIcons, APPOINTMENT_TYPES, MONTH_NAMES, ADMIN_EMAIL } from '@/lib/constants';
 import { NotificationBell } from '@/components/NotificationBell';
 import { createNotification } from '@/lib/notifications';
 import { AppSidebar } from '@/components/AppSidebar';
 import { AppointmentMap } from '@/components/AppointmentMap';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-interface NewsItem {
-  id: string; created_at: string; title: string; tag: string;
-  summary: string; image_url?: string | null; image_position?: string | null;
-  link?: string | null; social_link?: string | null;
-}
-interface PortfolioItem { id: string; title: string; description: string; image_url: string; }
-
-const APPOINTMENT_TYPES: Record<string, { label: string; color: string }> = {
-  consegna: { label: 'Consegna', color: '#f59e0b' },
-  chiamata: { label: 'Chiamata', color: '#10b981' },
-  pagamento: { label: 'Pagamento', color: '#ef4444' },
-  sopralluogo: { label: 'Sopralluogo', color: '#3b82f6' },
-  altro: { label: 'Altro', color: '#8b5cf6' },
-};
-
-const monthNames = [
-  'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
-  'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre',
-];
 
 function formatDateKey(date: Date) {
   const y = date.getFullYear();
@@ -68,11 +56,13 @@ export default function Dashboard() {
   const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
 
-  const [measurements, setMeasurements] = useState<any[]>([]);
-  const [profile, setProfile] = useState<any>(null);
-  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
-  const [portfolioImages, setPortfolioImages] = useState<PortfolioItem[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  // ── Dati remoti via React Query (no useState manuale) ──────────────────────
+  const queryClient = useQueryClient();
+  const { data: measurements = [], isLoading: loadingMeasurements } = useMeasurements(user?.id);
+  const { data: profile }                                            = useProfile(user?.id);
+  const { data: newsItems = [] }                                     = useNewsItems();
+  const { data: portfolioImages = [] }                               = usePortfolioImages();
+  const loadingData = loadingMeasurements;
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProduct, setFilterProduct] = useState('all');
@@ -81,22 +71,19 @@ export default function Dashboard() {
   const [expandedProductTypes, setExpandedProductTypes] = useState<Set<string>>(new Set());
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [quoteResponseDialog, setQuoteResponseDialog] = useState<any>(null);
+  const [quoteResponseDialog, setQuoteResponseDialog] = useState<Measurement | null>(null);
   const [modificationNotes, setModificationNotes] = useState('');
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
-  const [calendarAppointments, setCalendarAppointments] = useState<
-    Array<{ id: string; user_id?: string; date: string; type: string; title: string; time: string | null; location: string | null; description: string | null; color: string | null }>
-  >([]);
+  const { data: calendarAppointments = [] } = useAppointments(user?.id);
   const [addMode, setAddMode] = useState(false);
   const [clock, setClock] = useState('');
-  const [emailNotifyDialog, setEmailNotifyDialog] = useState<{ measurement: any; newStatus: string } | null>(null);
+  const [emailNotifyDialog, setEmailNotifyDialog] = useState<{ measurement: Measurement; newStatus: string } | null>(null);
   const [emailSelected, setEmailSelected] = useState<string[]>([]);
   const [emailCustom, setEmailCustom] = useState('');
   const [sendingEmails, setSendingEmails] = useState(false);
 
-  const ADMIN_EMAIL = '2002lavoro@gmail.com';
   const buildDefaultEmails = () => {
     const emails = [ADMIN_EMAIL];
     const profileEmail = profile?.email;
@@ -109,7 +96,7 @@ export default function Dashboard() {
   const [mapMounted, setMapMounted] = useState(false);
   const [policyModal, setPolicyModal] = useState<'privacy' | 'cookie' | null>(null);
   const [sendingWA, setSendingWA] = useState(false);
-  const [editingAppointment, setEditingAppointment] = useState<typeof calendarAppointments[0] | null>(null);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [hoveredApptId, setHoveredApptId] = useState<string | null>(null);
   const [apptSearch, setApptSearch] = useState('');
   const [giroDate, setGiroDate] = useState<Date>(() => new Date());
@@ -122,28 +109,9 @@ export default function Dashboard() {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    const fetchData = async () => {
-      const [{ data: mData }, { data: pData }, { data: nData }, { data: pfData }, { data: aData }] = await Promise.all([
-        supabase.from('measurements').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('profiles').select('*').eq('user_id', user.id).single(),
-        supabase.from('news').select('*').order('created_at', { ascending: false }),
-        supabase.from('portfolio_images').select('*').order('sort_order', { ascending: true }),
-        supabase.from('appointments').select('*').eq('user_id', user.id).order('date', { ascending: true }),
-      ]);
-      setMeasurements(mData || []);
-      setProfile(pData);
-      setNewsItems(nData || []);
-      setPortfolioImages(pfData || []);
-      setCalendarAppointments(aData || []);
-      setLoadingData(false);
-    };
-    fetchData();
-  }, [user]);
 
   useEffect(() => {
-    if (profile !== null) {
+    if (profile) {
       const dark = !!profile.dark_mode;
       setIsDark(dark);
       document.documentElement.classList.toggle('dark', dark);
@@ -164,8 +132,12 @@ export default function Dashboard() {
     const newDark = !isDark;
     setIsDark(newDark);
     document.documentElement.classList.toggle('dark', newDark);
-    setProfile((prev: any) => prev ? { ...prev, dark_mode: newDark } : prev);
-    if (user) await supabase.from('profiles').update({ dark_mode: newDark }).eq('user_id', user.id);
+    if (user) {
+      queryClient.setQueryData<Profile>(QUERY_KEYS.profile(user.id), (prev) =>
+        prev ? { ...prev, dark_mode: newDark } : prev
+      );
+      await supabase.from('profiles').update({ dark_mode: newDark }).eq('user_id', user.id);
+    }
   };
 
   const stats = useMemo(() => ({
@@ -209,7 +181,7 @@ export default function Dashboard() {
 
   const groupedMeasurements = useMemo(() => {
     const order = ['finestra', 'porta', 'porta_finestra', 'basculante', 'persiana', 'zanzariera'];
-    const groups: Record<string, any[]> = {};
+    const groups: Record<string, Measurement[]> = {};
     filteredMeasurements.forEach(m => {
       const type = m.product_type || 'altro';
       if (!groups[type]) groups[type] = [];
@@ -282,12 +254,19 @@ export default function Dashboard() {
 
   const handleQuoteResponse = async (measurementId: string, accept: boolean) => {
     const newStatus = accept ? 'ordered' : 'quote_modifications';
-    const updates: any = { status: newStatus };
-    if (!accept && modificationNotes) { updates.modification_notes = modificationNotes; updates.has_modification = true; }
+    const updates: Partial<Measurement> = { status: newStatus };
+    if (!accept && modificationNotes) {
+      updates.modification_notes = modificationNotes;
+      updates.has_modification = true;
+    }
     const { error } = await supabase.from('measurements').update(updates).eq('id', measurementId);
     if (error) { toast.error(error.message); return; }
     const measurement = measurements.find(m => m.id === measurementId);
-    setMeasurements(prev => prev.map(m => m.id === measurementId ? { ...m, ...updates } : m));
+    if (user) {
+      queryClient.setQueryData<Measurement[]>(QUERY_KEYS.measurements(user.id), (old = []) =>
+        old.map(m => m.id === measurementId ? { ...m, ...updates } : m)
+      );
+    }
     setQuoteResponseDialog(null); setModificationNotes('');
     toast.success(accept ? 'Ordine confermato! Ti contatteremo per procedere.' : 'Richiesta di modifiche inviata.');
     if (accept && measurement) {
@@ -307,19 +286,27 @@ export default function Dashboard() {
     }
   };
 
-  const handleConfirmOrder = async (m: any) => {
+  const handleConfirmOrder = async (m: Measurement) => {
     const { error } = await supabase.from('measurements').update({ status: 'ordered' }).eq('id', m.id);
     if (error) { toast.error(error.message); return; }
-    setMeasurements(prev => prev.map(x => x.id === m.id ? { ...x, status: 'ordered' } : x));
+    if (user) {
+      queryClient.setQueryData<Measurement[]>(QUERY_KEYS.measurements(user.id), (old = []) =>
+        old.map(x => x.id === m.id ? { ...x, status: 'ordered' } : x)
+      );
+    }
     toast.success('Ordine confermato!');
     setEmailSelected(buildDefaultEmails()); setEmailCustom('');
     setEmailNotifyDialog({ measurement: m, newStatus: 'ordered' });
   };
 
-  const handleStatusAdvanceWithEmail = async (m: any, newStatus: string) => {
+  const handleStatusAdvanceWithEmail = async (m: Measurement, newStatus: string) => {
     const { error } = await supabase.from('measurements').update({ status: newStatus }).eq('id', m.id);
     if (error) { toast.error(error.message); return; }
-    setMeasurements(prev => prev.map(x => x.id === m.id ? { ...x, status: newStatus } : x));
+    if (user) {
+      queryClient.setQueryData<Measurement[]>(QUERY_KEYS.measurements(user.id), (old = []) =>
+        old.map(x => x.id === m.id ? { ...x, status: newStatus } : x)
+      );
+    }
     setEmailSelected(buildDefaultEmails()); setEmailCustom('');
     setEmailNotifyDialog({ measurement: m, newStatus });
   };
@@ -361,7 +348,11 @@ export default function Dashboard() {
     };
     const { data, error } = await supabase.from('appointments').insert(newAppointment).select().single();
     if (error) { toast.error('Errore nel salvataggio dell\'appuntamento'); return; }
-    setCalendarAppointments(prev => [...prev, data]);
+    if (user) {
+      queryClient.setQueryData<Appointment[]>(QUERY_KEYS.appointments(user.id), (old = []) =>
+        [...old, data as Appointment]
+      );
+    }
     setAppointmentDialogOpen(false); setSelectedDay(null);
     setAppointmentForm({ type: 'consegna', title: '', time: '', location: '', description: '' });
     toast.success('Appuntamento salvato');
@@ -378,7 +369,11 @@ export default function Dashboard() {
   const handleDeleteAppointment = async (id: string) => {
     const { error } = await supabase.from('appointments').delete().eq('id', id);
     if (error) { toast.error('Errore nella cancellazione'); return; }
-    setCalendarAppointments(prev => prev.filter(a => a.id !== id));
+    if (user) {
+      queryClient.setQueryData<Appointment[]>(QUERY_KEYS.appointments(user.id), (old = []) =>
+        old.filter(a => a.id !== id)
+      );
+    }
     toast.success('Appuntamento eliminato');
   };
 
@@ -395,7 +390,11 @@ export default function Dashboard() {
     };
     const { error } = await supabase.from('appointments').update(updates).eq('id', editingAppointment.id);
     if (error) { toast.error('Errore nella modifica'); return; }
-    setCalendarAppointments(prev => prev.map(a => a.id === editingAppointment.id ? { ...a, ...updates } : a));
+    if (user) {
+      queryClient.setQueryData<Appointment[]>(QUERY_KEYS.appointments(user.id), (old = []) =>
+        old.map(a => a.id === editingAppointment.id ? { ...a, ...updates } : a)
+      );
+    }
     setEditingAppointment(null);
     toast.success('Appuntamento modificato');
   };
@@ -759,7 +758,7 @@ export default function Dashboard() {
                       <button onClick={() => setCalendarDate(new Date(year, month - 1, 1))} className="rounded-md p-1 hover:bg-muted transition-colors">
                         <ChevronLeft className="h-4 w-4" />
                       </button>
-                      <p className="text-xs font-semibold text-foreground">{monthNames[month]} {year}</p>
+                      <p className="text-xs font-semibold text-foreground">{MONTH_NAMES[month]} {year}</p>
                       <button onClick={() => setCalendarDate(new Date(year, month + 1, 1))} className="rounded-md p-1 hover:bg-muted transition-colors">
                         <ChevronRight className="h-4 w-4" />
                       </button>
@@ -934,11 +933,11 @@ export default function Dashboard() {
                         </button>
                         {isOpen && (
                           <div className="border-t border-border divide-y divide-border">
-                            {items.map((m: any) => {
+                            {items.map((m: Measurement) => {
                     const photos: string[] = m.photo_urls || [];
-                    const isGrouped = !!(m as any).order_group_id;
-                    const itemIndex = (m as any).order_item_index;
-                    const totalItems = (m as any).order_total_items;
+                    const isGrouped = !!m.order_group_id;
+                    const itemIndex = m.order_item_index;
+                    const totalItems = m.order_total_items;
                     return (
                       <div key={m.id} className="flex items-center gap-4 px-4 py-4 bg-card">
                           <div className="flex-1 min-w-0">
@@ -950,8 +949,8 @@ export default function Dashboard() {
                             </div>
                             <p className="text-sm text-muted-foreground">{m.width_mm}×{m.height_mm} mm</p>
                             {m.client_address && <p className="text-xs text-muted-foreground">{m.client_address}</p>}
-                            {(m as any).estimated_price > 0 && (
-                              <p className="text-xs font-medium text-accent mt-0.5">Prezzo stimato: €{Number((m as any).estimated_price).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+                            {(m.estimated_price ?? 0) > 0 && (
+                              <p className="text-xs font-medium text-accent mt-0.5">Prezzo stimato: €{Number(m.estimated_price).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
                             )}
                             {photos.length > 0 && (
                               <div className="flex gap-1.5 mt-2">
@@ -1379,7 +1378,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-function KpiCard({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function KpiCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <Card>
       <CardContent className="py-5 px-5">

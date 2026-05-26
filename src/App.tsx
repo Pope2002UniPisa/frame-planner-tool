@@ -8,6 +8,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import { ChatBot } from "./components/ChatBot";
 
+function PageLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-accent" />
+    </div>
+  );
+}
+
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -43,7 +51,7 @@ const App = () => (
         <ErrorBoundary>
           <AuthProvider>
             <ChatBot />
-            <Suspense fallback={null}>
+            <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
