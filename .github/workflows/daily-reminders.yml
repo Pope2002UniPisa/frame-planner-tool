@@ -1,0 +1,36 @@
+name: Daily Email Reminders
+
+on:
+  # Ogni giorno alle 08:00 ora italiana (07:00 UTC in inverno, 06:00 UTC in estate)
+  # Usiamo 06:00 UTC così funziona tutto l'anno senza doverlo cambiare
+  schedule:
+    - cron: '0 6 * * *'
+
+  # Permette di eseguire manualmente dal tab Actions su GitHub (utile per test)
+  workflow_dispatch:
+
+jobs:
+  send-reminders:
+    name: Send delivery & payment reminders
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger send-reminders Edge Function
+        run: |
+          RESPONSE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.SUPABASE_FUNCTIONS_URL }}/send-reminders")
+
+          echo "HTTP status: $RESPONSE"
+          echo "Response body:"
+          cat /tmp/response.json
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "❌ La funzione ha restituito HTTP $RESPONSE"
+            exit 1
+          fi
+
+          echo "✅ Promemoria inviati correttamente"

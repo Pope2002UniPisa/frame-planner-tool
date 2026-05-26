@@ -1,9 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!;
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY')!;
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const FROM_EMAIL = 'onboarding@resend.dev';
+const FROM_EMAIL = '2002lavoro@gmail.com';
+const FROM_NAME = 'Pratelli Rappresentanze';
 const ADMIN_EMAIL = '2002lavoro@gmail.com';
 
 const CORS = {
@@ -29,16 +30,12 @@ const SURVEY_LABELS: Record<string, string> = {
   grezzo: 'Grezzo', finito: 'Finito', controtelaio: 'Controtelaio',
 };
 
-// Full names including finish prefix (matching getColorLabel logic)
 const COLOR_LABELS: Record<string, string> = {
-  // Window colors (no finish prefix)
   bianco: 'Bianco', avorio: 'Avorio', grigio_chiaro: 'Grigio chiaro',
   grigio_antracite: 'Grigio antracite', marrone: 'Marrone', noce: 'Noce',
   verde_scuro: 'Verde scuro', blu_notte: 'Blu notte', rosso_mattone: 'Rosso mattone', nero: 'Nero',
-  // Laccato Opaco (lo_)
   lo_bianco_optical: 'Laccato Opaco Bianco Optical', lo_bianco: 'Laccato Opaco Bianco',
   lo_grigio_lux: 'Laccato Opaco Grigio Lux', lo_tortora: 'Laccato Opaco Tortora',
-  // Laccato ULTRA Opaco (uo_)
   uo_tortora: 'Laccato ULTRA Opaco Tortora', uo_bianco_optical: 'Laccato ULTRA Opaco Bianco Optical',
   uo_bianco: 'Laccato ULTRA Opaco Bianco', uo_grigio_lux: 'Laccato ULTRA Opaco Grigio Lux',
   uo_corallo_light: 'Laccato ULTRA Opaco Corallo Light', uo_corallo_pure: 'Laccato ULTRA Opaco Corallo Pure',
@@ -67,7 +64,7 @@ const HANDLE_FINISH_LABELS: Record<string, string> = {
   cromo_satinato: 'Cromo Satinato', cromo_lucido: 'Cromo Lucido',
   bianco_optical: 'Bianco Optical', nero: 'Nero', grigio_alluminio: 'Grigio Alluminio',
   grafite_satinato: 'Grafite Satinato', oro_satinato: 'Oro Satinato',
-  oro_antico_lucido: 'Oro Antico Lucido', ottone_lucido: 'Ottone Lucido',
+  ora_antico_lucido: 'Oro Antico Lucido', ottone_lucido: 'Ottone Lucido',
   nikel_lucido: 'Nikel Lucido', bronzo_satinato: 'Bronzo Satinato',
   cromo_lucido_satinato: 'Cromo Lucido + Satinato', cromo_lucido_bianco: 'Cromo Lucido + Bianco Optical',
   cromo_lucido_nero: 'Cromo Lucido + Nero', bianco: 'Bianco',
@@ -82,23 +79,31 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   try {
-    const { userId, measurementId, clientName, clientAddress, productType, surveyType, dimensions, estimatedPrice, measurement, doorModelName, status } = await req.json();
+    const {
+      userId, measurementId, clientName, clientAddress, productType, surveyType,
+      dimensions, estimatedPrice, measurement, doorModelName, status,
+    } = await req.json();
 
     const statusLabel = STATUS_LABELS[status || 'submitted'] || 'Nuova richiesta preventivo';
     const productLabel = doorModelName || PRODUCT_LABELS[productType] || productType || 'Prodotto';
     const surveyLabel = SURVEY_LABELS[surveyType] || surveyType || null;
-    const priceText = estimatedPrice ? `€${Number(estimatedPrice).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : null;
+    const priceText = estimatedPrice
+      ? `€${Number(estimatedPrice).toLocaleString('it-IT', { minimumFractionDigits: 2 })}`
+      : null;
 
-    // Fetch reseller profile
+    // Recupera il profilo del rivenditore
     let resellerName = '';
     let resellerLogoUrl = '';
     if (userId) {
-      const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=company_name,logo_url`, {
-        headers: {
-          'apikey': SUPABASE_SERVICE_ROLE_KEY,
-          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-      });
+      const profileRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}&select=company_name,logo_url`,
+        {
+          headers: {
+            'apikey': SUPABASE_SERVICE_ROLE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        }
+      );
       const profiles = await profileRes.json();
       if (profiles?.[0]) {
         resellerName = profiles[0].company_name || '';
@@ -106,7 +111,7 @@ serve(async (req) => {
       }
     }
 
-    // Build detail rows
+    // Costruisce le righe di dettaglio configurazione
     const installationType = measurement?.installation_type;
     const installationLabel = installationType === 'solo_fornitura' ? 'Solo fornitura'
       : installationType === 'con_installazione' ? 'Con installazione' : null;
@@ -188,19 +193,22 @@ serve(async (req) => {
 
   <div style="background:#f8f8fc;padding:20px 32px;text-align:center">
     ${measurementId ? `<a href="https://frame-planner-tool.vercel.app/misurazione/${measurementId}/stampa" style="display:inline-block;background:#f97316;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-bottom:16px">📄 Apri PDF misurazione</a><br>` : ''}
-    <p style="font-size:11px;color:#aaa;margin:0">Pratelli Rappresentanze SRL</p>
+    <p style="font-size:11px;color:#aaa;margin:0">Pratelli Rappresentanze SRL — Email automatica</p>
   </div>
 </div>
 </body></html>`;
 
-    const res = await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: {
+        'api-key': BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: ADMIN_EMAIL,
+        sender: { email: FROM_EMAIL, name: FROM_NAME },
+        to: [{ email: ADMIN_EMAIL, name: 'Admin Pratelli' }],
         subject: `[Pratelli] ${statusLabel} — ${resellerName || 'Cliente'} • ${clientName || ''} • ${productLabel}`,
-        html,
+        htmlContent: html,
       }),
     });
 
