@@ -13,6 +13,8 @@ import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel } from '@/data/doorCatalog';
 import { toast } from 'sonner';
 import { productLabels, statusLabels } from '@/lib/constants';
+import { recordStatusChange } from '@/lib/statusHistory';
+import { StatusTimeline } from '@/components/StatusTimeline';
 
 const isQuoteStatus = (status: string) => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(status);
 
@@ -54,6 +56,7 @@ export default function MeasurementView() {
   const handleAcceptQuote = async () => {
     const { error } = await supabase.from('measurements').update({ status: 'ordered' }).eq('id', id);
     if (error) { toast.error(error.message); return; }
+    await recordStatusChange(id!, m?.status ?? null, 'ordered');
     setM((prev: any) => ({ ...prev, status: 'ordered' }));
     toast.success('Ordine confermato!');
     setEmailSelected(buildDefaultEmails());
@@ -87,12 +90,13 @@ export default function MeasurementView() {
   };
 
   const handleRequestModifications = async () => {
-    const { error } = await supabase.from('measurements').update({ 
-      status: 'quote_modifications', 
-      modification_notes: modNotes, 
-      has_modification: true 
+    const { error } = await supabase.from('measurements').update({
+      status: 'quote_modifications',
+      modification_notes: modNotes,
+      has_modification: true
     }).eq('id', id);
     if (error) { toast.error(error.message); return; }
+    await recordStatusChange(id!, m?.status ?? null, 'quote_modifications', modNotes || undefined);
     setM((prev: any) => ({ ...prev, status: 'quote_modifications', modification_notes: modNotes }));
     setModDialog(false);
     setModNotes('');
@@ -336,6 +340,16 @@ export default function MeasurementView() {
             </CardContent>
           </Card>
         )}
+
+        {/* Timeline storico stati */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading text-base">📋 Storico avanzamento</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <StatusTimeline measurementId={m.id} />
+          </CardContent>
+        </Card>
       </main>
 
       {/* Email notification dialog */}

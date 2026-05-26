@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { productLabels, statusLabels, WORKFLOW_STEPS, getWorkflowIndex, productIcons, APPOINTMENT_TYPES, MONTH_NAMES, ADMIN_EMAIL } from '@/lib/constants';
 import { NotificationBell } from '@/components/NotificationBell';
 import { createNotification } from '@/lib/notifications';
+import { recordStatusChange } from '@/lib/statusHistory';
 import { AppSidebar } from '@/components/AppSidebar';
 import { AppointmentMap } from '@/components/AppointmentMap';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -262,6 +263,7 @@ export default function Dashboard() {
     const { error } = await supabase.from('measurements').update(updates).eq('id', measurementId);
     if (error) { toast.error(error.message); return; }
     const measurement = measurements.find(m => m.id === measurementId);
+    await recordStatusChange(measurementId, measurement?.status ?? null, newStatus, !accept && modificationNotes ? modificationNotes : undefined);
     if (user) {
       queryClient.setQueryData<Measurement[]>(QUERY_KEYS.measurements(user.id), (old = []) =>
         old.map(m => m.id === measurementId ? { ...m, ...updates } : m)
@@ -289,6 +291,7 @@ export default function Dashboard() {
   const handleConfirmOrder = async (m: Measurement) => {
     const { error } = await supabase.from('measurements').update({ status: 'ordered' }).eq('id', m.id);
     if (error) { toast.error(error.message); return; }
+    await recordStatusChange(m.id, m.status, 'ordered');
     if (user) {
       queryClient.setQueryData<Measurement[]>(QUERY_KEYS.measurements(user.id), (old = []) =>
         old.map(x => x.id === m.id ? { ...x, status: 'ordered' } : x)
@@ -302,6 +305,7 @@ export default function Dashboard() {
   const handleStatusAdvanceWithEmail = async (m: Measurement, newStatus: string) => {
     const { error } = await supabase.from('measurements').update({ status: newStatus }).eq('id', m.id);
     if (error) { toast.error(error.message); return; }
+    await recordStatusChange(m.id, m.status, newStatus);
     if (user) {
       queryClient.setQueryData<Measurement[]>(QUERY_KEYS.measurements(user.id), (old = []) =>
         old.map(x => x.id === m.id ? { ...x, status: newStatus } : x)

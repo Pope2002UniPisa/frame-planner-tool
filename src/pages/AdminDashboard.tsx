@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, BarChart3, Newspaper, Camera, Users, Plus, Trash2, Edit3, Save, Shield, FileText, Send, Package, CheckCircle, Eye, UserCheck, UserX, Clock, Target, TrendingUp, HelpCircle, CreditCard, ArrowRight, Upload, Building2, Euro } from 'lucide-react';
+import { recordStatusChange } from '@/lib/statusHistory';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 import { productLabels, statusLabels } from '@/lib/constants';
@@ -254,6 +255,9 @@ export default function AdminDashboard() {
     const { error } = await supabase.from('measurements').update(updates).eq('id', manageMeasurement.id);
     if (error) { toast.error(error.message); return; }
     setMeasurements(prev => prev.map(m => m.id === manageMeasurement.id ? { ...m, ...updates } : m));
+
+    // Registra il cambio di stato nella timeline
+    await recordStatusChange(manageMeasurement.id, manageMeasurement.status, newStatus);
 
     // Invia notifica email al cliente
     const clientProfile = profiles.find(p => p.user_id === manageMeasurement.user_id);
