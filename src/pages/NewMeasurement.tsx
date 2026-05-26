@@ -2,6 +2,7 @@ import { memo, useMemo, useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -247,7 +248,7 @@ export default function NewMeasurement() {
     return () => { cancelled = true; };
   }, [pricingKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
+  if (loading) return <LoadingSpinner />;
   if (!user) return <Navigate to="/auth" replace />;
 
   const update = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
@@ -721,7 +722,7 @@ export default function NewMeasurement() {
         </div>
       </header>
 
-      <main className="container max-w-4xl py-8">
+      <main className="container max-w-4xl py-4 sm:py-8">
         {/* Progress */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
@@ -1829,24 +1830,24 @@ export default function NewMeasurement() {
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="mt-6 flex flex-wrap justify-between gap-3">
-          <Button variant="outline" onClick={goPrevStep} disabled={isFirstStep}>
+        {/* Navigation — su mobile i bottoni sono full-width e impilati per touch facile */}
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:flex-wrap sm:justify-between">
+          <Button variant="outline" onClick={goPrevStep} disabled={isFirstStep} className="w-full sm:w-auto">
             <ArrowLeft className="mr-2 h-4 w-4" /> Indietro
           </Button>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             {isLastStep && (
-              <Button variant="outline" onClick={handleSaveDraft} disabled={savingDraft || submitting} className="gap-2">
+              <Button variant="outline" onClick={handleSaveDraft} disabled={savingDraft || submitting} className="w-full sm:w-auto gap-2">
                 <Save className="h-4 w-4" />
                 {savingDraft ? 'Salvataggio...' : 'Salva Bozza'}
               </Button>
             )}
             {!isLastStep ? (
-              <Button onClick={goNextStep} disabled={!canGoNext()}>
+              <Button onClick={goNextStep} disabled={!canGoNext()} className="w-full sm:w-auto">
                 Avanti <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={submitting || savingDraft} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button onClick={handleSubmit} disabled={submitting || savingDraft} className="w-full sm:w-auto gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
                 <Check className="h-4 w-4" />
                 {submitting ? 'Invio in corso...' : `Invia ${isMultiProduct ? `${multiItems.length} Preventivi` : 'Preventivo'}`}
               </Button>

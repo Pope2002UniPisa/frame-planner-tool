@@ -3,9 +3,10 @@ import { LayoutDashboard, Plus, Users, Truck, CreditCard, LogOut, Shield, Settin
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import pratelliLogo from '@/assets/pratelli-logo.png';
+import type { Profile } from '@/hooks/useDashboardQueries';
 
 interface Props {
-  profile: any;
+  profile: Profile | null | undefined;
   userEmail: string;
   isAdmin: boolean;
   darkMode: boolean;
@@ -78,10 +79,12 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDark
               to={href}
               onClick={onClose}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                // Base: altezza minima 44px per touch target ottimale
+                'flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium',
+                'transition-all duration-150 active:scale-95',
                 active
                   ? 'bg-white/15 text-white'
-                  : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  : 'text-white/80 hover:bg-white/10 hover:text-white active:bg-white/20'
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -106,7 +109,7 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDark
             <button
               onClick={() => { onNavigate('/admin'); onClose(); }}
               title="Admin"
-              className="flex-1 flex items-center justify-center rounded-lg py-2 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+              className="flex-1 flex items-center justify-center rounded-lg py-2.5 text-white/70 hover:bg-white/10 hover:text-white active:scale-95 active:bg-white/20 transition-all duration-150"
             >
               <Shield className="h-4 w-4" />
             </button>
@@ -114,14 +117,14 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode, onToggleDark
           <button
             onClick={() => { onNavigate('/profilo'); onClose(); }}
             title="Profilo"
-            className="flex-1 flex items-center justify-center rounded-lg py-2 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+            className="flex-1 flex items-center justify-center rounded-lg py-2.5 text-white/70 hover:bg-white/10 hover:text-white active:scale-95 active:bg-white/20 transition-all duration-150"
           >
             <Settings className="h-4 w-4" />
           </button>
           <button
             onClick={onSignOut}
             title="Esci"
-            className="flex-1 flex items-center justify-center rounded-lg py-2 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+            className="flex-1 flex items-center justify-center rounded-lg py-2.5 text-white/70 hover:bg-white/10 hover:text-white active:scale-95 active:bg-white/20 transition-all duration-150"
           >
             <LogOut className="h-4 w-4" />
           </button>

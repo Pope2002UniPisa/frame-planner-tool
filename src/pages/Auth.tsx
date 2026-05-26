@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Ruler, Shield } from 'lucide-react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 export default function Auth() {
   const { user, loading } = useAuth();
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-background"><div className="animate-pulse text-muted-foreground">Caricamento...</div></div>;
+  if (loading) return <LoadingSpinner />;
   if (user) return <Navigate to="/dashboard" replace />;
 
   return (

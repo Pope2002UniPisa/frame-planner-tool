@@ -3,7 +3,10 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useProfile, QUERY_KEYS, type Profile } from '@/hooks/useDashboardQueries';
 import { AppSidebar } from '@/components/AppSidebar';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Menu } from 'lucide-react';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 
@@ -15,18 +18,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { user, loading, signOut } = useAuth();
   const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
+  const queryClient = useQueryClient();
+
+  // Usa la stessa cache React Query del Dashboard → nessun fetch duplicato
+  const { data: profile } = useProfile(user?.id);
+
   const [isDark, setIsDark] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-    supabase.from('profiles').select('*').eq('user_id', user.id).single()
-      .then(({ data }) => setProfile(data));
-  }, [user]);
-
-  useEffect(() => {
-    if (profile !== null) {
+    if (profile) {
       const dark = !!profile.dark_mode;
       setIsDark(dark);
       document.documentElement.classList.toggle('dark', dark);
@@ -37,7 +38,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const newDark = !isDark;
     setIsDark(newDark);
     document.documentElement.classList.toggle('dark', newDark);
-    if (user) await supabase.from('profiles').update({ dark_mode: newDark }).eq('user_id', user.id);
+    if (user) {
+      // Aggiorna la cache condivisa con Dashboard
+      queryClient.setQueryData<Profile>(QUERY_KEYS.profile(user.id), (prev) =>
+        prev ? { ...prev, dark_mode: newDark } : prev
+      );
+      await supabase.from('profiles').update({ dark_mode: newDark }).eq('user_id', user.id);
+    }
   };
 
   const handleSignOut = async () => {
@@ -45,11 +52,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     navigate('/auth');
   };
 
-  if (loading) return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-    </div>
-  );
+  if (loading) return <LoadingSpinner />;
   if (!user) return <Navigate to="/auth" replace />;
 
   return (
@@ -67,10 +70,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Backdrop mobile */}
+      {/* Backdrop mobile con animazione */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -80,7 +83,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <div className="lg:hidden sticky top-0 z-30 flex items-center h-12 px-4 py-2 bg-background border-b border-border gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0"
+            className="p-2 rounded-lg hover:bg-muted active:scale-95 transition-all shrink-0"
             aria-label="Apri menu"
           >
             <Menu className="h-5 w-5 text-foreground" />
