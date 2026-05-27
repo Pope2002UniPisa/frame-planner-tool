@@ -126,7 +126,16 @@ export function ChatBot() {
     r.interimResults = false;
     r.onstart  = () => setAudioState('recording');
     r.onend    = () => setAudioState('idle');
-    r.onerror  = () => { setAudioState('idle'); toast.error('Microfono non accessibile'); };
+    r.onerror  = (e: any) => {
+      setAudioState('idle');
+      if (e.error === 'not-allowed') {
+        toast.error('Permesso microfono negato — clicca il lucchetto 🔒 nella barra degli indirizzi e consenti il microfono, poi ricarica la pagina');
+      } else if (e.error === 'no-speech') {
+        toast.info('Nessun audio rilevato — riprova');
+      } else {
+        toast.error(`Microfono non accessibile (${e.error ?? 'sconosciuto'})`);
+      }
+    };
     r.onresult = (e: any) => {
       const transcript = e.results[0][0].transcript;
       setInput(prev => (prev + ' ' + transcript).trim());
@@ -181,7 +190,10 @@ export function ChatBot() {
         return s + 1;
       }), 1000);
     } catch (e: any) {
-      toast.error('Microfono non accessibile: ' + e.message);
+      const msg = e?.name === 'NotAllowedError'
+        ? 'Permesso microfono negato — clicca il lucchetto 🔒 nella barra e consenti il microfono, poi ricarica'
+        : 'Microfono non accessibile: ' + e.message;
+      toast.error(msg);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
