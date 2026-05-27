@@ -57,6 +57,10 @@ export function ChatBot() {
   const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendAfterStop  = useRef(false); // true = stop+trascrivi+invia, false = annulla
 
+  // Ref sempre aggiornato ai messaggi correnti — usato nei callback asincroni per evitare stale closure
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
   const canRecord = typeof window !== 'undefined' &&
     !!(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== 'undefined';
 
@@ -110,58 +114,79 @@ export function ChatBot() {
   }, [messages, open]);
 
   // ── MediaRecorder + Groq Whisper ─────────────────────────────────────────
-  // Unico sistema audio: funziona su Chrome, Safari, Firefox, mobile.
-  // sendAfterStop=true → trascrivi e invia; false → annulla.
+  // Funziona su Chrome, Safari (iOS 14.3+), Firefox, Android.
+  // sendAfterStop=true → trascrivi+invia; false → annulla.
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Scegli il MIME type migliore supportato dal browser
-      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg']
-        .find(m => MediaRecorder.isTypeSupported(m)) ?? 'audio/webm';
 
-      const mr = new MediaRecorder(stream, { mimeType: mime });
+      // MIME type: prova in ordine, se nessuno è supportato non specificarlo
+      // (importante per iOS Safari che non supporta webm ma supporta mp4)
+      const preferredMimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+      const mime = preferredMimes.find(m => MediaRecorder.isTypeSupported(m));
+      const mr   = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      const actualMime = mr.mimeType; // il MIME reale usato dal browser
+
       chunksRef.current = [];
       mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
 
       mr.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
 
-        // Annullato dall'utente → scarta tutto
-        if (!sendAfterStop.current) {
-          setAudioState('idle');
-          return;
-        }
+        // Annullato → scarta
+        if (!sendAfterStop.current) { setAudioState('idle'); return; }
 
-        const blob = new Blob(chunksRef.current, { type: mime });
-        if (blob.size < 500) {
-          toast.error('Registrazione troppo breve — riprova');
+        const blob = new Blob(chunksRef.current, { type: actualMime });
+        if (blob.size < 200) {
+          toast.error('Registrazione troppo breve — tieni premuto invio mentre parli');
           setAudioState('idle');
           return;
         }
 
         setAudioState('transcribing');
         try {
-          // base64 encode
-          const ab    = await blob.arrayBuffer();
-          const bytes = new Uint8Array(ab);
-          let bin = '';
-          bytes.forEach(b => (bin += String.fromCharCode(b)));
-          const base64 = btoa(bin);
+          // Codifica base64 tramite FileReader (non usa btoa che può fallire su file grandi)
+          const base64: string = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result as string;
+              resolve(result.split(',')[1]); // rimuovi "data:...;base64,"
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
 
           const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-            body: { audio: base64, mimeType: mime },
+            body: { audio: base64, mimeType: actualMime },
           });
           if (error || !data?.text) throw new Error(data?.error ?? 'Nessun testo ricevuto');
 
           const transcript = data.text.trim();
-          // Invia direttamente il messaggio vocale a Silvia
+          if (!transcript) throw new Error('Trascrizione vuota — riprova parlando più chiaramente');
+
+          // Invia il messaggio a Silvia — usa messagesRef per evitare stale closure
+          const next: Message[] = [...messagesRef.current, { role: 'user', content: transcript }];
+          setMessages(next);
           setAudioState('idle');
-          setMessages(prev => {
-            const next: Message[] = [...prev, { role: 'user', content: transcript }];
-            // Avvia la chiamata AI in parallelo
-            sendToAssistant(next);
-            return next;
-          });
+
+          // Chiama l'assistente direttamente (evita side-effect dentro setState)
+          setLoading(true);
+          try {
+            const { data: aiData, error: aiError } = await supabase.functions.invoke('chat-assistant', {
+              body: { messages: next.map(m => ({ role: m.role, content: m.content })), userId: user?.id ?? null },
+            });
+            if (aiError) throw aiError;
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: aiData.reply || 'Nessuna risposta.',
+              action: aiData.action ?? undefined,
+              actionDone: false, actionLoading: false,
+            }]);
+          } catch {
+            setMessages(prev => [...prev, { role: 'assistant', content: 'Errore. Riprova tra poco.' }]);
+          } finally {
+            setLoading(false);
+          }
         } catch (e: any) {
           toast.error('Trascrizione fallita: ' + e.message);
           setAudioState('idle');
@@ -170,16 +195,12 @@ export function ChatBot() {
 
       mediaRecRef.current = mr;
       sendAfterStop.current = false;
-      mr.start(200);
+      mr.start(100); // chunk ogni 100ms per non perdere audio
       setAudioState('recording');
       setRecSeconds(0);
+      toast.success('🎙 In registrazione — clicca → per inviare', { id: 'rec', duration: 60000 });
       timerRef.current = setInterval(() => setRecSeconds(s => {
-        if (s >= 119) {
-          // Limite 2 minuti: invia automaticamente
-          sendAfterStop.current = true;
-          stopRecording();
-          return s;
-        }
+        if (s >= 119) { sendAfterStop.current = true; stopRecording(); return s; }
         return s + 1;
       }), 1000);
     } catch (e: any) {
@@ -188,9 +209,10 @@ export function ChatBot() {
         : 'Microfono non accessibile: ' + e.message;
       toast.error(msg);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopRecording = useCallback(() => {
+    toast.dismiss('rec');
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     if (mediaRecRef.current?.state !== 'inactive') mediaRecRef.current?.stop();
   }, []);
