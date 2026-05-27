@@ -259,23 +259,34 @@ export default function AdminDashboard() {
     // Registra il cambio di stato nella timeline
     await recordStatusChange(manageMeasurement.id, manageMeasurement.status, newStatus);
 
-    // Invia notifica email al cliente
+    // Invia notifica email al rivenditore
     const clientProfile = profiles.find(p => p.user_id === manageMeasurement.user_id);
+    const emailPayload = {
+      newStatus,
+      productType: manageMeasurement.product_type,
+      clientName: manageMeasurement.client_name,
+      estimatedPrice: updates.estimated_price || manageMeasurement.estimated_price || null,
+      estimatedDelivery: updates.estimated_delivery_date || manageMeasurement.estimated_delivery_date || null,
+      notes: updates.notes || null,
+    };
+
     if (clientProfile?.email) {
       supabase.functions.invoke('send-notification', {
-        body: {
-          toEmail: clientProfile.email,
-          toName: clientProfile.company_name || null,
-          newStatus,
-          productType: manageMeasurement.product_type,
-          clientName: manageMeasurement.client_name,
-          estimatedPrice: updates.estimated_price || manageMeasurement.estimated_price || null,
-          estimatedDelivery: updates.estimated_delivery_date || manageMeasurement.estimated_delivery_date || null,
-          notes: updates.notes || null,
-        },
+        body: { toEmail: clientProfile.email, toName: clientProfile.company_name || null, ...emailPayload },
       }).then(({ error: fnErr }) => {
-        if (fnErr) console.error('Email non inviata:', fnErr);
-        else toast.success('Email di notifica inviata al cliente');
+        if (fnErr) console.error('Email rivenditore non inviata:', fnErr);
+        else toast.success('Email di notifica inviata al rivenditore');
+      });
+    }
+
+    // Invia notifica email anche al cliente finale (se compilata)
+    const finalClientEmail = manageMeasurement.client_email as string | undefined;
+    if (finalClientEmail?.trim()) {
+      supabase.functions.invoke('send-notification', {
+        body: { toEmail: finalClientEmail.trim(), toName: manageMeasurement.client_name || null, ...emailPayload },
+      }).then(({ error: fnErr }) => {
+        if (fnErr) console.error('Email cliente finale non inviata:', fnErr);
+        else toast.success('Email di notifica inviata al cliente finale');
       });
     }
 

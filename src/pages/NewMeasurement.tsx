@@ -72,6 +72,7 @@ const initialForm = {
   door_is_window_version: false,
   client_name: '',
   client_address: '',
+  client_email: '',
   survey_type: '',
   width_mm: '',
   height_mm: '',
@@ -368,6 +369,7 @@ export default function NewMeasurement() {
     product_type: form.product_type,
     client_name: form.client_name,
     client_address: form.client_address,
+    client_email: form.client_email || '',
     survey_type: form.survey_type || 'foro_muro',
     width_mm: parseInt(itemOverrides?.width_mm || form.width_mm) || 0,
     height_mm: parseInt(itemOverrides?.height_mm || form.height_mm) || 0,
@@ -974,6 +976,10 @@ export default function NewMeasurement() {
                 <div className="space-y-2">
                   <Label>Indirizzo installazione</Label>
                   <Input value={form.client_address} onChange={e => update('client_address', e.target.value)} placeholder="Via Roma 1, Milano" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email cliente <span className="text-muted-foreground font-normal">(opzionale — per notifiche di stato)</span></Label>
+                  <Input type="email" value={form.client_email} onChange={e => update('client_email', e.target.value)} placeholder="mario.rossi@email.com" />
                 </div>
               </div>
             )}

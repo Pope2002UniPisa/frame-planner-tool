@@ -94,6 +94,7 @@ export type Database = {
           accessories_config: Json | null
           amount_paid: number | null
           client_address: string
+          client_email: string
           client_name: string
           color_external: string | null
           color_internal: string | null
@@ -146,6 +147,7 @@ export type Database = {
           accessories_config?: Json | null
           amount_paid?: number | null
           client_address?: string
+          client_email?: string
           client_name?: string
           color_external?: string | null
           color_internal?: string | null
@@ -198,6 +200,7 @@ export type Database = {
           accessories_config?: Json | null
           amount_paid?: number | null
           client_address?: string
+          client_email?: string
           client_name?: string
           color_external?: string | null
           color_internal?: string | null

@@ -97,6 +97,10 @@ export default function Dashboard() {
   const [mapMounted, setMapMounted] = useState(false);
   const [policyModal, setPolicyModal] = useState<'privacy' | 'cookie' | null>(null);
   const [sendingWA, setSendingWA] = useState(false);
+  // Dialog selezione destinatari WhatsApp
+  const [waDialog, setWaDialog] = useState<{ appointments: typeof todayAllAppointments; dateLabel?: string } | null>(null);
+  const [waNumbers, setWaNumbers] = useState<string[]>([]);
+  const [waCustomInput, setWaCustomInput] = useState('');
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [hoveredApptId, setHoveredApptId] = useState<string | null>(null);
   const [apptSearch, setApptSearch] = useState('');
@@ -403,9 +407,22 @@ export default function Dashboard() {
     toast.success('Appuntamento modificato');
   };
 
-  const sendWhatsAppGiro = async (appointments: typeof todayAllAppointments, dateLabel?: string) => {
+  // Apre il dialog per scegliere i numeri prima di inviare il giro
+  const sendWhatsAppGiro = (appointments: typeof todayAllAppointments, dateLabel?: string) => {
     if (appointments.length === 0) { toast.error('Nessun appuntamento da inviare'); return; }
+    // Pre-seleziona il numero del profilo se disponibile
+    const defaults: string[] = [];
+    if (profile?.phone?.trim()) defaults.push(profile.phone.trim());
+    setWaNumbers(defaults);
+    setWaCustomInput('');
+    setWaDialog({ appointments, dateLabel });
+  };
+
+  // Invia il giro a tutti i numeri selezionati nel dialog
+  const confirmSendWhatsApp = async () => {
+    if (!waDialog || waNumbers.length === 0) return;
     setSendingWA(true);
+    const { appointments, dateLabel } = waDialog;
     const label = dateLabel || new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const lines = appointments.map((a, i) => {
       const type = APPOINTMENT_TYPES[a.type]?.label || a.type;
@@ -415,16 +432,20 @@ export default function Dashboard() {
       return [`${i + 1}. *${a.title}* — ${type}`, time, loc, desc].filter(Boolean).join('\n   ');
     });
     const message = `📅 *Giro del ${label}*\n\n${lines.join('\n\n')}\n\n_Totale: ${appointments.length} appuntament${appointments.length === 1 ? 'o' : 'i'}_`;
-    try {
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', { body: { message } });
-      if (error || !data?.success) throw new Error(data?.error || 'Errore');
-      if (data?.skipped) toast.info('WhatsApp non configurato — messaggio simulato correttamente');
-      else toast.success('Riepilogo inviato su WhatsApp!');
-    } catch (err: any) {
-      toast.error(err.message || 'Errore invio WhatsApp');
-    } finally {
-      setSendingWA(false);
+    let sent = 0;
+    for (const to of waNumbers) {
+      try {
+        const { data, error } = await supabase.functions.invoke('send-whatsapp', { body: { message, to } });
+        if (error || !data?.success) { if (!data?.skipped) throw new Error(data?.error || 'Errore'); }
+        if (data?.skipped) toast.info('WhatsApp non configurato — messaggio simulato');
+        else sent++;
+      } catch (err: any) {
+        toast.error(`Errore per ${to}: ${err.message}`);
+      }
     }
+    if (sent > 0) toast.success(`Riepilogo inviato a ${sent} destinatar${sent === 1 ? 'io' : 'i'} WhatsApp`);
+    setSendingWA(false);
+    setWaDialog(null);
   };
 
   const searchedAppointments = useMemo(() => {
@@ -1335,6 +1356,88 @@ export default function Dashboard() {
             <Button onClick={sendEmailNotifications} disabled={sendingEmails || emailSelected.length === 0} className="gap-1.5">
               <Send className="h-3.5 w-3.5" />
               {sendingEmails ? 'Invio...' : `Invia a ${emailSelected.length} destinatar${emailSelected.length === 1 ? 'io' : 'i'}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog selezione destinatari WhatsApp */}
+      <Dialog open={!!waDialog} onOpenChange={open => { if (!open) setWaDialog(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <WhatsAppIcon className="h-5 w-5 text-[#25D366]" />
+              Invia giro su WhatsApp
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Seleziona i numeri a cui inviare il riepilogo degli appuntamenti.
+            </p>
+            {/* Numero dal profilo */}
+            {profile?.phone?.trim() && (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground">NUMERO DAL TUO PROFILO</p>
+                <button
+                  type="button"
+                  onClick={() => setWaNumbers(prev =>
+                    prev.includes(profile.phone!) ? prev.filter(n => n !== profile.phone!) : [...prev, profile.phone!]
+                  )}
+                  className={`w-full flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+                    waNumbers.includes(profile.phone!) ? 'border-[#25D366] bg-[#25D366]/5 text-[#128C7E]' : 'border-border hover:bg-muted'
+                  }`}
+                >
+                  <span className="font-medium">{profile.company_name || 'Il mio numero'}</span>
+                  <span className="text-xs text-muted-foreground font-mono">{profile.phone}</span>
+                </button>
+              </div>
+            )}
+            {/* Aggiungi numero */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground">AGGIUNGI NUMERO</p>
+              <div className="flex gap-2">
+                <Input
+                  type="tel"
+                  placeholder="+39 333 1234567"
+                  value={waCustomInput}
+                  onChange={e => setWaCustomInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && waCustomInput.trim()) {
+                      const n = waCustomInput.trim();
+                      setWaNumbers(prev => prev.includes(n) ? prev : [...prev, n]);
+                      setWaCustomInput('');
+                    }
+                  }}
+                />
+                <Button variant="outline" onClick={() => {
+                  const n = waCustomInput.trim();
+                  if (n) { setWaNumbers(prev => prev.includes(n) ? prev : [...prev, n]); setWaCustomInput(''); }
+                }}>Aggiungi</Button>
+              </div>
+              {/* Numeri aggiuntivi */}
+              {waNumbers.filter(n => n !== profile?.phone).map(n => (
+                <div key={n} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm font-mono">
+                  <span>{n}</span>
+                  <button type="button" onClick={() => setWaNumbers(prev => prev.filter(x => x !== n))} className="text-muted-foreground hover:text-destructive text-xs ml-2">✕</button>
+                </div>
+              ))}
+            </div>
+            {/* Anteprima count appuntamenti */}
+            {waDialog && (
+              <p className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2">
+                📅 Verrà inviato il riepilogo di <strong>{waDialog.appointments.length} appuntament{waDialog.appointments.length === 1 ? 'o' : 'i'}</strong>.
+              </p>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setWaDialog(null)}>Annulla</Button>
+            <Button
+              onClick={confirmSendWhatsApp}
+              disabled={sendingWA || waNumbers.length === 0}
+              className="gap-1.5 bg-[#25D366] hover:bg-[#1ebe5a] text-white"
+            >
+              <WhatsAppIcon className="h-4 w-4" />
+              {sendingWA ? 'Invio...' : `Invia a ${waNumbers.length} numer${waNumbers.length === 1 ? 'o' : 'i'}`}
             </Button>
           </DialogFooter>
         </DialogContent>
