@@ -1,10 +1,13 @@
 /**
- * chat-assistant — Silvia AI con dati reali + azioni (Fix #7 + #9)
+ * chat-assistant — Silvia AI con dati reali + azioni
  *
- * Novità:
- * - Riceve userId dal body → inietta misurazioni e appuntamenti reali nel system prompt
- * - Riconosce intenzioni strutturate (create_appointment, update_status, send_notification)
- * - Risponde con { reply, action? } per permettere al frontend di eseguire l'azione
+ * IMPORTANTE: usiamo response_format: { type: "json_object" } di Groq
+ * per forzare sempre output JSON valido. Senza questo il modello ignora
+ * l'istruzione di formato e risponde con testo libero, spezzando le azioni.
+ *
+ * Formato risposta SEMPRE:
+ *   { "reply": "testo visibile", "action": null }          ← risposta normale
+ *   { "reply": "testo", "action": { "type": "...", "data": {...} } }  ← con azione
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -17,29 +20,37 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// ── System prompt ────────────────────────────────────────────────────────────
+// CRITICO: devi menzionare "JSON" esplicitamente nel system prompt
+// quando usi response_format: json_object, altrimenti Groq dà errore.
 const BASE_SYSTEM_PROMPT = `Sei Silvia, l'assistente AI agente del Portale Misurazioni di Pratelli Rappresentanze.
 Sei esperta di serramenti, infissi, porte e finestre.
 Rispondi SEMPRE in italiano, in modo conciso e professionale (max 3-4 frasi o bullet point).
 
-CAPACITÀ OPERATIVE — puoi eseguire azioni reali:
-- Creare appuntamenti nel calendario
-- Aggiornare lo stato di una misurazione
-- Inviare notifiche all'utente
+FORMATO RISPOSTA OBBLIGATORIO — rispondi SEMPRE e SOLO con un oggetto JSON valido:
+{"reply": "<testo visibile all'utente>", "action": null}
 
-QUANDO l'utente chiede di creare un appuntamento, rispondi con JSON strutturato:
-{"reply":"Creo subito l'appuntamento!","action":{"type":"create_appointment","data":{"title":"...","date":"YYYY-MM-DD","type":"consegna|chiamata|pagamento|sopralluogo|altro","time":"HH:MM"}}}
+Quando devi eseguire un'azione, includi il campo "action" con i dettagli:
 
-QUANDO chiede di cambiare lo stato di una misurazione (usa measurementId dai dati sotto):
-{"reply":"Aggiorno lo stato!","action":{"type":"update_status","data":{"measurementId":"...","oldStatus":"...","newStatus":"..."}}}
+CREA APPUNTAMENTO — usa questo formato esatto:
+{"reply": "Creo subito l'appuntamento!", "action": {"type": "create_appointment", "data": {"title": "Sopralluogo Rossi", "date": "YYYY-MM-DD", "type": "sopralluogo", "time": "HH:MM", "location": "Via Roma 1, Milano"}}}
+I valori validi per type sono: consegna, chiamata, pagamento, sopralluogo, altro.
 
-QUANDO chiede di inviare una notifica/promemoria:
-{"reply":"Invio la notifica!","action":{"type":"send_notification","data":{"title":"...","body":"..."}}}
+CAMBIA STATO MISURAZIONE:
+{"reply": "Aggiorno lo stato!", "action": {"type": "update_status", "data": {"measurementId": "<id-esatto-dai-dati>", "oldStatus": "<stato-attuale>", "newStatus": "<nuovo-stato>"}}}
+Flusso stati: bozza → submitted → quoted → ordered → in_production → delivering → completed
 
-Altrimenti rispondi con testo normale (NON JSON).
+INVIA NOTIFICA:
+{"reply": "Invio la notifica!", "action": {"type": "send_notification", "data": {"title": "<titolo>", "body": "<corpo messaggio>"}}}
+
+REGOLE IMPORTANTI:
+- Non inventare mai measurementId: usa SOLO gli id presenti nei dati reali sotto.
+- Per le date usa sempre il formato YYYY-MM-DD. Se l'utente dice "venerdì" calcola la data precisa basandoti sulla data/ora attuale indicata sotto.
+- Se una richiesta è ambigua, chiedi chiarimenti prima di agire.
+- Per richieste senza azione (domande, informazioni) usa semplicemente: {"reply": "...", "action": null}
 
 STRUTTURA DEL PORTALE:
 - Dashboard: KPI, giro del giorno, calendario, lista misurazioni
-- Flusso ordine: Bozza → Inviata → Preventivo → Ordine confermato → In produzione → Pronta per consegna → Completata
 - Contatti: Via Livornese Ovest 22/A, 56035 Casciana Terme Lari (PI) — PEC: farewellsrl@pec.cgn.it`;
 
 serve(async (req) => {
@@ -56,12 +67,12 @@ serve(async (req) => {
   try {
     const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
     if (!GROQ_API_KEY) {
-      return json({ reply: "Chiave API non configurata. Contatta l'amministratore." }, 500);
+      return json({ reply: "Chiave API non configurata. Contatta l'amministratore.", action: null }, 500);
     }
 
     const { messages, userId } = await req.json();
 
-    // ── Fix #7: Inietta dati reali dell'utente nel system prompt ────────────
+    // ── Inietta dati reali dell'utente nel system prompt ─────────────────────
     let userContext = '';
     if (userId && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       try {
@@ -109,6 +120,7 @@ ${JSON.stringify(appointments ?? [], null, 2)}
       })),
     ];
 
+    // ── Chiamata Groq con JSON mode forzato ──────────────────────────────────
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -119,7 +131,8 @@ ${JSON.stringify(appointments ?? [], null, 2)}
         model: 'llama-3.3-70b-versatile',
         messages: conversation,
         max_tokens: 512,
-        temperature: 0.7,
+        temperature: 0.4,          // più bassa → output JSON più affidabile
+        response_format: { type: 'json_object' }, // FORZA JSON valido
       }),
     });
 
@@ -128,30 +141,38 @@ ${JSON.stringify(appointments ?? [], null, 2)}
     if (!res.ok) {
       const errMsg: string = data?.error?.message || `HTTP ${res.status}`;
       const isQuota = res.status === 429;
-      return json({ reply: isQuota ? 'Troppe richieste. Riprova tra qualche secondo.' : `Errore: ${errMsg.split('.')[0]}` });
+      return json({ reply: isQuota ? 'Troppe richieste. Riprova tra qualche secondo.' : `Errore: ${errMsg.split('.')[0]}`, action: null });
     }
 
     const rawReply = data.choices?.[0]?.message?.content;
-    if (!rawReply) return json({ reply: 'Nessuna risposta generata. Riprova.' });
+    if (!rawReply) return json({ reply: 'Nessuna risposta generata. Riprova.', action: null });
 
-    // ── Fix #9: Tenta di parsare JSON per azioni strutturate ────────────────
+    // ── Parsing JSON (con response_format json_object il modello DEVE restituire JSON) ──
     try {
-      // Cerca un blocco JSON nella risposta (Groq può aggiungere testo prima/dopo)
-      const jsonMatch = rawReply.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.reply && parsed.action) {
-          return json(parsed); // { reply: string, action: { type, data } }
-        }
-      }
+      const parsed = JSON.parse(rawReply);
+      // Normalizza: assicura che "action: null" o "action" assente siano trattati uguale
+      return json({
+        reply: parsed.reply || rawReply,
+        action: parsed.action ?? null,
+      });
     } catch {
-      // Non è JSON strutturato — risposta testuale normale
-    }
+      // Fallback: se per qualche motivo il JSON non è parsabile, usa il testo grezzo
+      console.error('[chat-assistant] Impossibile parsare JSON:', rawReply.slice(0, 200));
 
-    return json({ reply: rawReply });
+      // Tenta comunque l'estrazione da testo libero
+      try {
+        const jsonMatch = rawReply.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.reply) return json({ reply: parsed.reply, action: parsed.action ?? null });
+        }
+      } catch { /* ignora */ }
+
+      return json({ reply: rawReply, action: null });
+    }
 
   } catch (err) {
     console.error('Edge function error:', String(err));
-    return json({ reply: `Errore interno: ${String(err)}` }, 500);
+    return json({ reply: `Errore interno: ${String(err)}`, action: null }, 500);
   }
 });

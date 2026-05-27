@@ -1085,7 +1085,7 @@ export default function Dashboard() {
             )}
 
             {/* Footer */}
-            <div className="mt-2 -mx-6 -mb-6 bg-foreground text-background">
+            <div id="app-footer" className="mt-2 -mx-6 -mb-6 bg-foreground text-background">
               <div className="px-6 py-5 flex flex-wrap items-center justify-between gap-4">
                 {/* Brand */}
                 <div>

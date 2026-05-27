@@ -33,3 +33,9 @@ entrypoint = "./functions/chat-assistant/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/agent-action/index.ts"
+
+# transcribe-audio: trascrive audio con Groq Whisper large-v3
+[functions.transcribe-audio]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/transcribe-audio/index.ts"
