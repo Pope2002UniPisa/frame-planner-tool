@@ -1,19 +1,16 @@
 /**
  * ChatBot — Silvia AI
  *
+ * Footer overlap: IntersectionObserver su #app-footer.
+ *   Funziona con qualsiasi scroll container (non dipende da window.scroll).
+ *
  * Audio:
- *   - Primario: MediaRecorder API → Groq Whisper (funziona su TUTTI i browser)
- *   - Fallback: Web Speech API (solo Chrome/Edge, nessun round-trip)
- *
- * Footer overlap:
- *   - IntersectionObserver su #app-footer → sposta il bottone in alto quando il footer è visibile
- *
- * Azioni:
- *   - Pulsante arancione "📅 Crea appuntamento" ecc. → chiama agent-action
- *   - Dopo l'esecuzione invalida la React Query cache → UI aggiornata automaticamente
+ *   - Chrome/Edge: Web Speech API in tempo reale (più accurata, no round-trip)
+ *   - Safari/Firefox: MediaRecorder → Groq Whisper large-v3 (edge function)
+ *   Dopo la trascrizione il testo appare nell'input; l'utente può correggere prima di inviare.
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, Loader2, Mic, MicOff, Zap, Square } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, Loader2, Mic, Square, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useQueryClient } from '@tanstack/react-query';
@@ -38,7 +35,6 @@ declare global {
   }
 }
 
-// Etichette leggibili per ogni tipo di azione
 const ACTION_LABELS: Record<string, string> = {
   create_appointment: '📅 Crea appuntamento',
   update_status:      '🔄 Aggiorna stato',
@@ -49,249 +45,216 @@ export function ChatBot() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // ── Stato UI ──────────────────────────────────────────────────────────────
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState('');
+  const [open, setOpen]       = useState(false);
+  const [input, setInput]     = useState('');
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: 'Ciao! Sono Silvia 👋 Posso creare appuntamenti, aggiornare stati e rispondere alle tue domande. Parla col microfono o scrivi direttamente!',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([{
+    role: 'assistant',
+    content: 'Ciao! Sono Silvia 👋 Posso creare appuntamenti, aggiornare stati e rispondere alle tue domande. Clicca sul microfono per parlarmi!',
+  }]);
 
-  // ── Stato audio ───────────────────────────────────────────────────────────
-  const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'transcribing'>('idle');
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef   = useRef<Blob[]>([]);
-  const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ── Stato audio ─────────────────────────────────────────────────────────
+  const [audioState, setAudioState] = useState<'idle' | 'recording' | 'transcribing'>('idle');
+  const [recSeconds, setRecSeconds] = useState(0);
+  const mediaRecRef   = useRef<MediaRecorder | null>(null);
+  const chunksRef     = useRef<Blob[]>([]);
+  const timerRef      = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recogRef      = useRef<any>(null);
 
-  // Web Speech API come fallback rapido
-  const recognitionRef = useRef<any>(null);
-  const speechSupported = typeof window !== 'undefined' &&
+  // Priorità: Web Speech API (Chrome/Edge, real-time) > MediaRecorder + Whisper (altri browser)
+  const hasWebSpeech = typeof window !== 'undefined' &&
     !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-  const mediaSupported = typeof window !== 'undefined' &&
+  const hasMediaRec  = typeof window !== 'undefined' &&
     !!(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== 'undefined';
+  const canRecord    = hasWebSpeech || hasMediaRec;
 
-  // ── Posizione bottone (evita overlap con footer) ──────────────────────────
-  const [btnBottom, setBtnBottom] = useState(24); // px
-  const btnPanelBottom = btnBottom + 64 + 8;       // bottone h-14 + gap
+  // ── Footer overlap: IntersectionObserver ────────────────────────────────
+  // Funziona con qualsiasi scroll container (main con overflow-y-auto incluso)
+  const [btnBottom, setBtnBottom] = useState(24);
+  const ioRef = useRef<IntersectionObserver | null>(null);
 
-  useEffect(() => {
-    const update = () => {
-      const footer = document.getElementById('app-footer');
-      if (!footer) { setBtnBottom(24); return; }
-      const rect = footer.getBoundingClientRect();
-      const vh   = window.innerHeight;
-      if (rect.top < vh) {
-        // Footer parzialmente visibile: alza il bottone
-        setBtnBottom(Math.max(24, vh - rect.top + 12));
-      } else {
-        setBtnBottom(24);
-      }
-    };
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-    };
+  const attachFooterObserver = useCallback(() => {
+    const footer = document.getElementById('app-footer');
+    if (!footer || ioRef.current) return;
+
+    ioRef.current = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          const vh  = window.innerHeight;
+          const top = entry.boundingClientRect.top;
+          setBtnBottom(Math.max(24, Math.ceil(vh - top) + 16));
+        } else {
+          setBtnBottom(24);
+        }
+      },
+      // Threshold fine-grained: aggiorna la posizione mentre il footer scorre
+      { threshold: Array.from({ length: 21 }, (_, i) => i * 0.05) }
+    );
+    ioRef.current.observe(footer);
   }, []);
 
-  // ── Scroll automatico ai nuovi messaggi ──────────────────────────────────
+  useEffect(() => {
+    // Tenta subito
+    attachFooterObserver();
+    // Riprova ogni 300ms finché il footer non compare nel DOM
+    // (succede quando si naviga alla Dashboard dopo il primo render)
+    const poller = setInterval(() => {
+      if (document.getElementById('app-footer')) {
+        attachFooterObserver();
+        clearInterval(poller);
+      }
+    }, 300);
+    return () => {
+      clearInterval(poller);
+      ioRef.current?.disconnect();
+      ioRef.current = null;
+    };
+  }, [attachFooterObserver]);
+
+  // ── Scroll automatico ────────────────────────────────────────────────────
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
-  // ── Registrazione audio (MediaRecorder) ──────────────────────────────────
-  const startRecording = useCallback(async () => {
+  // ── Web Speech API (Chrome/Edge — real-time, accurata) ───────────────────
+  const startWebSpeech = useCallback(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const r = new SR();
+    r.lang = 'it-IT';
+    r.continuous = false;
+    r.interimResults = false;
+    r.onstart  = () => setAudioState('recording');
+    r.onend    = () => setAudioState('idle');
+    r.onerror  = () => { setAudioState('idle'); toast.error('Microfono non accessibile'); };
+    r.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      setInput(prev => (prev + ' ' + transcript).trim());
+      setAudioState('idle');
+    };
+    recogRef.current = r;
+    r.start();
+  }, []);
+
+  // ── MediaRecorder + Groq Whisper (Safari, Firefox) ───────────────────────
+  const startMediaRec = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      // Sceglie il formato più compatibile
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : 'audio/ogg';
+        : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg';
 
-      const mr = new MediaRecorder(stream, { mimeType });
-      audioChunksRef.current = [];
-
-      mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      const mr = new MediaRecorder(stream, { mimeType: mime });
+      chunksRef.current = [];
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       mr.onstop = async () => {
-        // Ferma le tracce audio (rilascia microfono)
         stream.getTracks().forEach(t => t.stop());
-        await transcribeAudio(mimeType);
+        const blob = new Blob(chunksRef.current, { type: mime });
+        if (blob.size < 500) { setAudioState('idle'); return; }
+
+        setAudioState('transcribing');
+        const ab = await blob.arrayBuffer();
+        const bytes = new Uint8Array(ab);
+        let bin = '';
+        bytes.forEach(b => bin += String.fromCharCode(b));
+        const base64 = btoa(bin);
+
+        try {
+          const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+            body: { audio: base64, mimeType: mime },
+          });
+          if (error || !data?.text) throw new Error(data?.error ?? 'Errore trascrizione');
+          setInput(prev => (prev + ' ' + data.text).trim());
+          toast.info(`Trascritto: "${data.text}"`, { duration: 3000 });
+        } catch (e: any) {
+          toast.error('Trascrizione fallita: ' + e.message);
+        } finally {
+          setAudioState('idle');
+        }
       };
-
-      mediaRecorderRef.current = mr;
-      mr.start(250); // chunk ogni 250ms
-      setRecordingState('recording');
-      setRecordingSeconds(0);
-
-      // Timer
-      timerRef.current = setInterval(() => setRecordingSeconds(s => {
-        if (s >= 59) { stopRecording(); return s; } // max 60 sec
+      mediaRecRef.current = mr;
+      mr.start(250);
+      setAudioState('recording');
+      setRecSeconds(0);
+      timerRef.current = setInterval(() => setRecSeconds(s => {
+        if (s >= 59) { stopRecording(); return s; }
         return s + 1;
       }), 1000);
     } catch (e: any) {
-      // Fallback a Web Speech API se il microfono non è accessibile
-      if (speechSupported) startWebSpeech();
-      else toast.error('Microfono non accessibile: ' + e.message);
+      toast.error('Microfono non accessibile: ' + e.message);
     }
-  }, [speechSupported]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopRecording = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    if (mediaRecorderRef.current?.state !== 'inactive') {
-      setRecordingState('transcribing');
-      mediaRecorderRef.current?.stop();
-    }
+    if (mediaRecRef.current?.state !== 'inactive') mediaRecRef.current?.stop();
   }, []);
 
-  const transcribeAudio = async (mimeType: string) => {
-    const blob = new Blob(audioChunksRef.current, { type: mimeType });
-    if (blob.size < 1000) {
-      // Audio troppo corto
-      setRecordingState('idle');
-      toast.error('Registrazione troppo breve — riprova');
-      return;
-    }
-
-    // Converti in base64
-    const arrayBuffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    const base64 = btoa(binary);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-        body: { audio: base64, mimeType },
-      });
-      if (error || !data?.text) throw new Error(data?.error || 'Trascrizione fallita');
-      setInput(prev => (prev + ' ' + data.text).trim());
-    } catch (e: any) {
-      toast.error('Trascrizione fallita: ' + e.message);
-    } finally {
-      setRecordingState('idle');
-    }
-  };
-
-  // ── Web Speech API (fallback / Chrome) ───────────────────────────────────
-  const startWebSpeech = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-    const recognition = new SR();
-    recognition.lang = 'it-IT';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.onstart  = () => setRecordingState('recording');
-    recognition.onend    = () => setRecordingState('idle');
-    recognition.onerror  = () => setRecordingState('idle');
-    recognition.onresult = (e: any) => {
-      setInput(prev => (prev + ' ' + e.results[0][0].transcript).trim());
-      setRecordingState('idle');
-    };
-    recognitionRef.current = recognition;
-    recognition.start();
-  };
-
   const handleMicClick = () => {
-    if (recordingState === 'recording') {
-      // Ferma registrazione
-      if (mediaRecorderRef.current?.state !== 'inactive') stopRecording();
-      else { recognitionRef.current?.stop(); setRecordingState('idle'); }
-    } else if (recordingState === 'idle') {
-      if (mediaSupported) startRecording();
-      else if (speechSupported) startWebSpeech();
+    if (audioState === 'recording') {
+      if (hasWebSpeech) { recogRef.current?.stop(); setAudioState('idle'); }
+      else stopRecording();
+    } else if (audioState === 'idle') {
+      // Chrome/Edge: Web Speech API (real-time, no lag)
+      if (hasWebSpeech) startWebSpeech();
+      else if (hasMediaRec) startMediaRec();
       else toast.error('Questo browser non supporta la registrazione audio');
     }
   };
 
-  // ── Esegui azione proposta da Silvia ─────────────────────────────────────
-  const executeAction = async (action: { type: string; data: Record<string, any> }, msgIndex: number) => {
+  // ── Esegui azione ────────────────────────────────────────────────────────
+  const executeAction = async (action: { type: string; data: Record<string, any> }, i: number) => {
     if (!user) return;
-
-    setMessages(prev => prev.map((m, i) =>
-      i === msgIndex ? { ...m, actionLoading: true } : m
-    ));
-
+    setMessages(prev => prev.map((m, j) => j === i ? { ...m, actionLoading: true } : m));
     try {
       const { data, error } = await supabase.functions.invoke('agent-action', {
         body: { action, userId: user.id },
       });
       if (error) throw error;
-
-      setMessages(prev => prev.map((m, i) =>
-        i === msgIndex ? { ...m, actionDone: true, actionLoading: false } : m
-      ));
+      setMessages(prev => prev.map((m, j) => j === i ? { ...m, actionDone: true, actionLoading: false } : m));
       toast.success(data?.message ?? 'Azione eseguita ✅');
-
-      // Invalida la cache → l'UI si aggiorna senza refresh
-      if (action.type === 'create_appointment') {
+      if (action.type === 'create_appointment')
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments(user.id) });
-      } else if (action.type === 'update_status') {
+      if (action.type === 'update_status')
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.measurements(user.id) });
-      }
     } catch (e: any) {
-      setMessages(prev => prev.map((m, i) =>
-        i === msgIndex ? { ...m, actionLoading: false } : m
-      ));
+      setMessages(prev => prev.map((m, j) => j === i ? { ...m, actionLoading: false } : m));
       toast.error('Errore: ' + (e?.message ?? String(e)));
     }
   };
 
-  // ── Invia messaggio ───────────────────────────────────────────────────────
+  // ── Invia messaggio ──────────────────────────────────────────────────────
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
-
-    const userMsg: Message = { role: 'user', content: text };
-    const next = [...messages, userMsg];
+    const next: Message[] = [...messages, { role: 'user', content: text }];
     setMessages(next);
     setLoading(true);
-
     try {
       const { data, error } = await supabase.functions.invoke('chat-assistant', {
-        body: {
-          messages: next.map(m => ({ role: m.role, content: m.content })),
-          userId: user?.id ?? null,
-        },
+        body: { messages: next.map(m => ({ role: m.role, content: m.content })), userId: user?.id ?? null },
       });
       if (error) throw error;
-
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: data.reply || 'Nessuna risposta.',
-          action: data.action ?? undefined,
-          actionDone: false,
-          actionLoading: false,
-        },
-      ]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: data.reply || 'Nessuna risposta.',
+        action: data.action ?? undefined,
+        actionDone: false, actionLoading: false,
+      }]);
     } catch {
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: 'Si è verificato un errore. Riprova tra poco.' },
-      ]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Errore. Riprova tra poco.' }]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
-  const canRecord = mediaSupported || speechSupported;
+  // ── Render ───────────────────────────────────────────────────────────────
+  const panelBottom = btnBottom + 56 + 8; // h-14 bottone + 8px gap
 
   return (
     <div className="print:hidden">
-      {/* Floating button — sale sopra il footer automaticamente */}
+      {/* Bottone flottante — si alza automaticamente quando il footer è visibile */}
       <button
         onClick={() => setOpen(o => !o)}
         style={{ bottom: `${btnBottom}px` }}
@@ -299,7 +262,7 @@ export function ChatBot() {
           'fixed right-6 z-50 h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300',
           open ? 'bg-foreground text-background scale-95' : 'bg-accent text-white hover:scale-105'
         )}
-        aria-label="Apri assistente"
+        aria-label={open ? 'Chiudi assistente' : 'Apri assistente'}
       >
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </button>
@@ -307,21 +270,21 @@ export function ChatBot() {
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed right-6 z-50 w-80 sm:w-96 rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden transition-all duration-300"
-          style={{ bottom: `${btnPanelBottom}px`, maxHeight: '70vh' }}
+          style={{ bottom: `${panelBottom}px`, maxHeight: '70vh' }}
+          className="fixed right-6 z-50 w-80 sm:w-96 rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 bg-foreground text-background shrink-0">
             <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
               <Bot className="h-4 w-4 text-white" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div>
               <p className="text-sm font-semibold">Silvia</p>
               <p className="text-[10px] opacity-60">Assistente AI · accede ai tuoi dati reali</p>
             </div>
           </div>
 
-          {/* Messages */}
+          {/* Messaggi */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((m, i) => (
               <div key={i} className={cn('flex flex-col', m.role === 'user' ? 'items-end' : 'items-start')}>
@@ -332,33 +295,27 @@ export function ChatBot() {
                     </div>
                   )}
                   <div className={cn(
-                    'max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed',
-                    m.role === 'user'
-                      ? 'bg-accent text-white rounded-br-sm'
-                      : 'bg-muted text-foreground rounded-bl-sm'
+                    'max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap',
+                    m.role === 'user' ? 'bg-accent text-white rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm'
                   )}>
                     {m.content}
                   </div>
                 </div>
 
-                {/* Pulsante azione — arancione, ben visibile */}
+                {/* Pulsante azione */}
                 {m.role === 'assistant' && m.action && !m.actionDone && (
                   <button
                     onClick={() => !m.actionLoading && executeAction(m.action!, i)}
-                    disabled={m.actionLoading}
+                    disabled={!!m.actionLoading}
                     className={cn(
                       'mt-2 ml-8 flex items-center gap-1.5 text-xs font-semibold',
-                      'bg-accent text-white rounded-xl px-3 py-1.5 shadow-sm',
-                      'transition-all duration-150',
-                      m.actionLoading
-                        ? 'opacity-60 cursor-not-allowed'
-                        : 'hover:bg-accent/90 active:scale-95'
+                      'bg-accent text-white rounded-xl px-3 py-1.5 shadow-sm transition-all duration-150',
+                      m.actionLoading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-accent/90 active:scale-95'
                     )}
                   >
                     {m.actionLoading
-                      ? <><Loader2 className="h-3 w-3 animate-spin" /> Esecuzione...</>
-                      : <><Zap className="h-3 w-3" /> {ACTION_LABELS[m.action.type] ?? 'Esegui'}</>
-                    }
+                      ? <><Loader2 className="h-3 w-3 animate-spin" /> Esecuzione…</>
+                      : <><Zap className="h-3 w-3" /> {ACTION_LABELS[m.action.type] ?? 'Esegui'}</>}
                   </button>
                 )}
                 {m.role === 'assistant' && m.actionDone && (
@@ -380,77 +337,62 @@ export function ChatBot() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Input area */}
+          {/* Input */}
           <div className="border-t border-border shrink-0">
-            {/* Barra di registrazione */}
-            {recordingState !== 'idle' && (
+            {/* Barra di stato durante la registrazione */}
+            {audioState !== 'idle' && (
               <div className={cn(
-                'flex items-center gap-2 px-3 py-2 text-xs font-medium',
-                recordingState === 'recording'
-                  ? 'bg-red-500/10 text-red-600 dark:text-red-400'
-                  : 'bg-amber-500/10 text-amber-600'
+                'flex items-center gap-2 px-3 py-1.5 text-xs font-medium',
+                audioState === 'recording' ? 'bg-red-500/10 text-red-600' : 'bg-amber-400/10 text-amber-600'
               )}>
-                {recordingState === 'recording' ? (
-                  <>
-                    <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                    Registrazione in corso… {recordingSeconds}s
-                    <span className="ml-auto opacity-60">max 60s</span>
-                  </>
+                {audioState === 'recording' ? (
+                  <><span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  In ascolto… {recSeconds}s — clicca di nuovo per fermare</>
                 ) : (
-                  <>
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Trascrizione con Whisper AI…
-                  </>
+                  <><Loader2 className="h-3 w-3 animate-spin" /> Trascrizione in corso…</>
                 )}
               </div>
             )}
 
             <div className="flex gap-2 p-3">
-              {/* Bottone microfono — sempre visibile se il browser lo supporta */}
               {canRecord && (
                 <button
                   type="button"
                   onClick={handleMicClick}
-                  disabled={recordingState === 'transcribing'}
+                  disabled={audioState === 'transcribing'}
+                  title={audioState === 'recording' ? 'Ferma' : 'Parla con Silvia'}
                   className={cn(
                     'shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-all duration-150',
-                    recordingState === 'recording'
+                    audioState === 'recording'
                       ? 'bg-red-500 text-white hover:bg-red-600'
-                      : recordingState === 'transcribing'
+                      : audioState === 'transcribing'
                       ? 'bg-amber-400 text-white cursor-not-allowed'
                       : 'bg-muted text-muted-foreground hover:bg-accent hover:text-white'
                   )}
-                  title={
-                    recordingState === 'recording' ? 'Ferma registrazione'
-                    : recordingState === 'transcribing' ? 'Trascrizione in corso…'
-                    : 'Registra messaggio vocale'
-                  }
                 >
-                  {recordingState === 'recording'
+                  {audioState === 'recording'
                     ? <Square className="h-3.5 w-3.5 fill-current" />
-                    : recordingState === 'transcribing'
+                    : audioState === 'transcribing'
                     ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : <Mic className="h-4 w-4" />
-                  }
+                    : <Mic className="h-4 w-4" />}
                 </button>
               )}
-
               <Input
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
                 placeholder={
-                  recordingState === 'recording' ? '🎤 In ascolto…'
-                  : recordingState === 'transcribing' ? '⏳ Trascrizione in corso…'
+                  audioState === 'recording' ? '🎤 In ascolto…'
+                  : audioState === 'transcribing' ? '⏳ Trascrizione…'
                   : 'Scrivi o parla con Silvia…'
                 }
                 className="text-sm"
-                disabled={loading || recordingState !== 'idle'}
+                disabled={loading || audioState !== 'idle'}
               />
               <Button
                 size="icon"
                 onClick={send}
-                disabled={!input.trim() || loading || recordingState !== 'idle'}
+                disabled={!input.trim() || loading || audioState !== 'idle'}
                 className="shrink-0 bg-accent hover:bg-accent/90"
               >
                 <Send className="h-4 w-4" />

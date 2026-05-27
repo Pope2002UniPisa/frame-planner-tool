@@ -94,15 +94,33 @@ serve(async (req) => {
             .limit(5),
         ]);
 
+        // Calcola i prossimi 10 giorni con giorno della settimana esplicito
+        // così il modello non deve fare calcoli sulle date relative
+        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+        const giorni = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+        const prossimi10 = Array.from({ length: 10 }, (_, i) => {
+          const d = new Date(now);
+          d.setDate(now.getDate() + i);
+          const iso = d.toISOString().split('T')[0];
+          const label = i === 0 ? 'OGGI' : i === 1 ? 'DOMANI' : giorni[d.getDay()].toUpperCase();
+          return `  ${label} = ${iso}`;
+        }).join('\n');
+
         userContext = `
 
 DATI REALI OPERATORE (usa queste informazioni per rispondere con precisione):
-Data/ora attuale: ${new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' })}
+Data/ora attuale: ${now.toLocaleString('it-IT')}
+Giorno corrente: ${giorni[now.getDay()]} ${now.toLocaleDateString('it-IT')}
+
+CALENDARIO DATE (usa SEMPRE questi valori esatti per le date negli appuntamenti):
+${prossimi10}
+
+IMPORTANTE: "prossimo venerdì" = il venerdì nella lista sopra. Non inventare date.
 
 Misurazioni recenti (ultime 10):
 ${JSON.stringify(measurements ?? [], null, 2)}
 
-Prossimi appuntamenti:
+Prossimi appuntamenti già in calendario:
 ${JSON.stringify(appointments ?? [], null, 2)}
 `;
       } catch (e) {

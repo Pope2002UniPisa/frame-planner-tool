@@ -60,7 +60,14 @@ serve(async (req) => {
         .single();
 
       if (error) return json({ error: error.message }, 500);
-      result = { message: `✅ Appuntamento "${action.data.title}" creato per il ${action.data.date}`, appointment: data };
+
+      // Formatta la data in italiano per il feedback visibile all'utente
+      const dateIt = new Date(action.data.date + 'T12:00:00Z')
+        .toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+      result = {
+        message: `✅ Appuntamento "${action.data.title}" creato per ${dateIt}${action.data.time ? ' alle ' + action.data.time : ''}`,
+        appointment: data,
+      };
     }
 
     // ── Aggiorna stato misurazione ──────────────────────────────────────────
