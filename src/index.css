@@ -5,6 +5,7 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Light theme (fallback when .dark is removed) ── */
   :root {
     --background: 0 0% 97%;
     --foreground: 0 0% 8%;
@@ -24,7 +25,7 @@
     --muted: 0 0% 95%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 28 95% 52%;
+    --accent: 28 95% 52%;           /* #F77114 */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -54,33 +55,49 @@
     --font-body: 'Inter', sans-serif;
   }
 
+  /* ── Dark theme — exact video brand palette ──────────────────────────
+     Background:  #0A1017 → hsl(213 39%  6%)
+     Card:        #1A2535 → hsl(213 34% 15%)
+     Foreground:  #F7FAF8 → hsl(150 12% 97%)
+     Accent:      #F77114 → hsl( 28 95% 52%)
+     Muted text:  #8B9BB4 → hsl(215 21% 63%)
+  ─────────────────────────────────────────────────────────────────── */
   .dark {
-    --background: 0 0% 8%;
-    --foreground: 0 0% 94%;
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 94%;
-    --popover: 0 0% 15%;
-    --popover-foreground: 0 0% 94%;
+    --background: 213 39% 6%;
+    --foreground: 150 12% 97%;
+
+    --card: 213 34% 15%;
+    --card-foreground: 150 12% 97%;
+
+    --popover: 213 30% 12%;
+    --popover-foreground: 150 12% 97%;
+
     --primary: 28 95% 52%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 94%;
-    --muted: 0 0% 18%;
-    --muted-foreground: 0 0% 70%;
+
+    --secondary: 213 25% 20%;
+    --secondary-foreground: 150 12% 94%;
+
+    --muted: 213 25% 20%;
+    --muted-foreground: 215 21% 63%;
+
     --accent: 28 95% 52%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 40%;
+
+    --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 32%;
-    --input: 0 0% 22%;
+
+    --border: 213 20% 22%;
+    --input: 213 25% 18%;
     --ring: 28 95% 52%;
-    --sidebar-background: 0 0% 6%;
-    --sidebar-foreground: 0 0% 95%;
+
+    --sidebar-background: 213 39% 5%;
+    --sidebar-foreground: 150 12% 92%;
     --sidebar-primary: 28 95% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 16%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 22%;
+    --sidebar-accent: 213 30% 13%;
+    --sidebar-accent-foreground: 150 12% 92%;
+    --sidebar-border: 213 20% 18%;
     --sidebar-ring: 28 95% 52%;
   }
 }
@@ -116,27 +133,27 @@
   }
 }
 
-/* Dark mode — card borders and separators */
+/* Card borders in dark mode */
 .dark [class*="rounded"][class*="border"],
 .dark .card,
 .dark [data-slot="card"] {
-  border-color: hsl(0 0% 32%);
+  border-color: hsl(213 20% 22%);
 }
 
 .dark [class*="border-border"] {
-  border-color: hsl(0 0% 32%);
+  border-color: hsl(213 20% 22%);
 }
 
 /* Calendar grid lines in dark mode */
 .dark .calendar-grid {
-  background: hsl(0 0% 30%);
+  background: hsl(213 20% 22%);
   gap: 1px;
   padding: 1px;
 }
 
 .dark .calendar-grid > button,
 .dark .calendar-grid > div {
-  background: hsl(0 0% 12%);
+  background: hsl(213 34% 15%);
 }
 
 /* iOS safe area — evita che il contenuto finisca sotto la barra del browser */

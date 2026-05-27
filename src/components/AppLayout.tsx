@@ -23,12 +23,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Usa la stessa cache React Query del Dashboard → nessun fetch duplicato
   const { data: profile } = useProfile(user?.id);
 
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (profile) {
-      const dark = !!profile.dark_mode;
+      // Only override default when profile explicitly sets dark_mode
+      const dark = profile.dark_mode !== false;
       setIsDark(dark);
       document.documentElement.classList.toggle('dark', dark);
     }

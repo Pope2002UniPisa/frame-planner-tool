@@ -1,0 +1,21 @@
+{
+  "name": "Measure Master — Pratelli Rappresentanze",
+  "short_name": "Measure Master",
+  "description": "Portale misurazioni e preventivi Pratelli Rappresentanze",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A1017",
+  "theme_color": "#F77114",
+  "orientation": "portrait-primary",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": []
+}

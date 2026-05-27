@@ -92,7 +92,7 @@ export default function Dashboard() {
     return emails;
   };
   const [appointmentForm, setAppointmentForm] = useState({ type: 'consegna', title: '', time: '', location: '', description: '' });
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const [todayMapOpen, setTodayMapOpen] = useState(false);
   const [mapMounted, setMapMounted] = useState(false);
   const [policyModal, setPolicyModal] = useState<'privacy' | 'cookie' | null>(null);
@@ -117,7 +117,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (profile) {
-      const dark = !!profile.dark_mode;
+      // Only override default when profile explicitly sets dark_mode
+      const dark = profile.dark_mode !== false;
       setIsDark(dark);
       document.documentElement.classList.toggle('dark', dark);
     }
