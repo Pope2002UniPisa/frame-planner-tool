@@ -2,15 +2,11 @@
  * ChatBot — Silvia AI
  *
  * Footer overlap: IntersectionObserver su #app-footer.
- *   Funziona con qualsiasi scroll container (non dipende da window.scroll).
- *
- * Audio:
- *   - Chrome/Edge: Web Speech API in tempo reale (più accurata, no round-trip)
- *   - Safari/Firefox: MediaRecorder → Groq Whisper large-v3 (edge function)
- *   Dopo la trascrizione il testo appare nell'input; l'utente può correggere prima di inviare.
+ * Audio: MediaRecorder → Groq Whisper large-v3 (funziona su tutti i browser/dispositivi).
+ * UX: mic a sinistra per iniziare/annullare, invio a destra per mandare il messaggio vocale.
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, Loader2, Mic, Square, Zap } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, Loader2, Mic, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useQueryClient } from '@tanstack/react-query';
@@ -56,17 +52,13 @@ export function ChatBot() {
   // ── Stato audio ─────────────────────────────────────────────────────────
   const [audioState, setAudioState] = useState<'idle' | 'recording' | 'transcribing'>('idle');
   const [recSeconds, setRecSeconds] = useState(0);
-  const mediaRecRef   = useRef<MediaRecorder | null>(null);
-  const chunksRef     = useRef<Blob[]>([]);
-  const timerRef      = useRef<ReturnType<typeof setInterval> | null>(null);
-  const recogRef      = useRef<any>(null);
+  const mediaRecRef    = useRef<MediaRecorder | null>(null);
+  const chunksRef      = useRef<Blob[]>([]);
+  const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sendAfterStop  = useRef(false); // true = stop+trascrivi+invia, false = annulla
 
-  // Priorità: Web Speech API (Chrome/Edge, real-time) > MediaRecorder + Whisper (altri browser)
-  const hasWebSpeech = typeof window !== 'undefined' &&
-    !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-  const hasMediaRec  = typeof window !== 'undefined' &&
+  const canRecord = typeof window !== 'undefined' &&
     !!(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== 'undefined';
-  const canRecord    = hasWebSpeech || hasMediaRec;
 
   // ── Footer overlap: IntersectionObserver ────────────────────────────────
   // Funziona con qualsiasi scroll container (main con overflow-y-auto incluso)
@@ -117,95 +109,77 @@ export function ChatBot() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
-  // ── Web Speech API (Chrome/Edge — continuous, nessun timeout) ──────────────
-  const startWebSpeech = useCallback(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const r = new SR();
-    r.lang = 'it-IT';
-    r.continuous = true;      // rimane in ascolto finché non fermi manualmente
-    r.interimResults = true;  // mostra parole mentre parli
-
-    let finalTranscript = '';
-
-    r.onstart = () => {
-      setAudioState('recording');
-      toast.info('🎙 Parla, poi clicca il mic per fermarti', { id: 'mic-listening', duration: 60000 });
-    };
-    r.onend = () => {
-      setAudioState('idle');
-      toast.dismiss('mic-listening');
-      // Applica il trascritto accumulato
-      if (finalTranscript.trim()) {
-        setInput(prev => (prev + ' ' + finalTranscript).trim());
-        finalTranscript = '';
-      }
-    };
-    r.onerror = (e: any) => {
-      setAudioState('idle');
-      toast.dismiss('mic-listening');
-      if (e.error === 'not-allowed') {
-        toast.error('Permesso microfono negato — clicca il lucchetto 🔒 nella barra e consenti il microfono, poi ricarica');
-      } else if (e.error === 'no-speech') {
-        // Con continuous=true questo non dovrebbe succedere, ma per sicurezza:
-        toast.info('Microfono attivo — parla più vicino o controlla il volume di ingresso');
-      } else {
-        toast.error(`Errore microfono (${e.error ?? 'sconosciuto'})`);
-      }
-    };
-    r.onresult = (e: any) => {
-      // Accumula i risultati finali; gli interim vengono ignorati
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          finalTranscript += e.results[i][0].transcript + ' ';
-        }
-      }
-    };
-    recogRef.current = r;
-    r.start();
-  }, []);
-
-  // ── MediaRecorder + Groq Whisper (Safari, Firefox) ───────────────────────
-  const startMediaRec = useCallback(async () => {
+  // ── MediaRecorder + Groq Whisper ─────────────────────────────────────────
+  // Unico sistema audio: funziona su Chrome, Safari, Firefox, mobile.
+  // sendAfterStop=true → trascrivi e invia; false → annulla.
+  const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg';
+      // Scegli il MIME type migliore supportato dal browser
+      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg']
+        .find(m => MediaRecorder.isTypeSupported(m)) ?? 'audio/webm';
 
       const mr = new MediaRecorder(stream, { mimeType: mime });
       chunksRef.current = [];
       mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+
       mr.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
+
+        // Annullato dall'utente → scarta tutto
+        if (!sendAfterStop.current) {
+          setAudioState('idle');
+          return;
+        }
+
         const blob = new Blob(chunksRef.current, { type: mime });
-        if (blob.size < 500) { setAudioState('idle'); return; }
+        if (blob.size < 500) {
+          toast.error('Registrazione troppo breve — riprova');
+          setAudioState('idle');
+          return;
+        }
 
         setAudioState('transcribing');
-        const ab = await blob.arrayBuffer();
-        const bytes = new Uint8Array(ab);
-        let bin = '';
-        bytes.forEach(b => bin += String.fromCharCode(b));
-        const base64 = btoa(bin);
-
         try {
+          // base64 encode
+          const ab    = await blob.arrayBuffer();
+          const bytes = new Uint8Array(ab);
+          let bin = '';
+          bytes.forEach(b => (bin += String.fromCharCode(b)));
+          const base64 = btoa(bin);
+
           const { data, error } = await supabase.functions.invoke('transcribe-audio', {
             body: { audio: base64, mimeType: mime },
           });
-          if (error || !data?.text) throw new Error(data?.error ?? 'Errore trascrizione');
-          setInput(prev => (prev + ' ' + data.text).trim());
-          toast.info(`Trascritto: "${data.text}"`, { duration: 3000 });
+          if (error || !data?.text) throw new Error(data?.error ?? 'Nessun testo ricevuto');
+
+          const transcript = data.text.trim();
+          // Invia direttamente il messaggio vocale a Silvia
+          setAudioState('idle');
+          setMessages(prev => {
+            const next: Message[] = [...prev, { role: 'user', content: transcript }];
+            // Avvia la chiamata AI in parallelo
+            sendToAssistant(next);
+            return next;
+          });
         } catch (e: any) {
           toast.error('Trascrizione fallita: ' + e.message);
-        } finally {
           setAudioState('idle');
         }
       };
+
       mediaRecRef.current = mr;
-      mr.start(250);
+      sendAfterStop.current = false;
+      mr.start(200);
       setAudioState('recording');
       setRecSeconds(0);
       timerRef.current = setInterval(() => setRecSeconds(s => {
-        if (s >= 59) { stopRecording(); return s; }
+        if (s >= 119) {
+          // Limite 2 minuti: invia automaticamente
+          sendAfterStop.current = true;
+          stopRecording();
+          return s;
+        }
         return s + 1;
       }), 1000);
     } catch (e: any) {
@@ -221,16 +195,22 @@ export function ChatBot() {
     if (mediaRecRef.current?.state !== 'inactive') mediaRecRef.current?.stop();
   }, []);
 
+  // Clicca mic → inizia / annulla
   const handleMicClick = () => {
     if (audioState === 'recording') {
-      if (hasWebSpeech) { recogRef.current?.stop(); setAudioState('idle'); }
-      else stopRecording();
+      sendAfterStop.current = false; // annulla
+      stopRecording();
     } else if (audioState === 'idle') {
-      // Chrome/Edge: Web Speech API (real-time, no lag)
-      if (hasWebSpeech) startWebSpeech();
-      else if (hasMediaRec) startMediaRec();
+      if (canRecord) startRecording();
       else toast.error('Questo browser non supporta la registrazione audio');
     }
+  };
+
+  // Clicca invio durante registrazione → ferma + trascrivi + invia
+  const handleSendVoice = () => {
+    if (audioState !== 'recording') return;
+    sendAfterStop.current = true;
+    stopRecording();
   };
 
   // ── Esegui azione ────────────────────────────────────────────────────────
@@ -254,17 +234,12 @@ export function ChatBot() {
     }
   };
 
-  // ── Invia messaggio ──────────────────────────────────────────────────────
-  const send = async () => {
-    const text = input.trim();
-    if (!text || loading) return;
-    setInput('');
-    const next: Message[] = [...messages, { role: 'user', content: text }];
-    setMessages(next);
+  // ── Chiamata al chat-assistant (riutilizzata da testo e voce) ──────────────
+  const sendToAssistant = useCallback(async (history: Message[]) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('chat-assistant', {
-        body: { messages: next.map(m => ({ role: m.role, content: m.content })), userId: user?.id ?? null },
+        body: { messages: history.map(m => ({ role: m.role, content: m.content })), userId: user?.id ?? null },
       });
       if (error) throw error;
       setMessages(prev => [...prev, {
@@ -278,6 +253,16 @@ export function ChatBot() {
     } finally {
       setLoading(false);
     }
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Invio messaggio testuale ─────────────────────────────────────────────
+  const send = () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput('');
+    const next: Message[] = [...messages, { role: 'user', content: text }];
+    setMessages(next);
+    sendToAssistant(next);
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -369,66 +354,74 @@ export function ChatBot() {
           </div>
 
           {/* Input */}
-          <div className="border-t border-border shrink-0">
-            {/* Barra di stato durante la registrazione */}
-            {audioState !== 'idle' && (
-              <div className={cn(
-                'flex items-center gap-2 px-3 py-1.5 text-xs font-medium',
-                audioState === 'recording' ? 'bg-red-500/10 text-red-600' : 'bg-amber-400/10 text-amber-600'
-              )}>
-                {audioState === 'recording' ? (
-                  <><span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                  In ascolto… {recSeconds}s — clicca di nuovo per fermare</>
-                ) : (
-                  <><Loader2 className="h-3 w-3 animate-spin" /> Trascrizione in corso…</>
+          <div className="border-t border-border shrink-0 p-3">
+            {audioState === 'idle' ? (
+              /* ── Modalità testo ── */
+              <div className="flex items-center gap-2">
+                {canRecord && (
+                  <button
+                    type="button"
+                    onClick={handleMicClick}
+                    title="Registra messaggio vocale"
+                    className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center bg-muted text-muted-foreground hover:bg-accent hover:text-white transition-all duration-150 active:scale-90"
+                  >
+                    <Mic className="h-4 w-4" />
+                  </button>
                 )}
+                <Input
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+                  placeholder="Scrivi o parla con Silvia…"
+                  className="text-sm"
+                  disabled={loading}
+                />
+                <Button
+                  size="icon"
+                  onClick={send}
+                  disabled={!input.trim() || loading}
+                  className="shrink-0 bg-accent hover:bg-accent/90 active:scale-90"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
-            )}
-
-            <div className="flex gap-2 p-3">
-              {canRecord && (
+            ) : audioState === 'recording' ? (
+              /* ── Modalità registrazione (stile WhatsApp) ── */
+              <div className="flex items-center gap-2">
+                {/* Annulla (X) — a sinistra */}
                 <button
                   type="button"
                   onClick={handleMicClick}
-                  disabled={audioState === 'transcribing'}
-                  title={audioState === 'recording' ? 'Ferma' : 'Parla con Silvia'}
-                  className={cn(
-                    'shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-all duration-150',
-                    audioState === 'recording'
-                      ? 'bg-red-500 text-white hover:bg-red-600'
-                      : audioState === 'transcribing'
-                      ? 'bg-amber-400 text-white cursor-not-allowed'
-                      : 'bg-muted text-muted-foreground hover:bg-accent hover:text-white'
-                  )}
+                  title="Annulla registrazione"
+                  className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center bg-muted text-muted-foreground hover:bg-red-500 hover:text-white transition-all duration-150 active:scale-90"
                 >
-                  {audioState === 'recording'
-                    ? <Square className="h-3.5 w-3.5 fill-current" />
-                    : audioState === 'transcribing'
-                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : <Mic className="h-4 w-4" />}
+                  <X className="h-4 w-4" />
                 </button>
-              )}
-              <Input
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-                placeholder={
-                  audioState === 'recording' ? '🎤 In ascolto…'
-                  : audioState === 'transcribing' ? '⏳ Trascrizione…'
-                  : 'Scrivi o parla con Silvia…'
-                }
-                className="text-sm"
-                disabled={loading || audioState !== 'idle'}
-              />
-              <Button
-                size="icon"
-                onClick={send}
-                disabled={!input.trim() || loading || audioState !== 'idle'}
-                className="shrink-0 bg-accent hover:bg-accent/90"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
+                {/* Indicatore registrazione */}
+                <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-red-500/10 text-red-600 text-sm font-medium">
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                  <span>
+                    {Math.floor(recSeconds / 60).toString().padStart(2, '0')}:{(recSeconds % 60).toString().padStart(2, '0')}
+                  </span>
+                  <span className="text-xs text-red-400 truncate">In registrazione…</span>
+                </div>
+                {/* Invia — a destra */}
+                <button
+                  type="button"
+                  onClick={handleSendVoice}
+                  title="Invia messaggio vocale"
+                  className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center bg-accent text-white hover:bg-accent/90 transition-all duration-150 active:scale-90 shadow-sm"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              /* ── Trascrizione in corso ── */
+              <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-amber-400/10 text-amber-600 text-sm font-medium">
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                <span>Trascrizione in corso…</span>
+              </div>
+            )}
           </div>
         </div>
       )}
