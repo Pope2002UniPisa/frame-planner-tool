@@ -13,20 +13,20 @@ serve(async (req) => {
   try {
     const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
     const TWILIO_AUTH_TOKEN  = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const TWILIO_FROM        = Deno.env.get('TWILIO_WHATSAPP_FROM'); // es. whatsapp:+14155238886
-    const TWILIO_TO          = Deno.env.get('TWILIO_WHATSAPP_TO');   // es. whatsapp:+39XXXXXXXXXX
+    const TWILIO_FROM        = Deno.env.get('TWILIO_WHATSAPP_FROM');   // es. whatsapp:+14155238886
+    const TWILIO_DEFAULT_TO  = Deno.env.get('TWILIO_WHATSAPP_TO');    // fallback numero admin
 
-    // Se le credenziali non sono ancora configurate, logga e restituisce ok silenzioso.
-    // Questo evita crash finché non hai il numero Twilio verificato.
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM || !TWILIO_TO) {
-      console.log('[send-whatsapp] Credenziali Twilio non configurate — messaggio non inviato (modalità placeholder)');
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM) {
+      console.log('[send-whatsapp] Credenziali Twilio non configurate — messaggio non inviato');
       return new Response(
         JSON.stringify({ success: true, skipped: true, reason: 'Twilio not configured' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { message } = await req.json() as { message: string };
+    // Fix #6: ora accetta 'to' opzionale dal body
+    // Se non passato, usa il numero di default configurato via env
+    const { message, to } = await req.json() as { message: string; to?: string };
 
     if (!message) {
       return new Response(
@@ -35,9 +35,21 @@ serve(async (req) => {
       );
     }
 
+    // 'to' può essere un numero nudo (+39...) o già in formato whatsapp:+39...
+    const toNumber = to
+      ? (to.startsWith('whatsapp:') ? to : `whatsapp:${to}`)
+      : TWILIO_DEFAULT_TO;
+
+    if (!toNumber) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Destinatario WhatsApp non configurato' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const body = new URLSearchParams({
       From: TWILIO_FROM,
-      To: TWILIO_TO,
+      To:   toNumber,
       Body: message,
     });
 
@@ -63,7 +75,6 @@ serve(async (req) => {
       );
     }
 
-    console.log('[send-whatsapp] Messaggio inviato, SID:', result.sid);
     return new Response(
       JSON.stringify({ success: true, sid: result.sid }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

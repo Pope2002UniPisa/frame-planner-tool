@@ -100,6 +100,33 @@ export function usePortfolioImages() {
   });
 }
 
+// ─── Hook: storico stati misurazione ─────────────────────────────────────────
+
+export interface StatusHistoryRow {
+  id: string;
+  old_status: string | null;
+  new_status: string;
+  changed_at: string;
+  note: string | null;
+}
+
+export function useStatusHistory(measurementId: string | undefined) {
+  return useQuery({
+    queryKey: measurementId ? ['statusHistory', measurementId] : ['statusHistory', null],
+    queryFn: async (): Promise<StatusHistoryRow[]> => {
+      const { data, error } = await supabase
+        .from('status_history')
+        .select('id, old_status, new_status, changed_at, note')
+        .eq('measurement_id', measurementId!)
+        .order('changed_at', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as StatusHistoryRow[];
+    },
+    enabled: !!measurementId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 // ─── Hook: appuntamenti utente ────────────────────────────────────────────────
 
 export function useAppointments(userId: string | undefined) {

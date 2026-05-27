@@ -1,52 +1,46 @@
+/**
+ * chat-assistant — Silvia AI con dati reali + azioni (Fix #7 + #9)
+ *
+ * Novità:
+ * - Riceve userId dal body → inietta misurazioni e appuntamenti reali nel system prompt
+ * - Riconosce intenzioni strutturate (create_appointment, update_status, send_notification)
+ * - Risponde con { reply, action? } per permettere al frontend di eseguire l'azione
+ */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `Sei Silvia, l'assistente virtuale del Portale Misurazioni di Pratelli Rappresentanze (FAREWELL SRL).
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-STILE DI RISPOSTA:
-- Rispondi sempre in italiano, in modo cordiale e diretto
-- Sii concisa: massimo 3-4 frasi o un breve elenco puntato
-- Non usare titoli numerati lunghi; preferisci bullet point sintetici
-- Presentati come Silvia solo se ti viene chiesto esplicitamente chi sei
+const BASE_SYSTEM_PROMPT = `Sei Silvia, l'assistente AI agente del Portale Misurazioni di Pratelli Rappresentanze.
+Sei esperta di serramenti, infissi, porte e finestre.
+Rispondi SEMPRE in italiano, in modo conciso e professionale (max 3-4 frasi o bullet point).
 
-STRUTTURA DEL PORTALE (usa queste informazioni per rispondere con precisione):
+CAPACITÀ OPERATIVE — puoi eseguire azioni reali:
+- Creare appuntamenti nel calendario
+- Aggiornare lo stato di una misurazione
+- Inviare notifiche all'utente
 
-Dashboard:
-- Mostra KPI (ordini attivi, consegne settimana, preventivi, fatturato mese)
-- Colonna destra: "Giro di oggi" con appuntamenti del giorno navigabili per data, pulsante WhatsApp per inviare il riepilogo, pulsante Mappa per vedere l'itinerario, pulsante Naviga per aprire Google Maps
-- Calendario mensile: clicca su un giorno per vedere gli appuntamenti; clicca "Aggiungi" sotto il calendario per aggiungere un nuovo appuntamento (scegli tipo, titolo, orario, luogo, descrizione)
-- Lista misurazioni raggruppate per tipo prodotto (finestre, porte, ecc.) con filtri per stato, data e ricerca
+QUANDO l'utente chiede di creare un appuntamento, rispondi con JSON strutturato:
+{"reply":"Creo subito l'appuntamento!","action":{"type":"create_appointment","data":{"title":"...","date":"YYYY-MM-DD","type":"consegna|chiamata|pagamento|sopralluogo|altro","time":"HH:MM"}}}
 
-Misurazioni:
-- Flusso: Bozza → Inviata → Preventivo → Ordine confermato → Completata
-- Per creare: clicca "+ Nuova misurazione" nel menu laterale
-- Per modificare una bozza: icona matita nella lista
-- Si possono allegare foto, aggiungere accessori e note
+QUANDO chiede di cambiare lo stato di una misurazione (usa measurementId dai dati sotto):
+{"reply":"Aggiorno lo stato!","action":{"type":"update_status","data":{"measurementId":"...","oldStatus":"...","newStatus":"..."}}}
 
-Appuntamenti (calendario):
-- Tipi disponibili: Consegna, Chiamata, Pagamento, Sopralluogo, Altro
-- Per aggiungere: clicca "Aggiungi" sotto il calendario, poi seleziona il giorno
-- Per modificare: icona matita nell'appuntamento
-- Il "Giro di oggi" mostra gli appuntamenti del giorno con mappa e itinerario
+QUANDO chiede di inviare una notifica/promemoria:
+{"reply":"Invio la notifica!","action":{"type":"send_notification","data":{"title":"...","body":"..."}}}
 
-Sezioni del menu:
-- Clienti: riepilogo per nominativo con statistiche e prossime misurazioni dal calendario
-- Consegne: lista ordini ordinata per urgenza di consegna con filtri
-- Pagamenti: tracciamento pagamenti per ordini completati
+Altrimenti rispondi con testo normale (NON JSON).
 
-Contatti azienda:
-- Pratelli Rappresentanze — FAREWELL SRL, P.IVA 02484510504
-- Via Livornese Ovest 22/A, 56035 Casciana Terme Lari (PI)
-- PEC: farewellsrl@pec.cgn.it
-
-Prodotti: finestre, porte finestra, porte, basculanti, zanzariere, persiane
-Fornitori: FerreroLegno SPA, Madrugada Group, Nurith SPA, Denardi SRL, Anger SRL
-
-Per domande fuori dal portale, indica di contattare l'azienda via PEC o telefono.`;
+STRUTTURA DEL PORTALE:
+- Dashboard: KPI, giro del giorno, calendario, lista misurazioni
+- Flusso ordine: Bozza → Inviata → Preventivo → Ordine confermato → In produzione → Pronta per consegna → Completata
+- Contatti: Via Livornese Ovest 22/A, 56035 Casciana Terme Lari (PI) — PEC: farewellsrl@pec.cgn.it`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -65,18 +59,55 @@ serve(async (req) => {
       return json({ reply: "Chiave API non configurata. Contatta l'amministratore." }, 500);
     }
 
-    const { messages } = await req.json();
+    const { messages, userId } = await req.json();
 
-    // Build conversation in OpenAI format (Groq is OpenAI-compatible)
+    // ── Fix #7: Inietta dati reali dell'utente nel system prompt ────────────
+    let userContext = '';
+    if (userId && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+        const [{ data: measurements }, { data: appointments }] = await Promise.all([
+          supabase
+            .from('measurements')
+            .select('id, client_name, status, product_type, estimated_delivery_date, estimated_price')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(10),
+          supabase
+            .from('appointments')
+            .select('id, title, date, time, type, location')
+            .eq('user_id', userId)
+            .gte('date', new Date().toISOString().split('T')[0])
+            .order('date', { ascending: true })
+            .limit(5),
+        ]);
+
+        userContext = `
+
+DATI REALI OPERATORE (usa queste informazioni per rispondere con precisione):
+Data/ora attuale: ${new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' })}
+
+Misurazioni recenti (ultime 10):
+${JSON.stringify(measurements ?? [], null, 2)}
+
+Prossimi appuntamenti:
+${JSON.stringify(appointments ?? [], null, 2)}
+`;
+      } catch (e) {
+        console.error('Errore fetch dati utente:', e);
+      }
+    }
+
+    const systemPrompt = BASE_SYSTEM_PROMPT + userContext;
+
     const conversation = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       ...messages.map((m: { role: string; content: string }) => ({
-        role: m.role, // 'user' or 'assistant'
+        role: m.role,
         content: m.content,
       })),
     ];
-
-    console.log('Calling Groq, messages:', conversation.length);
 
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -93,21 +124,31 @@ serve(async (req) => {
     });
 
     const data = await res.json();
-    console.log('Groq status:', res.status);
 
     if (!res.ok) {
       const errMsg: string = data?.error?.message || `HTTP ${res.status}`;
-      console.error('Groq error:', errMsg);
       const isQuota = res.status === 429;
       return json({ reply: isQuota ? 'Troppe richieste. Riprova tra qualche secondo.' : `Errore: ${errMsg.split('.')[0]}` });
     }
 
-    const reply = data.choices?.[0]?.message?.content;
-    if (!reply) {
-      return json({ reply: 'Nessuna risposta generata. Riprova.' });
+    const rawReply = data.choices?.[0]?.message?.content;
+    if (!rawReply) return json({ reply: 'Nessuna risposta generata. Riprova.' });
+
+    // ── Fix #9: Tenta di parsare JSON per azioni strutturate ────────────────
+    try {
+      // Cerca un blocco JSON nella risposta (Groq può aggiungere testo prima/dopo)
+      const jsonMatch = rawReply.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.reply && parsed.action) {
+          return json(parsed); // { reply: string, action: { type, data } }
+        }
+      }
+    } catch {
+      // Non è JSON strutturato — risposta testuale normale
     }
 
-    return json({ reply });
+    return json({ reply: rawReply });
 
   } catch (err) {
     console.error('Edge function error:', String(err));

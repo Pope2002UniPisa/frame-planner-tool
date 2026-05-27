@@ -17,3 +17,19 @@ entrypoint = "./functions/notify-measurement/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/send-reminders/index.ts"
+
+[functions.send-whatsapp]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/send-whatsapp/index.ts"
+
+[functions.chat-assistant]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/chat-assistant/index.ts"
+
+# agent-action: esegue le azioni richieste da Silvia AI
+[functions.agent-action]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/agent-action/index.ts"
