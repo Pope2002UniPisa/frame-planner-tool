@@ -123,23 +123,36 @@ export function ChatBot() {
     const r = new SR();
     r.lang = 'it-IT';
     r.continuous = false;
-    r.interimResults = false;
-    r.onstart  = () => setAudioState('recording');
-    r.onend    = () => setAudioState('idle');
-    r.onerror  = (e: any) => {
+    r.interimResults = true; // mostra parole mentre parli
+    r.onstart = () => {
+      setAudioState('recording');
+      toast.info('🎙 Parla ora...', { id: 'mic-listening', duration: 8000 });
+    };
+    r.onend = () => {
       setAudioState('idle');
+      toast.dismiss('mic-listening');
+    };
+    r.onerror = (e: any) => {
+      setAudioState('idle');
+      toast.dismiss('mic-listening');
       if (e.error === 'not-allowed') {
-        toast.error('Permesso microfono negato — clicca il lucchetto 🔒 nella barra degli indirizzi e consenti il microfono, poi ricarica la pagina');
+        toast.error('Permesso microfono negato — clicca il lucchetto 🔒 nella barra e consenti il microfono, poi ricarica');
       } else if (e.error === 'no-speech') {
-        toast.info('Nessun audio rilevato — riprova');
+        toast.error('Nessun audio rilevato 🎙\nVerifica: Impostazioni di Sistema macOS → Privacy → Microfono → abilita Chrome', { duration: 6000 });
       } else {
         toast.error(`Microfono non accessibile (${e.error ?? 'sconosciuto'})`);
       }
     };
     r.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript;
-      setInput(prev => (prev + ' ' + transcript).trim());
-      setAudioState('idle');
+      // Usa il risultato finale se disponibile, altrimenti l'interim
+      let transcript = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        transcript += e.results[i][0].transcript;
+      }
+      if (e.results[e.results.length - 1].isFinal) {
+        setInput(prev => (prev + ' ' + transcript).trim());
+        toast.dismiss('mic-listening');
+      }
     };
     recogRef.current = r;
     r.start();
