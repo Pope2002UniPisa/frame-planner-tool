@@ -117,20 +117,28 @@ export function ChatBot() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
-  // ── Web Speech API (Chrome/Edge — real-time, accurata) ───────────────────
+  // ── Web Speech API (Chrome/Edge — continuous, nessun timeout) ──────────────
   const startWebSpeech = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const r = new SR();
     r.lang = 'it-IT';
-    r.continuous = false;
-    r.interimResults = true; // mostra parole mentre parli
+    r.continuous = true;      // rimane in ascolto finché non fermi manualmente
+    r.interimResults = true;  // mostra parole mentre parli
+
+    let finalTranscript = '';
+
     r.onstart = () => {
       setAudioState('recording');
-      toast.info('🎙 Parla ora...', { id: 'mic-listening', duration: 8000 });
+      toast.info('🎙 Parla, poi clicca il mic per fermarti', { id: 'mic-listening', duration: 60000 });
     };
     r.onend = () => {
       setAudioState('idle');
       toast.dismiss('mic-listening');
+      // Applica il trascritto accumulato
+      if (finalTranscript.trim()) {
+        setInput(prev => (prev + ' ' + finalTranscript).trim());
+        finalTranscript = '';
+      }
     };
     r.onerror = (e: any) => {
       setAudioState('idle');
@@ -138,20 +146,18 @@ export function ChatBot() {
       if (e.error === 'not-allowed') {
         toast.error('Permesso microfono negato — clicca il lucchetto 🔒 nella barra e consenti il microfono, poi ricarica');
       } else if (e.error === 'no-speech') {
-        toast.error('Nessun audio rilevato 🎙\nVerifica: Impostazioni di Sistema macOS → Privacy → Microfono → abilita Chrome', { duration: 6000 });
+        // Con continuous=true questo non dovrebbe succedere, ma per sicurezza:
+        toast.info('Microfono attivo — parla più vicino o controlla il volume di ingresso');
       } else {
-        toast.error(`Microfono non accessibile (${e.error ?? 'sconosciuto'})`);
+        toast.error(`Errore microfono (${e.error ?? 'sconosciuto'})`);
       }
     };
     r.onresult = (e: any) => {
-      // Usa il risultato finale se disponibile, altrimenti l'interim
-      let transcript = '';
+      // Accumula i risultati finali; gli interim vengono ignorati
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        transcript += e.results[i][0].transcript;
-      }
-      if (e.results[e.results.length - 1].isFinal) {
-        setInput(prev => (prev + ' ' + transcript).trim());
-        toast.dismiss('mic-listening');
+        if (e.results[i].isFinal) {
+          finalTranscript += e.results[i][0].transcript + ' ';
+        }
       }
     };
     recogRef.current = r;
