@@ -717,7 +717,7 @@ export default function NewMeasurement() {
           </Button>
           <div className="flex items-center gap-2">
             <Ruler className="h-5 w-5 text-accent" />
-            <h1 className="text-lg font-bold font-heading text-foreground">
+            <h1 className="text-lg font-bold text-foreground" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.02em' }}>
               Nuova Misurazione{isMultiProduct ? ` (${multiItems.length} prodotti)` : ''}
             </h1>
           </div>

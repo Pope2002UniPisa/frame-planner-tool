@@ -143,13 +143,13 @@ export default function ClientSummary() {
             <Users className="h-5 w-5 text-accent" />
           </div>
           <div>
-            <h1 className="text-xl font-bold font-heading text-foreground">Clienti</h1>
+            <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.02em' }}>Clienti</h1>
             <p className="text-sm text-muted-foreground">Riepilogo nominativi con andamento ordini e pagamenti</p>
           </div>
         </div>
         <Card>
           <CardHeader>
-            <CardTitle className="font-heading">Filtri riepilogo</CardTitle>
+            <CardTitle style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.01em' }}>Filtri riepilogo</CardTitle>
             <CardDescription>Lista nominativi in ordine alfabetico con andamento ordini e pagamenti.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
