@@ -500,7 +500,7 @@ export default function Dashboard() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="shrink-0 border-b border-border bg-card px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <header className="shrink-0 border-b border-border/50 bg-background px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -530,10 +530,10 @@ export default function Dashboard() {
 
         {/* Scrollable content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="p-6 space-y-6">
+          <div className="p-6 lg:p-8 space-y-6">
 
             {/* KPI row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
               {loadingData ? (
                 [1,2,3,4].map(i => (
                   <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
@@ -555,7 +555,7 @@ export default function Dashboard() {
               <div className="xl:col-span-2 flex flex-col gap-6">
 
                 {/* Ordini per stato chart */}
-                <Card>
+                <Card className="shadow-surface border-0">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-semibold text-foreground">Ordini per stato</h3>
@@ -573,7 +573,12 @@ export default function Dashboard() {
                         </defs>
                         <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                         <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                        <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                        <Tooltip contentStyle={{
+                          fontSize: 11, borderRadius: 8,
+                          background: 'hsl(215 35% 12%)',
+                          border: '1px solid hsl(215 20% 18%)',
+                          color: 'hsl(210 15% 90%)'
+                        }} />
                         <Area type="monotone" dataKey="Bozza" stroke="#94a3b8" fill="url(#gradBozza)" strokeWidth={1.5} />
                         <Area type="monotone" dataKey="Preventivo" stroke="#f59e0b" fill="url(#gradPrev)" strokeWidth={1.5} />
                         <Area type="monotone" dataKey="Ordinato" stroke="#3b82f6" fill="url(#gradOrd)" strokeWidth={1.5} />
@@ -593,10 +598,10 @@ export default function Dashboard() {
 
                 {/* CTA */}
                 <Card className="gradient-primary border-0">
-                  <CardContent className="flex flex-col items-center gap-4 py-5 sm:flex-row">
+                  <CardContent className="flex flex-col items-center gap-4 py-6 sm:py-8 px-6 sm:flex-row">
                     <div className="flex-1">
-                      <h2 className="text-lg font-bold font-heading text-primary-foreground">Inserisci una nuova misurazione</h2>
-                      <p className="mt-0.5 text-sm text-primary-foreground/70">Compila il form guidato per inviare le misure.</p>
+                      <h2 className="text-xl font-bold font-heading text-primary-foreground">Inserisci una nuova misurazione</h2>
+                      <p className="mt-0.5 text-sm text-primary-foreground/60">Compila il form guidato per inviare le misure.</p>
                     </div>
                     <Link to="/nuova-misurazione">
                       <Button size="lg" className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90 shrink-0">
@@ -617,9 +622,9 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 gap-3">
                       {newsItems.slice(0, 6).map(n => (
                         <div key={n.id} onClick={() => setSelectedNews(n)}
-                          className="rounded-lg border border-border p-3 hover:shadow-card-hover transition-all cursor-pointer">
+                          className="rounded-xl bg-muted/30 p-3 hover:bg-muted/50 transition-all cursor-pointer border-0">
                           {n.image_url && (
-                            <img src={n.image_url} alt={n.title} className="w-full h-20 object-cover rounded-md mb-2"
+                            <img src={n.image_url} alt={n.title} className="w-full h-24 object-cover rounded-md mb-2"
                               style={{ objectPosition: n.image_position || '50% 50%' }} />
                           )}
                           <div className="flex items-center gap-1.5 mb-1.5">
@@ -1477,17 +1482,15 @@ function WhatsAppIcon({ className }: { className?: string }) {
 
 function KpiCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
-    <Card>
-      <CardContent className="py-5 px-5">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-muted-foreground font-medium">{label}</p>
-          <div className="rounded-lg bg-accent/10 p-1.5">
-            <Icon className="h-4 w-4 text-accent" />
-          </div>
+    <div className="rounded-2xl bg-card p-6 shadow-surface flex flex-col justify-between min-h-[120px]">
+      <div className="flex items-start justify-between">
+        <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">{label}</p>
+        <div className="h-7 w-7 rounded-lg bg-accent/10 flex items-center justify-center">
+          <Icon className="h-3.5 w-3.5 text-accent" />
         </div>
-        <p className="text-2xl font-bold font-heading text-foreground">{value}</p>
-      </CardContent>
-    </Card>
+      </div>
+      <p className="text-4xl font-bold font-heading text-foreground tracking-tight mt-3 leading-none">{value}</p>
+    </div>
   );
 }
 
