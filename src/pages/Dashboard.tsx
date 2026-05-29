@@ -500,7 +500,8 @@ export default function Dashboard() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="shrink-0 border-b border-border/50 bg-background px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <header className="shrink-0 px-4 sm:px-6 py-4 flex items-center justify-between gap-3 bg-background"
+                style={{ borderBottom: '1px solid hsl(30 9% 13%)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -510,7 +511,13 @@ export default function Dashboard() {
               <Menu className="h-5 w-5 text-foreground" />
             </button>
             <div className="min-w-0">
-              <p className="text-base font-bold font-heading text-foreground leading-tight truncate">
+              <p className="leading-tight truncate" style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 22,
+                fontWeight: 500,
+                color: 'hsl(var(--foreground))',
+                letterSpacing: '-0.01em',
+              }}>
                 {(() => {
                   const now = new Date();
                   const totalMins = now.getHours() * 60 + now.getMinutes();
@@ -519,11 +526,20 @@ export default function Dashboard() {
                   return name ? `${greeting}, ${name}` : greeting;
                 })()}
               </p>
-              <p className="text-xs text-muted-foreground capitalize">{todayLabel}</p>
+              <p className="text-[11px] capitalize mt-0.5" style={{
+                color: 'hsl(var(--muted-foreground))',
+                letterSpacing: '0.06em',
+              }}>{todayLabel}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <span className="font-mono text-sm tabular-nums text-foreground font-semibold tracking-wider hidden sm:block">{clock}</span>
+            <span style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 17,
+              fontWeight: 400,
+              letterSpacing: '0.04em',
+              color: 'hsl(35 25% 65%)',
+            }} className="hidden sm:block tabular-nums">{clock}</span>
             <NotificationBell />
           </div>
         </header>
@@ -556,84 +572,125 @@ export default function Dashboard() {
 
                 {/* Ordini per stato chart */}
                 <Card className="shadow-surface border-0">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-foreground">Ordini per stato</h3>
-                      <span className="text-xs text-muted-foreground">Ultime 12 settimane · ordini cumulativi</span>
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: 18,
+                        fontWeight: 500,
+                        color: 'hsl(var(--foreground))',
+                        letterSpacing: '-0.01em',
+                      }}>Ordini per stato</h3>
+                      <span style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 10,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        color: 'hsl(var(--muted-foreground))',
+                      }}>Ultime 12 settimane</span>
                     </div>
                     <ResponsiveContainer width="100%" height={160}>
                       <AreaChart data={weeklyStats} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                         <defs>
-                          {[['gradBozza','#94a3b8'],['gradPrev','#f59e0b'],['gradOrd','#3b82f6'],['gradComp','#10b981']].map(([id, color]) => (
+                          {[['gradBozza','#a09080'],['gradPrev','#C8874A'],['gradOrd','#7A9AB5'],['gradComp','#7AAF8A']].map(([id, color]) => (
                             <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={color} stopOpacity={0.55} />
+                              <stop offset="5%" stopColor={color} stopOpacity={0.45} />
                               <stop offset="95%" stopColor={color} stopOpacity={0} />
                             </linearGradient>
                           ))}
                         </defs>
-                        <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                        <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'hsl(25 10% 42%)' }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 9, fill: 'hsl(25 10% 42%)' }} tickLine={false} axisLine={false} allowDecimals={false} />
                         <Tooltip contentStyle={{
-                          fontSize: 11, borderRadius: 8,
-                          background: 'hsl(215 35% 12%)',
-                          border: '1px solid hsl(215 20% 18%)',
-                          color: 'hsl(210 15% 90%)'
+                          fontSize: 11, borderRadius: 10,
+                          background: 'hsl(30 9% 13%)',
+                          border: '1px solid hsl(30 9% 18%)',
+                          color: 'hsl(35 25% 85%)',
+                          boxShadow: '0 8px 24px -4px hsl(30 15% 3% / 0.6)',
                         }} />
-                        <Area type="monotone" dataKey="Bozza" stroke="#94a3b8" fill="url(#gradBozza)" strokeWidth={1.5} />
-                        <Area type="monotone" dataKey="Preventivo" stroke="#f59e0b" fill="url(#gradPrev)" strokeWidth={1.5} />
-                        <Area type="monotone" dataKey="Ordinato" stroke="#3b82f6" fill="url(#gradOrd)" strokeWidth={1.5} />
-                        <Area type="monotone" dataKey="Completato" stroke="#10b981" fill="url(#gradComp)" strokeWidth={1.5} />
+                        <Area type="monotone" dataKey="Bozza" stroke="#a09080" fill="url(#gradBozza)" strokeWidth={1.5} />
+                        <Area type="monotone" dataKey="Preventivo" stroke="#C8874A" fill="url(#gradPrev)" strokeWidth={1.5} />
+                        <Area type="monotone" dataKey="Ordinato" stroke="#7A9AB5" fill="url(#gradOrd)" strokeWidth={1.5} />
+                        <Area type="monotone" dataKey="Completato" stroke="#7AAF8A" fill="url(#gradComp)" strokeWidth={1.5} />
                       </AreaChart>
                     </ResponsiveContainer>
-                    <div className="flex items-center gap-4 mt-2 flex-wrap">
-                      {[['Bozza','#94a3b8'],['Preventivo','#f59e0b'],['Ordinato','#3b82f6'],['Completato','#10b981']].map(([label,color]) => (
-                        <div key={label} className="flex items-center gap-1.5">
-                          <div className="h-2 w-2 rounded-full" style={{ background: color }} />
-                          <span className="text-[10px] text-muted-foreground">{label}</span>
+                    {/* Chart legend */}
+                    <div className="flex items-center gap-5 mt-3 flex-wrap">
+                      {[['Bozza','#a09080'],['Preventivo','#C8874A'],['Ordinato','#7A9AB5'],['Completato','#7AAF8A']].map(([lbl,color]) => (
+                        <div key={lbl} className="flex items-center gap-1.5">
+                          <div className="h-1.5 w-4 rounded-full" style={{ background: color }} />
+                          <span style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'hsl(var(--muted-foreground))' }}>{lbl}</span>
                         </div>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* CTA */}
-                <Card className="gradient-primary border-0">
-                  <CardContent className="flex flex-col items-center gap-4 py-6 sm:py-8 px-6 sm:flex-row">
+                {/* CTA — luxury editorial */}
+                <div className="rounded-2xl overflow-hidden shadow-surface"
+                     style={{ background: 'linear-gradient(135deg, hsl(30 10% 13%), hsl(30 8% 9%))' }}>
+                  {/* Gold top line */}
+                  <div style={{ height: 1, background: 'linear-gradient(90deg, hsl(28 55% 54% / 0.6), transparent)' }} />
+                  <div className="flex flex-col sm:flex-row items-center gap-5 px-7 py-7">
                     <div className="flex-1">
-                      <h2 className="text-xl font-bold font-heading text-primary-foreground">Inserisci una nuova misurazione</h2>
-                      <p className="mt-0.5 text-sm text-primary-foreground/60">Compila il form guidato per inviare le misure.</p>
+                      <p style={{
+                        fontSize: 10, fontWeight: 600, letterSpacing: '0.14em',
+                        textTransform: 'uppercase', color: 'hsl(28 55% 64%)',
+                        marginBottom: 8,
+                      }}>Nuova scheda</p>
+                      <h2 style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: 26, fontWeight: 500, letterSpacing: '-0.01em',
+                        color: 'hsl(35 25% 91%)', lineHeight: 1.2,
+                      }}>Inserisci una nuova misurazione</h2>
+                      <p style={{ fontSize: 14, color: 'hsl(25 10% 55%)', marginTop: 6 }}>
+                        Compila il form guidato per inviare le misure.
+                      </p>
                     </div>
                     <Link to="/nuova-misurazione">
-                      <Button size="lg" className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90 shrink-0">
-                        <Plus className="h-5 w-5" /> Inizia ora
+                      <Button size="lg" className="gap-2 shrink-0 font-semibold"
+                              style={{ background: 'hsl(28 55% 54%)', color: '#fff', border: 'none' }}>
+                        <Plus className="h-4 w-4" /> Inizia ora
                       </Button>
                     </Link>
-                  </CardContent>
-                </Card>
-
+                  </div>
+                </div>
 
                 {/* News */}
-                <Card className="flex-1">
-                  <CardContent className="p-4 h-full flex flex-col">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Newspaper className="h-4 w-4 text-accent" />
-                      <h3 className="text-sm font-heading font-semibold text-foreground">Novità e Promozioni</h3>
+                <Card className="flex-1 shadow-surface border-0">
+                  <CardContent className="p-5 h-full flex flex-col">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Newspaper className="h-3.5 w-3.5" style={{ color: 'hsl(28 55% 54%)' }} />
+                      <h3 style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: 17, fontWeight: 500,
+                        color: 'hsl(var(--foreground))',
+                        letterSpacing: '-0.01em',
+                      }}>Novità e Promozioni</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {newsItems.slice(0, 6).map(n => (
                         <div key={n.id} onClick={() => setSelectedNews(n)}
-                          className="rounded-xl bg-muted/30 p-3 hover:bg-muted/50 transition-all cursor-pointer border-0">
+                          className="rounded-xl cursor-pointer transition-all duration-150"
+                          style={{ background: 'hsl(30 8% 13%)', padding: 12 }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'hsl(30 8% 15%)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'hsl(30 8% 13%)')}>
                           {n.image_url && (
-                            <img src={n.image_url} alt={n.title} className="w-full h-24 object-cover rounded-md mb-2"
+                            <img src={n.image_url} alt={n.title} className="w-full h-24 object-cover rounded-lg mb-2.5"
                               style={{ objectPosition: n.image_position || '50% 50%' }} />
                           )}
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{n.tag}</Badge>
-                            {n.link && <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />}
-                            {n.social_link && <Instagram className="h-2.5 w-2.5 text-muted-foreground" />}
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <span style={{
+                              fontSize: 9, fontWeight: 600, letterSpacing: '0.1em',
+                              textTransform: 'uppercase', color: 'hsl(28 55% 64%)',
+                              background: 'hsl(28 55% 54% / 0.12)',
+                              padding: '2px 6px', borderRadius: 4,
+                            }}>{n.tag}</span>
+                            {n.link && <ExternalLink className="h-2.5 w-2.5" style={{ color: 'hsl(25 10% 42%)' }} />}
+                            {n.social_link && <Instagram className="h-2.5 w-2.5" style={{ color: 'hsl(25 10% 42%)' }} />}
                           </div>
-                          <p className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{n.title}</p>
-                          <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.created_at).toLocaleDateString('it-IT')}</p>
+                          <p className="text-xs font-semibold leading-tight line-clamp-2" style={{ color: 'hsl(35 25% 85%)' }}>{n.title}</p>
+                          <p style={{ fontSize: 10, color: 'hsl(25 10% 42%)', marginTop: 4 }}>{new Date(n.created_at).toLocaleDateString('it-IT')}</p>
                         </div>
                       ))}
                       {newsItems.length === 0 && (
@@ -648,11 +705,14 @@ export default function Dashboard() {
               <div className="space-y-4">
 
                 {/* Giro di oggi / altro giorno */}
-                <Card>
-                  <CardContent className="p-4">
+                <Card className="shadow-surface border-0">
+                  <CardContent className="p-5">
                     <div className="flex items-center gap-1.5 mb-3">
-                      <MapPin className="h-4 w-4 text-accent shrink-0" />
-                      <h3 className="text-sm font-semibold text-foreground truncate">{giroLabelShort}</h3>
+                      <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: 'hsl(28 55% 54%)' }} />
+                      <h3 style={{
+                        fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500,
+                        color: 'hsl(var(--foreground))', letterSpacing: '-0.01em',
+                      }} className="truncate">{giroLabelShort}</h3>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">{todayAllAppointments.length} tappe</span>
                       {/* Controlli sempre visibili, layout stabile */}
                       <div className="ml-auto flex items-center gap-0.5 shrink-0">
@@ -1482,14 +1542,34 @@ function WhatsAppIcon({ className }: { className?: string }) {
 
 function KpiCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-surface flex flex-col justify-between min-h-[120px]">
-      <div className="flex items-start justify-between">
-        <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">{label}</p>
-        <div className="h-7 w-7 rounded-lg bg-accent/10 flex items-center justify-center">
-          <Icon className="h-3.5 w-3.5 text-accent" />
+    <div className="rounded-2xl bg-card shadow-surface flex flex-col justify-between overflow-hidden"
+         style={{ minHeight: 130 }}>
+      {/* Gold top accent line */}
+      <div style={{ height: 2, background: 'linear-gradient(90deg, hsl(28 55% 54% / 0.7), transparent)' }} />
+      <div className="px-6 pb-6 pt-4 flex flex-col justify-between flex-1">
+        <div className="flex items-start justify-between mb-3">
+          <p style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'hsl(var(--muted-foreground))',
+          }}>{label}</p>
+          <div className="h-6 w-6 rounded-md flex items-center justify-center"
+               style={{ background: 'hsl(28 55% 54% / 0.12)' }}>
+            <Icon className="h-3 w-3" style={{ color: 'hsl(28 55% 64%)' }} />
+          </div>
         </div>
+        <p style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 44,
+          fontWeight: 500,
+          letterSpacing: '-0.02em',
+          lineHeight: 1,
+          color: 'hsl(var(--foreground))',
+        }}>{value}</p>
       </div>
-      <p className="text-4xl font-bold font-heading text-foreground tracking-tight mt-3 leading-none">{value}</p>
     </div>
   );
 }

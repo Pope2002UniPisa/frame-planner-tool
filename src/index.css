@@ -1,104 +1,98 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  /* ── Light theme (fallback when .dark is removed) ── */
+  /* ── Light fallback ─────────────────────────────────────────── */
   :root {
     --background: 0 0% 97%;
     --foreground: 0 0% 8%;
-
     --card: 0 0% 100%;
     --card-foreground: 0 0% 8%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 8%;
-
     --primary: 0 0% 9%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 0 0% 93%;
     --secondary-foreground: 0 0% 8%;
-
     --muted: 0 0% 95%;
     --muted-foreground: 0 0% 45%;
-
-    --accent: 28 95% 52%;           /* #F77114 */
+    --accent: 28 55% 54%;            /* gold-orange */
     --accent-foreground: 0 0% 100%;
-
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 0 0% 88%;
     --input: 0 0% 88%;
-    --ring: 28 95% 52%;
-
+    --ring: 28 55% 54%;
     --radius: 0.75rem;
-
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-
     --sidebar-background: 0 0% 7%;
     --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 28 95% 52%;
+    --sidebar-primary: 28 55% 54%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 15%;
     --sidebar-accent-foreground: 0 0% 92%;
     --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 28 95% 52%;
-
+    --sidebar-ring: 28 55% 54%;
+    --font-display: 'Cormorant Garamond', serif;
     --font-heading: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
   }
 
-  /* ── Dark theme — refined editorial palette ──────────────────────────
-     Background:  #07101A → hsl(215 42%  5%)
-     Card:        #0E1B2E → hsl(215 38%  9%)
-     Foreground:  #E4EAF2 → hsl(210 15% 93%)
-     Accent:      #F77114 → hsl( 28 95% 52%)
-     Muted text:  #677898 → hsl(215 18% 52%)
-  ─────────────────────────────────────────────────────────────────── */
+  /* ── Dark — Luxury Charcoal + Gold ──────────────────────────
+     Philosophy: warm charcoal like aged walnut, gold accent like
+     brushed brass — the palette of luxury interior design studios.
+
+     Background:  #141210  → hsl(30  8%  8%)   warm charcoal black
+     Card:        #1E1B18  → hsl(30  8% 11%)   dark walnut
+     Popover:     #252119  → hsl(30  9% 13%)   slightly elevated
+     Foreground:  #EDE8E2  → hsl(35 25% 91%)   warm ivory
+     Accent:      #C8874A  → hsl(28 55% 54%)   brushed gold-orange
+     Muted text:  #857870  → hsl(25 10% 48%)   warm terracotta grey
+     Border:      #2A2620  → hsl(30  9% 14%)   barely-there warm line
+  ─────────────────────────────────────────────────────────── */
   .dark {
-    --background: 215 42% 5%;
-    --foreground: 210 15% 93%;
+    --background: 30 8% 8%;
+    --foreground: 35 25% 91%;
 
-    --card: 215 38% 9%;
-    --card-foreground: 210 15% 93%;
+    --card: 30 8% 11%;
+    --card-foreground: 35 25% 91%;
 
-    --popover: 215 35% 12%;
-    --popover-foreground: 210 15% 93%;
+    --popover: 30 9% 13%;
+    --popover-foreground: 35 25% 91%;
 
-    --primary: 28 95% 52%;
+    --primary: 28 55% 54%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 28% 14%;
-    --secondary-foreground: 210 10% 75%;
+    --secondary: 30 8% 14%;
+    --secondary-foreground: 35 18% 75%;
 
-    --muted: 215 28% 14%;
-    --muted-foreground: 215 18% 52%;
+    --muted: 30 8% 14%;
+    --muted-foreground: 25 10% 48%;
 
-    --accent: 28 95% 52%;
+    --accent: 28 55% 54%;            /* #C8874A brushed gold */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 60% 48%;
+    --destructive: 0 58% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 20% 14%;
-    --input: 215 30% 12%;
-    --ring: 28 95% 52%;
+    --border: 30 9% 14%;
+    --input: 30 9% 12%;
+    --ring: 28 55% 54%;
 
-    --sidebar-background: 215 42% 4%;
-    --sidebar-foreground: 210 12% 82%;
-    --sidebar-primary: 28 95% 52%;
+    --sidebar-background: 30 10% 6%;  /* #0F0D0B — deeper charcoal */
+    --sidebar-foreground: 35 18% 78%;
+    --sidebar-primary: 28 55% 54%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 30% 10%;
-    --sidebar-accent-foreground: 210 12% 88%;
-    --sidebar-border: 215 20% 10%;
-    --sidebar-ring: 28 95% 52%;
+    --sidebar-accent: 30 8% 10%;
+    --sidebar-accent-foreground: 35 18% 85%;
+    --sidebar-border: 30 8% 11%;
+    --sidebar-ring: 28 55% 54%;
   }
 }
 
@@ -110,7 +104,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
-    font-size: 16.5px;
+    font-size: 16px;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -119,65 +113,89 @@
 }
 
 @layer utilities {
+  /* ── Font utilities ─────────────────────────────────── */
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* ── Gradient fills ─────────────────────────────────── */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(215 42% 7%), hsl(215 38% 11%));
+    background: linear-gradient(135deg, hsl(30 10% 9%), hsl(30 8% 13%));
   }
   .gradient-accent {
-    background: linear-gradient(135deg, hsl(28 95% 52%), hsl(18 90% 46%));
+    background: linear-gradient(135deg, hsl(28 55% 54%), hsl(22 52% 46%));
   }
-  /* Hairline border using box-shadow (no layout impact) */
-  .ring-surface {
-    box-shadow: 0 0 0 1px hsl(215 20% 14%);
+
+  /* ── Luxury gold divider ────────────────────────────── */
+  .divider-gold {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(28 55% 54% / 0.4), transparent);
   }
-  /* Premium card shadow — subtle depth */
+
+  /* ── Surface shadows — depth via warm shadow ─────────── */
   .shadow-surface {
-    box-shadow: 0 1px 2px 0 hsl(215 42% 3% / 0.5), 0 0 0 1px hsl(215 20% 14%);
+    box-shadow:
+      0 1px 2px 0 hsl(30 15% 3% / 0.6),
+      0 0 0 1px hsl(30 9% 14%);
   }
   .shadow-elevated {
-    box-shadow: 0 4px 16px -4px hsl(215 42% 3% / 0.6), 0 0 0 1px hsl(215 20% 16%);
+    box-shadow:
+      0 4px 20px -4px hsl(30 15% 3% / 0.7),
+      0 0 0 1px hsl(30 9% 16%);
   }
   .shadow-card {
-    box-shadow: 0 1px 3px 0 hsl(220 30% 12% / 0.06), 0 1px 2px -1px hsl(220 30% 12% / 0.06);
+    box-shadow:
+      0 1px 3px 0 hsl(30 15% 3% / 0.4),
+      0 0 0 1px hsl(30 9% 14%);
   }
   .shadow-card-hover {
-    box-shadow: 0 10px 25px -5px hsl(220 30% 12% / 0.1), 0 4px 10px -3px hsl(220 30% 12% / 0.05);
+    box-shadow:
+      0 8px 24px -6px hsl(30 15% 3% / 0.5),
+      0 0 0 1px hsl(30 9% 18%);
+  }
+  .ring-surface {
+    box-shadow: 0 0 0 1px hsl(30 9% 14%);
+  }
+
+  /* ── Label style — luxury small-caps ─────────────────── */
+  .label-luxury {
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
   }
 }
 
-/* Card borders in dark mode */
+/* ── Card borders in dark mode ────────────────────────── */
 .dark [class*="rounded"][class*="border"],
 .dark .card,
 .dark [data-slot="card"] {
-  border-color: hsl(215 20% 14%);
+  border-color: hsl(30 9% 14%);
 }
-
 .dark [class*="border-border"] {
-  border-color: hsl(215 20% 14%);
+  border-color: hsl(30 9% 14%);
 }
 
-/* Calendar grid lines in dark mode */
+/* ── Calendar grid dark ───────────────────────────────── */
 .dark .calendar-grid {
-  background: hsl(215 20% 14%);
+  background: hsl(30 9% 14%);
   gap: 1px;
   padding: 1px;
 }
-
 .dark .calendar-grid > button,
 .dark .calendar-grid > div {
-  background: hsl(215 38% 9%);
+  background: hsl(30 8% 11%);
 }
 
-/* iOS safe area — evita che il contenuto finisca sotto la barra del browser */
+/* ── iOS safe area ─────────────────────────────────────── */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
-  main {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+  main { padding-bottom: env(safe-area-inset-bottom); }
 }
 
 @media print {
-  @page {
-    margin: 15mm 10mm 20mm 10mm;
-  }
+  @page { margin: 15mm 10mm 20mm 10mm; }
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
