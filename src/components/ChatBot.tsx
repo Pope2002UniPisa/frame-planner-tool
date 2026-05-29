@@ -52,7 +52,8 @@ export function ChatBot() {
   // ── Stato voce ───────────────────────────────────────────────
   const [voiceState, setVoiceState] = useState<'idle' | 'listening' | 'transcribing'>('idle');
   const [interimText, setInterimText] = useState('');
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef  = useRef<any>(null);
+  const lastInterimRef  = useRef('');   // fallback se onend arriva senza risultati finali
 
   // Ref sempre aggiornato ai messaggi — evita stale closure nei callback async
   const messagesRef = useRef(messages);
@@ -148,15 +149,17 @@ export function ChatBot() {
     const recognition = new SR();
     recognition.lang = 'it-IT';
     recognition.continuous = false;
-    recognition.interimResults = true;  // testo in tempo reale visibile nell'input
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
     let finalTranscript = '';
+    lastInterimRef.current = '';
 
     recognition.onstart = () => {
       setVoiceState('listening');
       setInterimText('');
       finalTranscript = '';
+      lastInterimRef.current = '';
     };
 
     recognition.onresult = (event: any) => {
@@ -164,22 +167,42 @@ export function ChatBot() {
       let final   = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) { final += t; }
-        else                          { interim += t; }
+        if (event.results[i].isFinal) {
+          final += t;
+        } else {
+          interim += t;
+        }
       }
-      if (final)  { finalTranscript += final; setInterimText(''); }
-      else        { setInterimText(interim); }
+      if (final) {
+        finalTranscript += final;
+        lastInterimRef.current = finalTranscript; // aggiorna fallback
+        setInterimText('');
+      } else if (interim) {
+        lastInterimRef.current = interim; // tieni l'ultimo interim come fallback
+        setInterimText(interim);
+      }
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error === 'aborted') return; // abortito manualmente
+      if (event.error === 'aborted' || event.error === 'no-speech') {
+        // no-speech è normale — se abbiamo già del testo interim, inviamolo
+        const fallback = finalTranscript.trim() || lastInterimRef.current.trim();
+        setVoiceState('idle');
+        setInterimText('');
+        if (fallback) {
+          const next: Message[] = [...messagesRef.current, { role: 'user', content: fallback }];
+          setMessages(next);
+          sendToAssistant(next);
+        }
+        return;
+      }
       const MSGS: Record<string, string> = {
-        'no-speech':    'Nessun audio — riprova parlando più vicino al microfono',
-        'not-allowed':  'Microfono non autorizzato — controlla i permessi del browser 🔒',
+        'not-allowed':  '🔒 Microfono non autorizzato — clicca sul lucchetto in alto e consenti il microfono',
         'network':      'Errore di rete — controlla la connessione',
-        'audio-capture':'Nessun microfono trovato',
+        'audio-capture':'Nessun microfono trovato — controlla che sia collegato',
+        'service-not-allowed': '🔒 Servizio voce non autorizzato — usa HTTPS o controlla le impostazioni del browser',
       };
-      toast.error(MSGS[event.error] ?? `Errore voce: ${event.error}`);
+      toast.error(MSGS[event.error] ?? `Errore voce: ${event.error}`, { duration: 6000 });
       setVoiceState('idle');
       setInterimText('');
     };
@@ -187,10 +210,11 @@ export function ChatBot() {
     recognition.onend = () => {
       setVoiceState('idle');
       setInterimText('');
-      const transcript = finalTranscript.trim();
+      // Usa finalTranscript, oppure l'ultimo interim se isFinal non è mai arrivato
+      const transcript = (finalTranscript || lastInterimRef.current).trim();
+      lastInterimRef.current = '';
       if (!transcript) return;
 
-      // Invia direttamente
       const next: Message[] = [...messagesRef.current, { role: 'user', content: transcript }];
       setMessages(next);
       sendToAssistant(next);
@@ -200,7 +224,8 @@ export function ChatBot() {
     try {
       recognition.start();
       return true;
-    } catch {
+    } catch (e: any) {
+      toast.error('Impossibile avviare il microfono: ' + (e?.message ?? String(e)));
       return false;
     }
   }, [sendToAssistant]);

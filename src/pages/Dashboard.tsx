@@ -92,7 +92,8 @@ export default function Dashboard() {
     return emails;
   };
   const [appointmentForm, setAppointmentForm] = useState({ type: 'consegna', title: '', time: '', location: '', description: '' });
-  const [isDark, setIsDark] = useState(true);
+  // Dark mode è il tema permanente del brand — sempre attivo
+  const [isDark] = useState(true);
   const [todayMapOpen, setTodayMapOpen] = useState(false);
   const [mapMounted, setMapMounted] = useState(false);
   const [policyModal, setPolicyModal] = useState<'privacy' | 'cookie' | null>(null);
@@ -116,13 +117,10 @@ export default function Dashboard() {
 
 
   useEffect(() => {
-    if (profile) {
-      // Only override default when profile explicitly sets dark_mode
-      const dark = profile.dark_mode !== false;
-      setIsDark(dark);
-      document.documentElement.classList.toggle('dark', dark);
-    }
-  }, [profile?.dark_mode]);
+    // Forza dark class sempre — brand Measure Master
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
+  }, []);
 
   // Monta la mappa solo dopo che l'animazione del dialog è completata (evita container 0px su iOS)
   useEffect(() => {
@@ -134,17 +132,8 @@ export default function Dashboard() {
     }
   }, [todayMapOpen]);
 
-  const toggleDarkMode = async () => {
-    const newDark = !isDark;
-    setIsDark(newDark);
-    document.documentElement.classList.toggle('dark', newDark);
-    if (user) {
-      queryClient.setQueryData<Profile>(QUERY_KEYS.profile(user.id), (prev) =>
-        prev ? { ...prev, dark_mode: newDark } : prev
-      );
-      await supabase.from('profiles').update({ dark_mode: newDark }).eq('user_id', user.id);
-    }
-  };
+  // No-op — dark mode è il tema permanente del brand
+  const toggleDarkMode = () => {};
 
   const stats = useMemo(() => ({
     total: measurements.length,

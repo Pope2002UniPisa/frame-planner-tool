@@ -23,30 +23,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Usa la stessa cache React Query del Dashboard → nessun fetch duplicato
   const { data: profile } = useProfile(user?.id);
 
-  const [isDark, setIsDark] = useState(true);
+  // Dark mode è il tema permanente del brand — sempre attivo
+  const [isDark] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (profile) {
-      // Only override default when profile explicitly sets dark_mode
-      const dark = profile.dark_mode !== false;
-      setIsDark(dark);
-      document.documentElement.classList.toggle('dark', dark);
-    }
-  }, [profile?.dark_mode]);
+    // Forza dark class sempre — brand Measure Master
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
+  }, []);
 
-  const handleToggleDarkMode = async () => {
-    const newDark = !isDark;
-    setIsDark(newDark);
-    document.documentElement.classList.toggle('dark', newDark);
-    if (user) {
-      // Aggiorna la cache condivisa con Dashboard
-      queryClient.setQueryData<Profile>(QUERY_KEYS.profile(user.id), (prev) =>
-        prev ? { ...prev, dark_mode: newDark } : prev
-      );
-      await supabase.from('profiles').update({ dark_mode: newDark }).eq('user_id', user.id);
-    }
-  };
+  // No-op: mantiene compatibilità col componente AppSidebar che passa la prop
+  const handleToggleDarkMode = () => {};
 
   const handleSignOut = async () => {
     await signOut();
