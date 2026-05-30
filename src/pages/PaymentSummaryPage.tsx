@@ -14,7 +14,7 @@ export default function PaymentSummaryPage() {
             <CreditCard className="h-5 w-5 text-accent" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.02em' }}>Pagamenti</h1>
+            <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-display)', fontWeight: 400, letterSpacing: '-0.02em' }}>Pagamenti</h1>
             <p className="text-sm text-muted-foreground">Gestisci e traccia i pagamenti dei tuoi ordini</p>
           </div>
         </div>

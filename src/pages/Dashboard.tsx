@@ -514,7 +514,7 @@ export default function Dashboard() {
               <p className="leading-tight truncate" style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: 22,
-                fontWeight: 500,
+                fontWeight: 400,
                 color: 'hsl(var(--foreground))',
                 letterSpacing: '-0.01em',
               }}>
@@ -577,7 +577,7 @@ export default function Dashboard() {
                       <h3 style={{
                         fontFamily: 'var(--font-display)',
                         fontSize: 18,
-                        fontWeight: 500,
+                        fontWeight: 400,
                         color: 'hsl(var(--foreground))',
                         letterSpacing: '-0.01em',
                       }}>Ordini per stato</h3>
@@ -640,7 +640,7 @@ export default function Dashboard() {
                       }}>Nuova scheda</p>
                       <h2 style={{
                         fontFamily: 'var(--font-display)',
-                        fontSize: 26, fontWeight: 500, letterSpacing: '-0.01em',
+                        fontSize: 26, fontWeight: 400, letterSpacing: '-0.01em',
                         color: 'hsl(35 25% 91%)', lineHeight: 1.2,
                       }}>Inserisci una nuova misurazione</h2>
                       <p style={{ fontSize: 14, color: 'hsl(25 10% 55%)', marginTop: 6 }}>
@@ -663,7 +663,7 @@ export default function Dashboard() {
                       <Newspaper className="h-3.5 w-3.5" style={{ color: 'hsl(28 55% 54%)' }} />
                       <h3 style={{
                         fontFamily: 'var(--font-display)',
-                        fontSize: 17, fontWeight: 500,
+                        fontSize: 17, fontWeight: 400,
                         color: 'hsl(var(--foreground))',
                         letterSpacing: '-0.01em',
                       }}>Novità e Promozioni</h3>
@@ -710,7 +710,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-1.5 mb-3">
                       <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: 'hsl(28 55% 54%)' }} />
                       <h3 style={{
-                        fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500,
+                        fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 400,
                         color: 'hsl(var(--foreground))', letterSpacing: '-0.01em',
                       }} className="truncate">{giroLabelShort}</h3>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">{todayAllAppointments.length} tappe</span>
@@ -1562,12 +1562,13 @@ function KpiCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string
           </div>
         </div>
         <p style={{
-          fontFamily: 'var(--font-display)',
+          fontFamily: 'var(--font-mono)',
           fontSize: 44,
-          fontWeight: 500,
+          fontWeight: 400,
           letterSpacing: '-0.02em',
           lineHeight: 1,
           color: 'hsl(var(--foreground))',
+          fontVariantNumeric: 'tabular-nums',
         }}>{value}</p>
       </div>
     </div>

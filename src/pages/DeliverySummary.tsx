@@ -108,7 +108,7 @@ export default function DeliverySummary() {
             <Truck className="h-5 w-5 text-accent" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.02em' }}>Consegne</h1>
+            <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-display)', fontWeight: 400, letterSpacing: '-0.02em' }}>Consegne</h1>
             <p className="text-sm text-muted-foreground">Monitora lo stato e le scadenze delle consegne</p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function DeliverySummary() {
             <Card key={s.label}>
               <CardContent className="py-3 px-4 text-center">
                 <s.icon className={`h-4 w-4 mx-auto mb-1 ${s.color}`} />
-                <p className={`text-xl font-bold ${s.color}`} style={{ fontFamily: 'var(--font-display)', fontSize: 36 }}>{s.value}</p>
+                <p className={`text-xl ${s.color}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 36, fontVariantNumeric: 'tabular-nums' }}>{s.value}</p>
                 <p className="text-[10px] text-muted-foreground">{s.label}</p>
               </CardContent>
             </Card>
@@ -134,7 +134,7 @@ export default function DeliverySummary() {
         {/* Filters */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.01em' }}>Filtri consegne</CardTitle>
+            <CardTitle className="text-base" style={{ fontFamily: 'var(--font-display)', fontWeight: 400, letterSpacing: '-0.01em' }}>Filtri consegne</CardTitle>
             <CardDescription>Ordini ordinati per urgenza di consegna.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">

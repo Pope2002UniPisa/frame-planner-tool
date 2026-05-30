@@ -14,9 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['Cormorant Garamond', 'serif'],
-        heading: ['Space Grotesk', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
+        display: ['Instrument Serif', 'serif'],
+        heading: ['Instrument Serif', 'serif'],
+        body: ['Instrument Sans', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

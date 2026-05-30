@@ -448,7 +448,7 @@ export default function AdminDashboard() {
               <Shield className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.02em' }}>Pannello Amministrazione</h1>
+              <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-display)', fontWeight: 400, letterSpacing: '-0.02em' }}>Pannello Amministrazione</h1>
               <p className="text-sm text-muted-foreground">Gestione completa del portale</p>
             </div>
           </div>
@@ -494,7 +494,7 @@ export default function AdminDashboard() {
             {measurements.length > 0 && (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Card>
-                  <CardHeader className="pb-2"><CardTitle className="text-sm" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.01em' }}>Stato misurazioni globale</CardTitle></CardHeader>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm" style={{ fontFamily: 'var(--font-display)', fontWeight: 400, letterSpacing: '-0.01em' }}>Stato misurazioni globale</CardTitle></CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={220}>
                       <PieChart>
@@ -508,7 +508,7 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardHeader className="pb-2"><CardTitle className="text-sm" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.01em' }}>Andamento per tipologia</CardTitle></CardHeader>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm" style={{ fontFamily: 'var(--font-display)', fontWeight: 400, letterSpacing: '-0.01em' }}>Andamento per tipologia</CardTitle></CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={220}>
                       <LineChart data={monthlyData}>
@@ -564,7 +564,7 @@ export default function AdminDashboard() {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle className="text-sm" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, letterSpacing: '-0.01em' }}>Ultime misurazioni ricevute</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm" style={{ fontFamily: 'var(--font-display)', fontWeight: 400, letterSpacing: '-0.01em' }}>Ultime misurazioni ricevute</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {measurements.filter(m => m.status !== 'bozza').slice(0, 10).map(m => {
