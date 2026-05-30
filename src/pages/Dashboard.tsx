@@ -716,24 +716,8 @@ export default function Dashboard() {
                         color: 'hsl(var(--foreground))', letterSpacing: '-0.01em',
                       }} className="truncate">{giroLabelShort}</h3>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">{todayAllAppointments.length} tappe</span>
-                      {/* Controlli sempre visibili, layout stabile */}
+                      {/* Azioni giro: WhatsApp e Mappa */}
                       <div className="ml-auto flex items-center gap-0.5 shrink-0">
-                        <button onClick={() => navigateGiro(-1)} className="rounded p-1 hover:bg-muted transition-colors">
-                          <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          onClick={() => { setGiroDate(new Date()); setHoveredApptId(null); }}
-                          className={cn(
-                            'text-[10px] w-7 text-center transition-colors',
-                            isGiroToday ? 'invisible pointer-events-none' : 'text-accent hover:underline'
-                          )}
-                        >
-                          Oggi
-                        </button>
-                        <button onClick={() => navigateGiro(1)} className="rounded p-1 hover:bg-muted transition-colors">
-                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                        <div className="w-px h-3 bg-border mx-0.5" />
                         <button
                           onClick={() => !sendingWA && todayAllAppointments.length > 0 && sendWhatsAppGiro(todayAllAppointments, giroDateStr)}
                           disabled={sendingWA || todayAllAppointments.length === 0}
@@ -758,7 +742,9 @@ export default function Dashboard() {
                       </div>
                     </div>
                     {todayAllAppointments.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4 italic">Nessun appuntamento per oggi.</p>
+                      <p className="text-xs text-muted-foreground text-center py-4 italic">
+                        {isGiroToday ? 'Nessun appuntamento per oggi.' : 'Nessun appuntamento per questo giorno.'}
+                      </p>
                     ) : (
                       <div className="space-y-2">
                         {todayAllAppointments.slice(0, 4).map(appt => (
@@ -860,7 +846,12 @@ export default function Dashboard() {
                             <button key={i} type="button"
                               onClick={() => {
                                 if (addMode) { setAddMode(false); openAppointmentDialog(date); }
-                                else setSelectedDay(prev => prev && formatDateKey(prev) === formatDateKey(date) ? null : date);
+                                else {
+                                  const isSame = selectedDay && formatDateKey(selectedDay) === formatDateKey(date);
+                                  setSelectedDay(isSame ? null : date);
+                                  setGiroDate(isSame ? new Date() : date);
+                                  setHoveredApptId(null);
+                                }
                               }}
                               className={`aspect-square rounded text-[11px] font-medium flex flex-col items-center justify-center transition-colors relative ${addMode ? 'cursor-crosshair' : ''} ${isSelected ? 'bg-accent/20 text-accent font-bold' : isToday ? 'border border-accent/50 text-accent font-semibold' : 'hover:bg-accent/10'}`}
                               style={firstColor && !isSelected ? { boxShadow: `inset 0 0 0 1.5px ${firstColor}` } : undefined}
