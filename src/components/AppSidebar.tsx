@@ -42,9 +42,17 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode: _darkMode, o
       )}
       style={{ background: 'hsl(var(--sidebar-background))' }}
     >
-      {/* Logo */}
+      {/* Logo — pillola avorio: il PNG ha sfondo bianco opaco, non va invertito */}
       <div className="px-5 pt-5 pb-4 border-b border-white/5">
-        <img src={pratelliLogo} alt="Pratelli Rappresentanze" className="h-8 object-contain opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
+        <div style={{
+          display: 'inline-block',
+          background: '#EDE8E2',
+          borderRadius: 8,
+          padding: '5px 10px',
+          lineHeight: 0,
+        }}>
+          <img src={pratelliLogo} alt="Pratelli Rappresentanze" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+        </div>
       </div>
 
       {/* Operator info */}

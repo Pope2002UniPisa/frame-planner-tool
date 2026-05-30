@@ -521,7 +521,9 @@ export default function Dashboard() {
                 {(() => {
                   const now = new Date();
                   const totalMins = now.getHours() * 60 + now.getMinutes();
-                  const name = profile?.full_name?.split(' ')[0] || '';
+                  // Fallback: full_name → company_name (primo token) → nessun nome
+                  const rawName = profile?.full_name || profile?.company_name || '';
+                  const name = rawName.split(' ')[0];
                   const greeting = totalMins < 720 ? 'Buongiorno' : totalMins < 870 ? 'Buon pomeriggio' : 'Buonasera';
                   return name ? `${greeting}, ${name}` : greeting;
                 })()}
