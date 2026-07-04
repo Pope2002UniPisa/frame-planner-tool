@@ -34,6 +34,7 @@ const LeadDetail = lazy(() => import("./pages/LeadDetail"));
 const OperationsAnalytics = lazy(() => import("./pages/OperationsAnalytics"));
 const QuoteBuilder = lazy(() => import("./pages/QuoteBuilder"));
 const QuotePrint = lazy(() => import("./pages/QuotePrint"));
+const TerritorialMap = lazy(() => import("./pages/TerritorialMap"));
 const DeliverySummary = lazy(() => import("./pages/DeliverySummary"));
 const PaymentSummaryPage = lazy(() => import("./pages/PaymentSummaryPage"));
 
@@ -67,6 +68,7 @@ const App = () => (
                 <Route path="/preventivo/nuovo" element={<QuoteBuilder />} />
                 <Route path="/preventivo/:id" element={<QuoteBuilder />} />
                 <Route path="/preventivo/:id/stampa" element={<QuotePrint />} />
+                <Route path="/dashboard/mappa" element={<TerritorialMap />} />
                 <Route path="/dashboard/clienti" element={<ClientSummary />} />
                 <Route path="/dashboard/clienti/:id" element={<ClientDetail />} />
                 <Route path="/dashboard/consegne" element={<DeliverySummary />} />

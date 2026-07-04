@@ -15,6 +15,8 @@ interface ApptMarker {
   time: string | null;
   location: string;
   color: string | null;
+  lat?: number | null;   // coordinate persistite (se presenti si evita il geocoding)
+  lng?: number | null;
 }
 
 async function nominatimSearch(q: string): Promise<[number, number] | null> {
@@ -138,7 +140,11 @@ export const AppointmentMap = memo(function AppointmentMap({
       for (let i = 0; i < appointments.length; i++) {
         if (cancelled) break;
         const appt = appointments[i];
-        const coords = await nominatimGeocode(appt.location);
+        // Usa le coordinate persistite se disponibili → nessuna attesa Nominatim.
+        const hasCoords = appt.lat != null && appt.lng != null;
+        const coords = hasCoords
+          ? [appt.lat as number, appt.lng as number] as [number, number]
+          : await nominatimGeocode(appt.location);
         if (cancelled) break;
 
         if (coords) {
@@ -152,7 +158,8 @@ export const AppointmentMap = memo(function AppointmentMap({
           markersRef.current[appt.id] = { marker, appt, seq };
         }
 
-        if (i < appointments.length - 1) await new Promise(r => setTimeout(r, 1300));
+        // Delay solo quando abbiamo davvero interrogato Nominatim.
+        if (!hasCoords && i < appointments.length - 1) await new Promise(r => setTimeout(r, 1300));
       }
 
       if (!cancelled && points.length > 0) {
