@@ -9,6 +9,7 @@ import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getD
 import pratelliLogo from '@/assets/pratelli-logo.png';
 import ferreroLegnoLogo from '@/assets/ferrerolegno-logo.png';
 import { productLabels } from '@/lib/constants';
+import { ORDINARY_VAT_RATE } from '@/lib/quoteEngine';
 
 const surveyLabels: Record<string, string> = {
   foro_muro: 'Foro muro', luce_netta: 'Luce netta', controtelaio: 'Controtelaio', vecchio_infisso: 'Vecchio infisso',
@@ -93,7 +94,7 @@ export default function MeasurementPrint() {
   const docTitle = isOrder ? 'Conferma d\'Ordine' : isQuote ? 'Preventivo' : 'Scheda Misurazione';
 
   const price = Number(m.estimated_price) || 0;
-  const iva = Math.round(price * 0.22 * 100) / 100;
+  const iva = Math.round(price * (ORDINARY_VAT_RATE / 100) * 100) / 100;
   const totalWithIva = Math.round((price + iva) * 100) / 100;
 
   const resolveColor = (colorId: string): string => {
@@ -276,7 +277,7 @@ export default function MeasurementPrint() {
                       <td className="py-2.5 px-4 text-right font-medium text-foreground">€ {price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
-                      <td className="py-2.5 px-4 font-medium text-muted-foreground">IVA (22%)</td>
+                      <td className="py-2.5 px-4 font-medium text-muted-foreground">IVA ({ORDINARY_VAT_RATE}%)</td>
                       <td className="py-2.5 px-4 text-right font-medium text-foreground">€ {iva.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
                     </tr>
                     <tr className="bg-primary/5 border-t-2 border-primary/20">

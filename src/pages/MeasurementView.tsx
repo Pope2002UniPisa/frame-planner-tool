@@ -8,13 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Printer, Edit3, ThumbsUp, MessageSquare, Send, FileDown } from 'lucide-react';
+import { ArrowLeft, Printer, Edit3, ThumbsUp, MessageSquare, Send, FileDown, FileText } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel } from '@/data/doorCatalog';
 import { toast } from 'sonner';
 import { productLabels, statusLabels } from '@/lib/constants';
 import { recordStatusChange } from '@/lib/statusHistory';
 import { StatusTimeline } from '@/components/StatusTimeline';
+import { ORDINARY_VAT_RATE } from '@/lib/quoteEngine';
 
 const isQuoteStatus = (status: string) => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(status);
 
@@ -124,7 +125,7 @@ export default function MeasurementView() {
   };
 
   const price = Number(m.estimated_price) || 0;
-  const iva = Math.round(price * 0.22 * 100) / 100;
+  const iva = Math.round(price * (ORDINARY_VAT_RATE / 100) * 100) / 100;
   const totalWithIva = Math.round((price + iva) * 100) / 100;
 
   // Resolve color to full label: try door catalog first, then window COLOR_OPTIONS
@@ -301,9 +302,14 @@ export default function MeasurementView() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="font-heading">Riepilogo</CardTitle>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/misurazione/${id}/stampa`)}>
-                <FileDown className="h-4 w-4" /> Scarica PDF
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/preventivo/nuovo?measurement=${id}`)}>
+                  <FileText className="h-4 w-4" /> Preventivo dettagliato
+                </Button>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/misurazione/${id}/stampa`)}>
+                  <FileDown className="h-4 w-4" /> Scarica PDF
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="rounded-lg border border-border overflow-hidden">
@@ -314,7 +320,7 @@ export default function MeasurementView() {
                       <td className="py-2.5 px-4 text-right font-medium text-foreground">€ {price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
-                      <td className="py-2.5 px-4 font-medium text-muted-foreground">IVA (22%)</td>
+                      <td className="py-2.5 px-4 font-medium text-muted-foreground">IVA ({ORDINARY_VAT_RATE}%)</td>
                       <td className="py-2.5 px-4 text-right font-medium text-foreground">€ {iva.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
                     </tr>
                     <tr className="bg-primary/5 border-t-2 border-primary/20">
