@@ -31,6 +31,7 @@ const ClientSummary = lazy(() => import("./pages/ClientSummary"));
 const ClientDetail = lazy(() => import("./pages/ClientDetail"));
 const LeadsList = lazy(() => import("./pages/LeadsList"));
 const LeadDetail = lazy(() => import("./pages/LeadDetail"));
+const OperationsAnalytics = lazy(() => import("./pages/OperationsAnalytics"));
 const DeliverySummary = lazy(() => import("./pages/DeliverySummary"));
 const PaymentSummaryPage = lazy(() => import("./pages/PaymentSummaryPage"));
 
@@ -60,6 +61,7 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/lead" element={<LeadsList />} />
                 <Route path="/dashboard/lead/:id" element={<LeadDetail />} />
+                <Route path="/dashboard/tempi" element={<OperationsAnalytics />} />
                 <Route path="/dashboard/clienti" element={<ClientSummary />} />
                 <Route path="/dashboard/clienti/:id" element={<ClientDetail />} />
                 <Route path="/dashboard/consegne" element={<DeliverySummary />} />

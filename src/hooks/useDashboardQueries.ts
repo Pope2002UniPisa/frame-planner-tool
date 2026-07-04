@@ -179,6 +179,33 @@ export function useLeads(userId: string | undefined) {
   });
 }
 
+// ─── WS2: tempi operativi (mediane per transizione di stato) ─────────────────
+
+export interface StatusTiming {
+  dealer_id: string;
+  from_status: string | null;
+  to_status: string;
+  transitions: number;
+  median_seconds: number | null;
+  avg_seconds: number | null;
+}
+
+export function useOperationTimings(userId: string | undefined) {
+  return useQuery({
+    queryKey: userId ? ['operationTimings', userId] : ['operationTimings', null],
+    queryFn: async (): Promise<StatusTiming[]> => {
+      const { data, error } = await supabase
+        .from('v_status_median_durations' as any)
+        .select('*')
+        .eq('dealer_id', userId!);
+      if (error) throw error;
+      return (data ?? []) as unknown as StatusTiming[];
+    },
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 // ─── Hook: appuntamenti utente ────────────────────────────────────────────────
 
 export function useAppointments(userId: string | undefined) {
