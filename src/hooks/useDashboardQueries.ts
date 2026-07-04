@@ -127,6 +127,58 @@ export function useStatusHistory(measurementId: string | undefined) {
   });
 }
 
+// ─── CRM Lead ─────────────────────────────────────────────────────────────────
+// La tabella `leads` è stata aggiunta dopo l'ultima rigenerazione di types.ts,
+// quindi si accede con cast `as any` (stesso pattern di price_catalog/end_clients).
+
+export interface Lead {
+  id: string;
+  dealer_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  source: string;
+  status: string;
+  estimated_value: number | null;
+  next_action_at: string | null;
+  notes: string | null;
+  lat: number | null;
+  lng: number | null;
+  geocoded_at: string | null;
+  converted_client_id: string | null;
+  converted_measurement_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadActivity {
+  id: string;
+  lead_id: string;
+  dealer_id: string;
+  type: string;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export function useLeads(userId: string | undefined) {
+  return useQuery({
+    queryKey: userId ? ['leads', userId] : ['leads', null],
+    queryFn: async (): Promise<Lead[]> => {
+      const { data, error } = await supabase
+        .from('leads' as any)
+        .select('*')
+        .eq('dealer_id', userId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Lead[];
+    },
+    enabled: !!userId,
+  });
+}
+
 // ─── Hook: appuntamenti utente ────────────────────────────────────────────────
 
 export function useAppointments(userId: string | undefined) {

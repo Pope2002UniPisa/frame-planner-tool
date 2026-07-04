@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Plus, Users, Truck, CreditCard, LogOut, Shield, Settings } from 'lucide-react';
+import { LayoutDashboard, Plus, Users, Truck, CreditCard, LogOut, Shield, Settings, Target, Map } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 import type { Profile } from '@/hooks/useDashboardQueries';
@@ -18,8 +18,10 @@ interface Props {
 
 const NAV = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  { icon: Target, label: 'Lead', href: '/dashboard/lead' },
   { icon: Plus, label: 'Nuova misurazione', href: '/nuova-misurazione' },
   { icon: Users, label: 'Clienti', href: '/dashboard/clienti' },
+  { icon: Map, label: 'Mappa', href: '/dashboard/mappa' },
   { icon: Truck, label: 'Consegne', href: '/dashboard/consegne' },
   { icon: CreditCard, label: 'Pagamenti', href: '/dashboard/pagamenti' },
 ];

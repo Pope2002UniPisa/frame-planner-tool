@@ -73,3 +73,35 @@ export const MONTH_NAMES = [
 
 // Email amministratore
 export const ADMIN_EMAIL = '2002lavoro@gmail.com';
+
+// ─── CRM Lead (pre-vendita) ──────────────────────────────────────────────────
+
+// Stati della pipeline lead, in ordine di avanzamento
+export const LEAD_STATUSES = [
+  'nuovo', 'contattato', 'preventivo_inviato', 'in_trattativa', 'vinto', 'perso',
+] as const;
+export type LeadStatus = typeof LEAD_STATUSES[number];
+
+export const leadStatusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; color: string }> = {
+  nuovo:              { label: 'Nuovo',            variant: 'default',     color: '#3b82f6' },
+  contattato:         { label: 'Contattato',       variant: 'secondary',   color: '#8b5cf6' },
+  preventivo_inviato: { label: 'Preventivo inviato',variant: 'secondary',  color: '#f59e0b' },
+  in_trattativa:      { label: 'In trattativa',     variant: 'default',     color: '#eab308' },
+  vinto:              { label: 'Vinto',             variant: 'default',     color: '#10b981' },
+  perso:              { label: 'Perso',             variant: 'destructive',  color: '#ef4444' },
+};
+
+export const leadSourceLabels: Record<string, string> = {
+  showroom: 'Showroom',
+  telefono: 'Telefono',
+  passaparola: 'Passaparola',
+  sito: 'Sito web',
+  altro: 'Altro',
+};
+
+export const leadActivityLabels: Record<string, string> = {
+  nota: 'Nota',
+  chiamata: 'Chiamata',
+  email: 'Email',
+  cambio_stato: 'Cambio stato',
+};
