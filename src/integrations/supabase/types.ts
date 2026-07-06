@@ -864,6 +864,7 @@ export type Database = {
           amount_paid: number | null
           client_address: string | null
           client_email: string | null
+          client_id: string | null
           client_name: string | null
           color_external: string | null
           color_internal: string | null
@@ -925,6 +926,7 @@ export type Database = {
           amount_paid?: number | null
           client_address?: string | null
           client_email?: string | null
+          client_id?: string | null
           client_name?: string | null
           color_external?: string | null
           color_internal?: string | null
@@ -986,6 +988,7 @@ export type Database = {
           amount_paid?: number | null
           client_address?: string | null
           client_email?: string | null
+          client_id?: string | null
           client_name?: string | null
           color_external?: string | null
           color_internal?: string | null
@@ -1043,6 +1046,13 @@ export type Database = {
           width_mm?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "measurements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "end_clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "measurements_product_id_fkey"
             columns: ["product_id"]

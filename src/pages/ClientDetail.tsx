@@ -113,7 +113,7 @@ export default function ClientDetail() {
         supabase
           .from('measurements')
           .select('id,product_type,status,width_mm,height_mm,estimated_price,created_at')
-          .ilike('client_name', clientData.name)
+          .eq('client_id', id)
           .order('created_at', { ascending: false }),
         supabase
           .from('client_documents')
