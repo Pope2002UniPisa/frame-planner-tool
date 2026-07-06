@@ -361,6 +361,24 @@ export function ChatBot() {
     }
   };
 
+  // ── Chiudi al click fuori dal pannello ───────────────────────
+  const panelRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: Event) => {
+      const t = e.target as Node;
+      if (panelRef.current?.contains(t) || toggleRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
+    };
+  }, [open]);
+
   // ── Render ───────────────────────────────────────────────────
   const panelBottom = btnBottom + 56 + 8;
 
@@ -368,6 +386,7 @@ export function ChatBot() {
     <div className="print:hidden">
       {/* Bottone flottante */}
       <button
+        ref={toggleRef}
         onClick={() => setOpen(o => !o)}
         style={{ bottom: `${btnBottom}px` }}
         className={cn(
@@ -382,6 +401,7 @@ export function ChatBot() {
       {/* Chat panel */}
       {open && (
         <div
+          ref={panelRef}
           style={{ bottom: `${panelBottom}px`, maxHeight: '70vh' }}
           className="fixed right-6 z-[1100] w-80 sm:w-96 rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
         >
