@@ -35,6 +35,14 @@ const OperationsAnalytics = lazy(() => import("./pages/OperationsAnalytics"));
 const QuoteBuilder = lazy(() => import("./pages/QuoteBuilder"));
 const QuotePrint = lazy(() => import("./pages/QuotePrint"));
 const TerritorialMap = lazy(() => import("./pages/TerritorialMap"));
+const RiepilogoContabilita = lazy(() => import("./pages/contabilita/RiepilogoContabilita"));
+const ImportaContabilita = lazy(() => import("./pages/contabilita/ImportaContabilita"));
+const GiornaleContabilita = lazy(() => import("./pages/contabilita/GiornaleContabilita"));
+const IvaContabilita = lazy(() => import("./pages/contabilita/IvaContabilita"));
+const ScadenzarioContabilita = lazy(() => import("./pages/contabilita/ScadenzarioContabilita"));
+const CespitiContabilita = lazy(() => import("./pages/contabilita/CespitiContabilita"));
+const FattureAttiveContabilita = lazy(() => import("./pages/contabilita/FattureAttiveContabilita"));
+const BilancioContabilita = lazy(() => import("./pages/contabilita/BilancioContabilita"));
 const DeliverySummary = lazy(() => import("./pages/DeliverySummary"));
 const PaymentSummaryPage = lazy(() => import("./pages/PaymentSummaryPage"));
 
@@ -77,6 +85,14 @@ const App = () => (
                 <Route path="/misurazione/:id" element={<MeasurementView />} />
                 <Route path="/misurazione/:id/stampa" element={<MeasurementPrint />} />
                 <Route path="/misurazione/:id/modifica" element={<EditMeasurement />} />
+                <Route path="/contabilita" element={<RiepilogoContabilita />} />
+                <Route path="/contabilita/importa" element={<ImportaContabilita />} />
+                <Route path="/contabilita/giornale" element={<GiornaleContabilita />} />
+                <Route path="/contabilita/iva" element={<IvaContabilita />} />
+                <Route path="/contabilita/scadenzario" element={<ScadenzarioContabilita />} />
+                <Route path="/contabilita/cespiti" element={<CespitiContabilita />} />
+                <Route path="/contabilita/fatture-attive" element={<FattureAttiveContabilita />} />
+                <Route path="/contabilita/bilancio" element={<BilancioContabilita />} />
                 <Route path="/profilo" element={<Profile />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/prezziario" element={<PriceCatalogAdmin />} />

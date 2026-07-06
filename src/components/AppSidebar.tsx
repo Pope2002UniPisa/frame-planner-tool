@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Plus, Users, Truck, CreditCard, LogOut, Shield, Settings, Target, Map, Clock } from 'lucide-react';
+import { LayoutDashboard, Plus, Users, Truck, CreditCard, LogOut, Shield, Settings, Target, Map, Clock, Calculator } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 import type { Profile } from '@/hooks/useDashboardQueries';
@@ -8,6 +8,7 @@ interface Props {
   profile: Profile | null | undefined;
   userEmail: string;
   isAdmin: boolean;
+  accountingEnabled?: boolean;
   darkMode: boolean;
   onToggleDarkMode: () => void;
   onSignOut: () => void;
@@ -28,9 +29,13 @@ const NAV = [
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function AppSidebar({ profile, userEmail, isAdmin, darkMode: _darkMode, onToggleDarkMode: _onToggleDarkMode, onSignOut, onNavigate, isOpen = false, onClose = () => {} }: Props) {
+export function AppSidebar({ profile, userEmail, isAdmin, accountingEnabled = false, darkMode: _darkMode, onToggleDarkMode: _onToggleDarkMode, onSignOut, onNavigate, isOpen = false, onClose = () => {} }: Props) {
   const location = useLocation();
   const initials = (profile?.full_name || userEmail || '?')[0].toUpperCase();
+  // La contabilità appare solo per i dealer con l'abbonamento che la include (o admin).
+  const nav = accountingEnabled
+    ? [...NAV, { icon: Calculator, label: 'Contabilità', href: '/contabilita' }]
+    : NAV;
 
   return (
     <aside
@@ -80,7 +85,7 @@ export function AppSidebar({ profile, userEmail, isAdmin, darkMode: _darkMode, o
 
       {/* Nav */}
       <nav className="flex-1 px-3 pb-3 space-y-0.5 overflow-y-auto">
-        {NAV.map(({ icon: Icon, label, href }) => {
+        {nav.map(({ icon: Icon, label, href }) => {
           const active = location.pathname === href;
           return (
             <Link

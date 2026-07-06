@@ -2,6 +2,7 @@ import { useEffect, useState, ReactNode } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { useAccountingAccess } from '@/hooks/useAccountingAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProfile, QUERY_KEYS, type Profile } from '@/hooks/useDashboardQueries';
@@ -17,6 +18,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, loading, signOut } = useAuth();
   const { isAdmin } = useAdminCheck();
+  const { enabled: accountingEnabled } = useAccountingAccess();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -51,6 +53,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         profile={profile}
         userEmail={user.email || ''}
         isAdmin={isAdmin}
+        accountingEnabled={accountingEnabled}
         darkMode={isDark}
         onToggleDarkMode={handleToggleDarkMode}
         onSignOut={handleSignOut}
