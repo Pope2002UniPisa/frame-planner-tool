@@ -452,7 +452,13 @@ export default function AdminDashboard() {
               <p className="text-sm text-muted-foreground">Gestione completa del portale</p>
             </div>
           </div>
-          <span className="text-xl font-mono font-bold text-foreground tabular-nums tracking-widest select-none">{clock}</span>
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 17,
+            fontWeight: 400,
+            letterSpacing: '0.04em',
+            color: 'hsl(35 25% 65%)',
+          }} className="tabular-nums select-none">{clock}</span>
         </div>
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full grid-cols-6">
