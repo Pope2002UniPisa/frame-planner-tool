@@ -41,7 +41,7 @@ INSERT INTO public.detrazioni (name, percentage, cap, note, active) VALUES
 ON CONFLICT DO NOTHING;
 
 -- Preventivo a valle
-CREATE TABLE IF NOT EXISTS public.quotes (
+CREATE TABLE IF NOT EXISTS public.dealer_quotes (
   id                 uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
   dealer_id          uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   measurement_id     uuid        REFERENCES public.measurements(id) ON DELETE SET NULL,
@@ -66,22 +66,22 @@ CREATE TABLE IF NOT EXISTS public.quotes (
   created_at         timestamptz NOT NULL DEFAULT now(),
   updated_at         timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS idx_quotes_dealer      ON public.quotes(dealer_id);
-CREATE INDEX IF NOT EXISTS idx_quotes_measurement ON public.quotes(measurement_id);
+CREATE INDEX IF NOT EXISTS idx_dealer_quotes_dealer      ON public.dealer_quotes(dealer_id);
+CREATE INDEX IF NOT EXISTS idx_dealer_quotes_measurement ON public.dealer_quotes(measurement_id);
 
-ALTER TABLE public.quotes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "dealer_own_quotes" ON public.quotes
+ALTER TABLE public.dealer_quotes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "dealer_own_quotes" ON public.dealer_quotes
   FOR ALL USING (auth.uid() = dealer_id) WITH CHECK (auth.uid() = dealer_id);
-CREATE POLICY "admin_all_quotes" ON public.quotes
+CREATE POLICY "admin_all_quotes" ON public.dealer_quotes
   FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
 
-CREATE TRIGGER update_quotes_updated_at BEFORE UPDATE ON public.quotes
+CREATE TRIGGER update_quotes_updated_at BEFORE UPDATE ON public.dealer_quotes
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Righe del preventivo
 CREATE TABLE IF NOT EXISTS public.quote_lines (
   id                  uuid    DEFAULT gen_random_uuid() PRIMARY KEY,
-  quote_id            uuid    NOT NULL REFERENCES public.quotes(id) ON DELETE CASCADE,
+  quote_id            uuid    NOT NULL REFERENCES public.dealer_quotes(id) ON DELETE CASCADE,
   description         text    NOT NULL DEFAULT '',
   product_ref         text,
   qty                 numeric(10,2) NOT NULL DEFAULT 1,
@@ -97,7 +97,7 @@ CREATE INDEX IF NOT EXISTS idx_quote_lines_quote ON public.quote_lines(quote_id)
 ALTER TABLE public.quote_lines ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "dealer_own_quote_lines" ON public.quote_lines
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.quotes q WHERE q.id = quote_lines.quote_id AND q.dealer_id = auth.uid())
+    EXISTS (SELECT 1 FROM public.dealer_quotes q WHERE q.id = quote_lines.quote_id AND q.dealer_id = auth.uid())
   ) WITH CHECK (
-    EXISTS (SELECT 1 FROM public.quotes q WHERE q.id = quote_lines.quote_id AND q.dealer_id = auth.uid())
+    EXISTS (SELECT 1 FROM public.dealer_quotes q WHERE q.id = quote_lines.quote_id AND q.dealer_id = auth.uid())
   );

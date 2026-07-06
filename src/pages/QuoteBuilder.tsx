@@ -47,7 +47,7 @@ export default function QuoteBuilder() {
 
       if (id) {
         // Carica preventivo esistente
-        const { data: q } = await supabase.from('quotes' as any).select('*').eq('id', id).eq('dealer_id', user.id).single();
+        const { data: q } = await supabase.from('dealer_quotes' as any).select('*').eq('id', id).eq('dealer_id', user.id).single();
         const quote = q as any;
         if (quote) {
           setTitle(quote.title ?? 'Preventivo');
@@ -119,11 +119,11 @@ export default function QuoteBuilder() {
     };
     let quoteId = id;
     if (id) {
-      const { error } = await supabase.from('quotes' as any).update(payload).eq('id', id);
+      const { error } = await supabase.from('dealer_quotes' as any).update(payload).eq('id', id);
       if (error) { setSaving(false); toast.error(error.message); return; }
       await supabase.from('quote_lines' as any).delete().eq('quote_id', id);
     } else {
-      const { data, error } = await supabase.from('quotes' as any).insert(payload).select('id').single();
+      const { data, error } = await supabase.from('dealer_quotes' as any).insert(payload).select('id').single();
       if (error || !data) { setSaving(false); toast.error(error?.message ?? 'Errore'); return; }
       quoteId = (data as any).id;
     }

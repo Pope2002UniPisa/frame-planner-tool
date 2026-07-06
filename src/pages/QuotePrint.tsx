@@ -27,7 +27,7 @@ export default function QuotePrint() {
   useEffect(() => {
     if (!user || !id) return;
     const load = async () => {
-      const { data: q } = await supabase.from('quotes' as any).select('*').eq('id', id).eq('dealer_id', user.id).single();
+      const { data: q } = await supabase.from('dealer_quotes' as any).select('*').eq('id', id).eq('dealer_id', user.id).single();
       setQuote(q);
       const { data: ql } = await supabase.from('quote_lines' as any).select('*').eq('quote_id', id).order('sort_order');
       setLines((ql as unknown as QuoteLine[]) ?? []);
