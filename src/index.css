@@ -220,6 +220,17 @@
   main { padding-bottom: env(safe-area-inset-bottom); }
 }
 
+/* App installata (standalone): il contenuto va sotto la status bar iOS, quindi le
+   intestazioni in alto devono lasciare lo spazio della safe area (orologio/batteria).
+   In browser/desktop la media query non matcha → nessun cambiamento. */
+@media (display-mode: standalone) {
+  header {
+    padding-top: max(env(safe-area-inset-top), 0.75rem) !important;
+  }
+  /* la barra fissa in fondo (se presente) resta sopra la home bar */
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
 @media print {
   @page { margin: 15mm 10mm 20mm 10mm; }
   body {
