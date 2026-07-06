@@ -1,0 +1,58 @@
+/* Tema brand (scuro/oro) per le nuvolette del tour guidato (driver.js). */
+
+.driver-popover {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 14px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
+  max-width: 320px;
+  padding: 18px 18px 14px;
+}
+
+.driver-popover-title {
+  color: hsl(var(--foreground));
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.driver-popover-description {
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.driver-popover-progress-text {
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+}
+
+.driver-popover-close-btn {
+  color: hsl(var(--muted-foreground));
+  transition: color 0.15s;
+}
+.driver-popover-close-btn:hover {
+  color: hsl(var(--foreground));
+}
+
+.driver-popover-navigation-btns button {
+  background: hsl(var(--accent));
+  color: #fff;
+  text-shadow: none;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: filter 0.15s;
+}
+.driver-popover-navigation-btns button:hover {
+  filter: brightness(1.08);
+  background: hsl(var(--accent));
+}
+
+/* Freccia dello stesso colore della nuvoletta, per ogni lato */
+.driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: hsl(var(--card)); }
+.driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: hsl(var(--card)); }
+.driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: hsl(var(--card)); }
+.driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: hsl(var(--card)); }

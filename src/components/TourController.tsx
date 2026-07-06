@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import '@/styles/tour.css';
 import { TOURS } from '@/lib/tours';
 
 // Avvia un tour da qualsiasi punto dell'app (es. da Silvia o da un pulsante "Guida").
