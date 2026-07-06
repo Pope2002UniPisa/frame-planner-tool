@@ -49,8 +49,19 @@ REGOLE IMPORTANTI:
 - Se una richiesta è ambigua, chiedi chiarimenti prima di agire.
 - Per richieste senza azione (domande, informazioni) usa semplicemente: {"reply": "...", "action": null}
 
-STRUTTURA DEL PORTALE:
-- Dashboard: KPI, giro del giorno, calendario, lista misurazioni
+STRUTTURA DEL PORTALE (conosci tutte queste sezioni e sai spiegarle e indirizzare l'utente):
+- Dashboard (/dashboard): KPI (ordini attivi, consegne, preventivi in attesa, fatturato), giro del giorno, calendario, lista misurazioni.
+- Lead (/dashboard/lead): CRM pre-vendita. Pipeline dei contatti con stati nuovo → contattato → preventivo_inviato → in_trattativa → vinto/perso. Ha promemoria di richiamo ("da richiamare oggi") e la conversione di un lead in cliente. Fonti: showroom, telefono, passaparola, sito.
+- Nuova misurazione (/nuova-misurazione): rilievo misure e configurazione prodotto.
+- Clienti (/dashboard/clienti): anagrafica clienti finali, documenti, misurazioni collegate.
+- Mappa (/dashboard/mappa): mappa territoriale con clienti, lead, preventivi e ordini geolocalizzati, filtri per tipo e conversione per zona (comune).
+- Consegne (/dashboard/consegne) e Pagamenti (/dashboard/pagamenti).
+- Tempi (/dashboard/tempi): analytics dei tempi operativi con mediane per fase — il ROI misurato.
+- Preventivo a valle (dalla misurazione → "Preventivo dettagliato", /preventivo/nuovo): motore con ricarico, posa, trasporto, IVA split 10/22 (regola beni significativi) e detrazioni (Ecobonus/Bonus Casa) con "prezzo al netto del bonus".
+- Contabilità (/contabilita, solo per i rivenditori abilitati): back-office contabile con sottosezioni Riepilogo, Importa (carica XML FatturaPA → registra in partita doppia, gestisce anche il reverse charge intra-UE), Giornale (con export CSV), IVA (prospetto per periodo), Scadenzario, Cespiti (ammortamenti), Fatture attive (emissione XML), Bilancio (SP/CE).
+
+COSA PUOI FARE DIRETTAMENTE: creare appuntamenti, cambiare stato misurazioni, inviare notifiche (le azioni sopra). Per le altre sezioni (Lead, Preventivi, Mappa, Tempi, Contabilità) puoi SPIEGARE come funzionano e indirizzare l'utente alla pagina giusta, ma non eseguire azioni.
+
 - Contatti: Via Livornese Ovest 22/A, 56035 Casciana Terme Lari (PI) — PEC: farewellsrl@pec.cgn.it`;
 
 serve(async (req) => {
@@ -78,7 +89,7 @@ serve(async (req) => {
       try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-        const [{ data: measurements }, { data: appointments }] = await Promise.all([
+        const [{ data: measurements }, { data: appointments }, { data: leads }] = await Promise.all([
           supabase
             .from('measurements')
             .select('id, client_name, status, product_type, estimated_delivery_date, estimated_price')
@@ -92,6 +103,12 @@ serve(async (req) => {
             .gte('date', new Date().toISOString().split('T')[0])
             .order('date', { ascending: true })
             .limit(5),
+          supabase
+            .from('leads')
+            .select('id, name, status, city, phone, next_action_at, estimated_value')
+            .eq('dealer_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(10),
         ]);
 
         // Calcola i prossimi 10 giorni con giorno della settimana esplicito
@@ -122,6 +139,9 @@ ${JSON.stringify(measurements ?? [], null, 2)}
 
 Prossimi appuntamenti già in calendario:
 ${JSON.stringify(appointments ?? [], null, 2)}
+
+Lead recenti (CRM pre-vendita, ultimi 10) — next_action_at è il promemoria di richiamo:
+${JSON.stringify(leads ?? [], null, 2)}
 `;
       } catch (e) {
         console.error('Errore fetch dati utente:', e);
