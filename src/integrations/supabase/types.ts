@@ -123,6 +123,51 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_movements: {
+        Row: {
+          amount: number
+          causale: string
+          created_at: string
+          dealer_id: string
+          external_id: string | null
+          id: string
+          matched_code: string | null
+          movement_date: string
+          payment_id: string | null
+          raw: Json
+          source: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          causale?: string
+          created_at?: string
+          dealer_id: string
+          external_id?: string | null
+          id?: string
+          matched_code?: string | null
+          movement_date: string
+          payment_id?: string | null
+          raw?: Json
+          source?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          causale?: string
+          created_at?: string
+          dealer_id?: string
+          external_id?: string | null
+          id?: string
+          matched_code?: string | null
+          movement_date?: string
+          payment_id?: string | null
+          raw?: Json
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
       chart_of_accounts: {
         Row: {
           code: string
@@ -254,6 +299,7 @@ export type Database = {
           comune: string
           dealer_id: string
           denominazione: string
+          iban: string | null
           indirizzo: string
           nazione: string
           piva: string
@@ -268,6 +314,7 @@ export type Database = {
           comune?: string
           dealer_id: string
           denominazione?: string
+          iban?: string | null
           indirizzo?: string
           nazione?: string
           piva?: string
@@ -282,6 +329,7 @@ export type Database = {
           comune?: string
           dealer_id?: string
           denominazione?: string
+          iban?: string | null
           indirizzo?: string
           nazione?: string
           piva?: string
@@ -426,6 +474,7 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          codice_sdi: string | null
           created_at: string | null
           dealer_id: string
           email: string | null
@@ -436,10 +485,12 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          piva: string | null
         }
         Insert: {
           address?: string | null
           city?: string | null
+          codice_sdi?: string | null
           created_at?: string | null
           dealer_id: string
           email?: string | null
@@ -450,10 +501,12 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          piva?: string | null
         }
         Update: {
           address?: string | null
           city?: string | null
+          codice_sdi?: string | null
           created_at?: string | null
           dealer_id?: string
           email?: string | null
@@ -464,6 +517,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          piva?: string | null
         }
         Relationships: []
       }
@@ -851,6 +905,7 @@ export type Database = {
           order_total_items: number | null
           out_of_square_mm: number | null
           panel_type: string | null
+          payment_code: string | null
           payment_method: string | null
           payment_status: string | null
           photo_urls: string[] | null
@@ -911,6 +966,7 @@ export type Database = {
           order_total_items?: number | null
           out_of_square_mm?: number | null
           panel_type?: string | null
+          payment_code?: string | null
           payment_method?: string | null
           payment_status?: string | null
           photo_urls?: string[] | null
@@ -971,6 +1027,7 @@ export type Database = {
           order_total_items?: number | null
           out_of_square_mm?: number | null
           panel_type?: string | null
+          payment_code?: string | null
           payment_method?: string | null
           payment_status?: string | null
           photo_urls?: string[] | null
@@ -1657,6 +1714,7 @@ export type Database = {
       }
     }
     Functions: {
+      gen_payment_code: { Args: never; Returns: string }
       get_vat_report: {
         Args: { p_from: string; p_to: string }
         Returns: {

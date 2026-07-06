@@ -23,6 +23,8 @@ interface EndClient {
   address: string | null;
   city: string | null;
   notes: string | null;
+  piva: string | null;
+  codice_sdi: string | null;
   created_at: string;
 }
 
@@ -72,6 +74,8 @@ export default function ClientDetail() {
   const [formPhone, setFormPhone] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formCity, setFormCity] = useState('');
+  const [formPiva, setFormPiva] = useState('');
+  const [formSdi, setFormSdi] = useState('');
   const [formNotes, setFormNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -101,6 +105,8 @@ export default function ClientDetail() {
       setFormPhone(clientData.phone ?? '');
       setFormAddress(clientData.address ?? '');
       setFormCity(clientData.city ?? '');
+      setFormPiva((clientData as EndClient).piva ?? '');
+      setFormSdi((clientData as EndClient).codice_sdi ?? '');
       setFormNotes(clientData.notes ?? '');
 
       const [{ data: mData }, { data: dData }] = await Promise.all([
@@ -134,12 +140,14 @@ export default function ClientDetail() {
         phone: formPhone || null,
         address: formAddress || null,
         city: formCity || null,
+        piva: formPiva || null,
+        codice_sdi: formSdi || null,
         notes: formNotes || null,
       })
       .eq('id', id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    setClient(prev => prev ? { ...prev, name: formName, email: formEmail || null, phone: formPhone || null, address: formAddress || null, city: formCity || null, notes: formNotes || null } : prev);
+    setClient(prev => prev ? { ...prev, name: formName, email: formEmail || null, phone: formPhone || null, address: formAddress || null, city: formCity || null, piva: formPiva || null, codice_sdi: formSdi || null, notes: formNotes || null } : prev);
     toast.success('Dati salvati');
   };
 
@@ -245,6 +253,14 @@ export default function ClientDetail() {
               <div className="space-y-1.5">
                 <Label htmlFor="client-city">Città</Label>
                 <Input id="client-city" value={formCity} onChange={e => setFormCity(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="client-piva">P.IVA</Label>
+                <Input id="client-piva" value={formPiva} onChange={e => setFormPiva(e.target.value)} placeholder="es. 01234567890" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="client-sdi">Codice SDI</Label>
+                <Input id="client-sdi" value={formSdi} onChange={e => setFormSdi(e.target.value)} placeholder="es. 0000000" />
               </div>
               <div className="sm:col-span-2 space-y-1.5">
                 <Label htmlFor="client-address">Indirizzo</Label>
