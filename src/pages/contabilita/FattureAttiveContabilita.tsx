@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { formatEuro } from '@/lib/format';
 import { scritturaFatturaAttiva, verificaQuadratura } from '@/lib/accounting';
@@ -17,13 +18,19 @@ const esc = (s: string) => (s ?? '').replace(/[<>&]/g, c => ({ '<': '&lt;', '>':
 export default function FattureAttiveContabilita() {
   const { user } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
+  const [clients, setClients] = useState<{ id: string; name: string; piva?: string }[]>([]);
   const [form, setForm] = useState({ cliente: '', clientePiva: '', imponibile: '', aliquota: '22', descrizione: '' });
   const [busy, setBusy] = useState(false);
+
+  // Aliquote IVA ordinarie italiane (niente valori arbitrari tipo 17%).
+  const ALIQUOTE = ['4', '5', '10', '22'];
 
   useEffect(() => {
     if (!user) return;
     supabase.from('company_profile' as any).select('*').eq('dealer_id', user.id).maybeSingle()
       .then(({ data }) => setCompany(data as unknown as Company | null));
+    supabase.from('end_clients').select('*').eq('dealer_id', user.id).order('name')
+      .then(({ data }) => setClients(((data as any[]) ?? []).map(c => ({ id: c.id, name: c.name, piva: c.piva ?? '' }))));
   }, [user]);
 
   const imponibile = Number(form.imponibile) || 0;
@@ -79,10 +86,29 @@ export default function FattureAttiveContabilita() {
         <CardHeader><CardTitle className="font-heading text-base">Emetti fattura attiva</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1"><Label className="text-xs">Cliente</Label><Input value={form.cliente} onChange={e => setForm({ ...form, cliente: e.target.value })} /></div>
+            <div className="space-y-1">
+              <Label className="text-xs">Cliente</Label>
+              <Select value={form.cliente} onValueChange={name => {
+                const c = clients.find(x => x.name === name);
+                setForm(f => ({ ...f, cliente: name, clientePiva: c?.piva || f.clientePiva }));
+              }}>
+                <SelectTrigger><SelectValue placeholder={clients.length ? 'Scegli un cliente' : 'Nessun cliente in anagrafica'} /></SelectTrigger>
+                <SelectContent>
+                  {clients.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1"><Label className="text-xs">P.IVA cliente</Label><Input value={form.clientePiva} onChange={e => setForm({ ...form, clientePiva: e.target.value })} /></div>
             <div className="space-y-1"><Label className="text-xs">Imponibile €</Label><Input type="number" value={form.imponibile} onChange={e => setForm({ ...form, imponibile: e.target.value })} /></div>
-            <div className="space-y-1"><Label className="text-xs">Aliquota IVA %</Label><Input type="number" value={form.aliquota} onChange={e => setForm({ ...form, aliquota: e.target.value })} /></div>
+            <div className="space-y-1">
+              <Label className="text-xs">Aliquota IVA %</Label>
+              <Select value={form.aliquota} onValueChange={v => setForm(f => ({ ...f, aliquota: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ALIQUOTE.map(a => <SelectItem key={a} value={a}>{a}%</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="sm:col-span-2 space-y-1"><Label className="text-xs">Descrizione</Label><Input value={form.descrizione} onChange={e => setForm({ ...form, descrizione: e.target.value })} /></div>
           </div>
           <div className="flex items-center gap-4 text-sm">

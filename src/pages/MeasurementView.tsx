@@ -199,7 +199,7 @@ export default function MeasurementView() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card shadow-card">
         <div className="container flex h-16 items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}><ArrowLeft className="h-5 w-5" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5" /></Button>
           <h1 className="text-lg font-bold font-heading text-foreground">{pageTitle}</h1>
           <div className="ml-auto flex gap-2">
             {m.status === 'bozza' && (

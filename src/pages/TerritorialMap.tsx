@@ -31,6 +31,7 @@ interface MapEntity {
   lng: number | null;
   value: number;         // transato/valore stimato per aggregazione
   won?: boolean;         // per i lead
+  converted?: boolean;   // lead già convertito in cliente (non mostrare il marker)
 }
 
 const dot = (color: string) => L.divIcon({
@@ -59,7 +60,7 @@ export default function TerritorialMap() {
     const load = async () => {
       const [clients, leads, measurements] = await Promise.all([
         supabase.from('end_clients').select('id,name,address,city,lat,lng').eq('dealer_id', user.id),
-        supabase.from('leads' as any).select('id,name,address,city,lat,lng,status,estimated_value').eq('dealer_id', user.id),
+        supabase.from('leads' as any).select('id,name,address,city,lat,lng,status,estimated_value,converted_client_id').eq('dealer_id', user.id),
         supabase.from('measurements').select('id,client_name,client_address,status,estimated_price,lat,lng').eq('user_id', user.id),
       ]);
 
@@ -68,7 +69,7 @@ export default function TerritorialMap() {
         list.push({ id: `c-${c.id}`, type: 'cliente', title: c.name, subtitle: buildAddress(c), city: c.city, lat: c.lat, lng: c.lng, value: 0 });
       }
       for (const l of (leads.data as any[]) ?? []) {
-        list.push({ id: `l-${l.id}`, type: 'lead', title: l.name, subtitle: buildAddress(l), city: l.city, lat: l.lat, lng: l.lng, value: Number(l.estimated_value ?? 0), won: l.status === 'vinto' });
+        list.push({ id: `l-${l.id}`, type: 'lead', title: l.name, subtitle: buildAddress(l), city: l.city, lat: l.lat, lng: l.lng, value: Number(l.estimated_value ?? 0), won: l.status === 'vinto', converted: !!l.converted_client_id });
       }
       for (const m of (measurements.data as any[]) ?? []) {
         if (!isPreventivo(m.status) && !isOrdine(m.status)) continue;
@@ -132,6 +133,8 @@ export default function TerritorialMap() {
     const pts: [number, number][] = [];
     for (const e of entities) {
       if (!enabled[e.type] || e.lat == null || e.lng == null) continue;
+      // Un lead convertito è già mostrato come cliente: non disegnare il doppione lead.
+      if (e.type === 'lead' && e.converted) continue;
       pts.push([e.lat, e.lng]);
       L.marker([e.lat, e.lng], { icon: dot(TYPE_META[e.type].color) })
         .addTo(layer)
