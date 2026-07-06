@@ -224,7 +224,9 @@
    intestazioni in alto devono lasciare lo spazio della safe area (orologio/batteria).
    In browser/desktop la media query non matcha → nessun cambiamento. */
 @media (display-mode: standalone) {
-  header {
+  /* intestazioni: header semantici + top bar mobile del layout condiviso */
+  header,
+  .app-topbar {
     padding-top: max(env(safe-area-inset-top), 0.75rem) !important;
   }
   /* la barra fissa in fondo (se presente) resta sopra la home bar */
