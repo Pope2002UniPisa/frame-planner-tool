@@ -12,93 +12,808 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       appointments: {
         Row: {
-          id: string
-          user_id: string
-          date: string
-          type: string
-          title: string
-          time: string | null
-          location: string | null
-          description: string | null
           color: string | null
           created_at: string
+          date: string
+          description: string | null
+          geocoded_at: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          location: string | null
+          time: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          date: string
+          description?: string | null
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          location?: string | null
+          time?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          date?: string
+          description?: string | null
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          location?: string | null
+          time?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      assets: {
+        Row: {
+          anno_acquisto: number
+          categoria: string | null
+          created_at: string
+          dealer_id: string
+          descrizione: string
+          id: string
+          perc_amm: number
+          valore: number
+        }
+        Insert: {
+          anno_acquisto: number
+          categoria?: string | null
+          created_at?: string
+          dealer_id: string
+          descrizione: string
+          id?: string
+          perc_amm?: number
+          valore: number
+        }
+        Update: {
+          anno_acquisto?: number
+          categoria?: string | null
+          created_at?: string
+          dealer_id?: string
+          descrizione?: string
+          id?: string
+          perc_amm?: number
+          valore?: number
+        }
+        Relationships: []
+      }
+      chart_of_accounts: {
+        Row: {
+          code: string
+          description: string
+          section: string | null
+          type: string
+        }
+        Insert: {
+          code: string
+          description: string
+          section?: string | null
+          type: string
+        }
+        Update: {
+          code?: string
+          description?: string
+          section?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      client_documents: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          dealer_id: string
+          file_size: number | null
+          file_url: string
+          id: string
+          name: string
+          type: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          dealer_id: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          name: string
+          type?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          dealer_id?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          name?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "end_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coding_keywords: {
+        Row: {
+          account_code: string
+          id: string
+          keywords: string[]
+          priority: number
+        }
+        Insert: {
+          account_code: string
+          id?: string
+          keywords: string[]
+          priority?: number
+        }
+        Update: {
+          account_code?: string
+          id?: string
+          keywords?: string[]
+          priority?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coding_keywords_account_code_fkey"
+            columns: ["account_code"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      coding_rules: {
+        Row: {
+          account_code: string
+          created_at: string
+          dealer_id: string
+          id: string
+          piva: string
+        }
+        Insert: {
+          account_code: string
+          created_at?: string
+          dealer_id: string
+          id?: string
+          piva: string
+        }
+        Update: {
+          account_code?: string
+          created_at?: string
+          dealer_id?: string
+          id?: string
+          piva?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coding_rules_account_code_fkey"
+            columns: ["account_code"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      company_profile: {
+        Row: {
+          cap: string
+          codice_fiscale: string
+          codice_sdi: string
+          comune: string
+          dealer_id: string
+          denominazione: string
+          indirizzo: string
+          nazione: string
+          piva: string
+          provincia: string
+          regime_fiscale: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          date: string
-          type?: string
-          title: string
-          time?: string | null
-          location?: string | null
-          description?: string | null
-          color?: string | null
-          created_at?: string
+          cap?: string
+          codice_fiscale?: string
+          codice_sdi?: string
+          comune?: string
+          dealer_id: string
+          denominazione?: string
+          indirizzo?: string
+          nazione?: string
+          piva?: string
+          provincia?: string
+          regime_fiscale?: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          date?: string
-          type?: string
-          title?: string
-          time?: string | null
-          location?: string | null
-          description?: string | null
-          color?: string | null
-          created_at?: string
+          cap?: string
+          codice_fiscale?: string
+          codice_sdi?: string
+          comune?: string
+          dealer_id?: string
+          denominazione?: string
+          indirizzo?: string
+          nazione?: string
+          piva?: string
+          provincia?: string
+          regime_fiscale?: string
           updated_at?: string
         }
         Relationships: []
       }
-      notifications: {
+      dealer_quotes: {
         Row: {
-          id: string
-          user_id: string
-          type: string
-          title: string
-          body: string | null
-          read: boolean
-          metadata: Json | null
+          client_id: string | null
           created_at: string
+          dealer_id: string
+          detrazione_amount: number
+          detrazione_id: string | null
+          id: string
+          lead_id: string | null
+          markup_amount: number
+          measurement_id: string | null
+          notes: string | null
+          posa_amount: number
+          status: string
+          subtotal_net: number
+          taxable_base: number
+          title: string
+          total_gross: number
+          total_net_of_bonus: number
+          trasporto_amount: number
+          updated_at: string
+          vat_10_base: number
+          vat_22_base: number
+          vat_amount: number
         }
         Insert: {
-          id?: string
-          user_id: string
-          type?: string
-          title: string
-          body?: string | null
-          read?: boolean
-          metadata?: Json | null
+          client_id?: string | null
           created_at?: string
+          dealer_id: string
+          detrazione_amount?: number
+          detrazione_id?: string | null
+          id?: string
+          lead_id?: string | null
+          markup_amount?: number
+          measurement_id?: string | null
+          notes?: string | null
+          posa_amount?: number
+          status?: string
+          subtotal_net?: number
+          taxable_base?: number
+          title?: string
+          total_gross?: number
+          total_net_of_bonus?: number
+          trasporto_amount?: number
+          updated_at?: string
+          vat_10_base?: number
+          vat_22_base?: number
+          vat_amount?: number
         }
         Update: {
-          id?: string
-          user_id?: string
-          type?: string
-          title?: string
-          body?: string | null
-          read?: boolean
-          metadata?: Json | null
+          client_id?: string | null
           created_at?: string
+          dealer_id?: string
+          detrazione_amount?: number
+          detrazione_id?: string | null
+          id?: string
+          lead_id?: string | null
+          markup_amount?: number
+          measurement_id?: string | null
+          notes?: string | null
+          posa_amount?: number
+          status?: string
+          subtotal_net?: number
+          taxable_base?: number
+          title?: string
+          total_gross?: number
+          total_net_of_bonus?: number
+          trasporto_amount?: number
+          updated_at?: string
+          vat_10_base?: number
+          vat_22_base?: number
+          vat_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dealer_quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "end_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_quotes_detrazione_id_fkey"
+            columns: ["detrazione_id"]
+            isOneToOne: false
+            referencedRelation: "detrazioni"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_quotes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_quotes_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "measurements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detrazioni: {
+        Row: {
+          active: boolean
+          cap: number | null
+          id: string
+          name: string
+          note: string | null
+          percentage: number
+        }
+        Insert: {
+          active?: boolean
+          cap?: number | null
+          id?: string
+          name: string
+          note?: string | null
+          percentage: number
+        }
+        Update: {
+          active?: boolean
+          cap?: number | null
+          id?: string
+          name?: string
+          note?: string | null
+          percentage?: number
         }
         Relationships: []
+      }
+      end_clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string | null
+          dealer_id: string
+          email: string | null
+          geocoded_at: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          notes: string | null
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          dealer_id: string
+          email?: string | null
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          dealer_id?: string
+          email?: string | null
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      files: {
+        Row: {
+          created_at: string | null
+          file_url: string | null
+          id: string
+          order_id: string | null
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          order_id?: string | null
+          type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          order_id?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_counters: {
+        Row: {
+          anno: number
+          dealer_id: string
+          last_number: number
+        }
+        Insert: {
+          anno: number
+          dealer_id: string
+          last_number?: number
+        }
+        Update: {
+          anno?: number
+          dealer_id?: string
+          last_number?: number
+        }
+        Relationships: []
+      }
+      invoices_raw: {
+        Row: {
+          aliquota: number
+          chiave: string
+          cliente: string
+          created_at: string
+          data: string | null
+          dealer_id: string
+          descrizione: string
+          entry_id: string | null
+          file_url: string | null
+          fornitore: string
+          id: string
+          imponibile: number
+          imposta: number
+          intra_ue: boolean
+          natura: string
+          numero: string
+          paese_fornitore: string
+          piva_fornitore: string
+          proposed_account: string | null
+          status: string
+          tipo_doc: string
+          totale: number
+        }
+        Insert: {
+          aliquota?: number
+          chiave: string
+          cliente?: string
+          created_at?: string
+          data?: string | null
+          dealer_id: string
+          descrizione?: string
+          entry_id?: string | null
+          file_url?: string | null
+          fornitore?: string
+          id?: string
+          imponibile?: number
+          imposta?: number
+          intra_ue?: boolean
+          natura?: string
+          numero?: string
+          paese_fornitore?: string
+          piva_fornitore?: string
+          proposed_account?: string | null
+          status?: string
+          tipo_doc?: string
+          totale?: number
+        }
+        Update: {
+          aliquota?: number
+          chiave?: string
+          cliente?: string
+          created_at?: string
+          data?: string | null
+          dealer_id?: string
+          descrizione?: string
+          entry_id?: string | null
+          file_url?: string | null
+          fornitore?: string
+          id?: string
+          imponibile?: number
+          imposta?: number
+          intra_ue?: boolean
+          natura?: string
+          numero?: string
+          paese_fornitore?: string
+          piva_fornitore?: string
+          proposed_account?: string | null
+          status?: string
+          tipo_doc?: string
+          totale?: number
+        }
+        Relationships: []
+      }
+      journal_entries: {
+        Row: {
+          chiave: string
+          controparte: string
+          created_at: string
+          data: string
+          dealer_id: string
+          id: string
+          intra_ue: boolean
+          mov_tipo: string | null
+          note: string | null
+          numero: string
+          source_xml_url: string | null
+          stato: string
+          tipo: string
+        }
+        Insert: {
+          chiave: string
+          controparte?: string
+          created_at?: string
+          data: string
+          dealer_id: string
+          id?: string
+          intra_ue?: boolean
+          mov_tipo?: string | null
+          note?: string | null
+          numero?: string
+          source_xml_url?: string | null
+          stato?: string
+          tipo?: string
+        }
+        Update: {
+          chiave?: string
+          controparte?: string
+          created_at?: string
+          data?: string
+          dealer_id?: string
+          id?: string
+          intra_ue?: boolean
+          mov_tipo?: string | null
+          note?: string | null
+          numero?: string
+          source_xml_url?: string | null
+          stato?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      journal_lines: {
+        Row: {
+          account_code: string
+          avere: number
+          dare: number
+          descr: string
+          entry_id: string
+          id: string
+          sort_order: number
+        }
+        Insert: {
+          account_code: string
+          avere?: number
+          dare?: number
+          descr?: string
+          entry_id: string
+          id?: string
+          sort_order?: number
+        }
+        Update: {
+          account_code?: string
+          avere?: number
+          dare?: number
+          descr?: string
+          entry_id?: string
+          id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_lines_account_code_fkey"
+            columns: ["account_code"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "journal_lines_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_activities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dealer_id: string
+          id: string
+          lead_id: string
+          note: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dealer_id: string
+          id?: string
+          lead_id: string
+          note?: string | null
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dealer_id?: string
+          id?: string
+          lead_id?: string
+          note?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          address: string | null
+          city: string | null
+          converted_client_id: string | null
+          converted_measurement_id: string | null
+          created_at: string
+          dealer_id: string
+          email: string | null
+          estimated_value: number | null
+          geocoded_at: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          next_action_at: string | null
+          notes: string | null
+          phone: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          converted_client_id?: string | null
+          converted_measurement_id?: string | null
+          created_at?: string
+          dealer_id: string
+          email?: string | null
+          estimated_value?: number | null
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          next_action_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          converted_client_id?: string | null
+          converted_measurement_id?: string | null
+          created_at?: string
+          dealer_id?: string
+          email?: string | null
+          estimated_value?: number | null
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          next_action_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_converted_client_id_fkey"
+            columns: ["converted_client_id"]
+            isOneToOne: false
+            referencedRelation: "end_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_converted_measurement_id_fkey"
+            columns: ["converted_measurement_id"]
+            isOneToOne: false
+            referencedRelation: "measurements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       measurements: {
         Row: {
           accessories_config: Json | null
           amount_paid: number | null
-          client_address: string
-          client_email: string
-          client_name: string
+          client_address: string | null
+          client_email: string | null
+          client_name: string | null
           color_external: string | null
           color_internal: string | null
-          created_at: string
+          created_at: string | null
           delivery_notes: string | null
           depth_mm: number | null
           dispute_notes: string | null
@@ -106,6 +821,7 @@ export type Database = {
           estimated_price: number | null
           external_space_mm: number | null
           frame_type: string | null
+          geocoded_at: string | null
           glass_type: string | null
           handle_type: string | null
           has_box: boolean | null
@@ -114,14 +830,17 @@ export type Database = {
           has_mosquito_net: boolean | null
           has_motorization: boolean | null
           has_shutter: boolean | null
-          height_mm: number
+          height: number | null
+          height_mm: number | null
           id: string
           installation_type: string | null
           internal_space_mm: number | null
           is_level: boolean | null
           is_plumb: boolean | null
           is_square: boolean | null
+          lat: number | null
           laying_type: string | null
+          lng: number | null
           material: string | null
           modification_notes: string | null
           notes: string | null
@@ -135,23 +854,26 @@ export type Database = {
           payment_method: string | null
           payment_status: string | null
           photo_urls: string[] | null
-          product_type: string
+          product_id: string | null
+          product_type: string | null
           remove_old: boolean | null
-          status: string
-          survey_type: string
-          updated_at: string
-          user_id: string
-          width_mm: number
+          status: string | null
+          supplier_id: string | null
+          survey_type: string | null
+          updated_at: string | null
+          user_id: string | null
+          width: number | null
+          width_mm: number | null
         }
         Insert: {
           accessories_config?: Json | null
           amount_paid?: number | null
-          client_address?: string
-          client_email?: string
-          client_name?: string
+          client_address?: string | null
+          client_email?: string | null
+          client_name?: string | null
           color_external?: string | null
           color_internal?: string | null
-          created_at?: string
+          created_at?: string | null
           delivery_notes?: string | null
           depth_mm?: number | null
           dispute_notes?: string | null
@@ -159,6 +881,7 @@ export type Database = {
           estimated_price?: number | null
           external_space_mm?: number | null
           frame_type?: string | null
+          geocoded_at?: string | null
           glass_type?: string | null
           handle_type?: string | null
           has_box?: boolean | null
@@ -167,14 +890,17 @@ export type Database = {
           has_mosquito_net?: boolean | null
           has_motorization?: boolean | null
           has_shutter?: boolean | null
-          height_mm: number
+          height?: number | null
+          height_mm?: number | null
           id?: string
           installation_type?: string | null
           internal_space_mm?: number | null
           is_level?: boolean | null
           is_plumb?: boolean | null
           is_square?: boolean | null
+          lat?: number | null
           laying_type?: string | null
+          lng?: number | null
           material?: string | null
           modification_notes?: string | null
           notes?: string | null
@@ -188,23 +914,26 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           photo_urls?: string[] | null
-          product_type: string
+          product_id?: string | null
+          product_type?: string | null
           remove_old?: boolean | null
-          status?: string
-          survey_type: string
-          updated_at?: string
-          user_id: string
-          width_mm: number
+          status?: string | null
+          supplier_id?: string | null
+          survey_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          width?: number | null
+          width_mm?: number | null
         }
         Update: {
           accessories_config?: Json | null
           amount_paid?: number | null
-          client_address?: string
-          client_email?: string
-          client_name?: string
+          client_address?: string | null
+          client_email?: string | null
+          client_name?: string | null
           color_external?: string | null
           color_internal?: string | null
-          created_at?: string
+          created_at?: string | null
           delivery_notes?: string | null
           depth_mm?: number | null
           dispute_notes?: string | null
@@ -212,6 +941,7 @@ export type Database = {
           estimated_price?: number | null
           external_space_mm?: number | null
           frame_type?: string | null
+          geocoded_at?: string | null
           glass_type?: string | null
           handle_type?: string | null
           has_box?: boolean | null
@@ -220,14 +950,17 @@ export type Database = {
           has_mosquito_net?: boolean | null
           has_motorization?: boolean | null
           has_shutter?: boolean | null
-          height_mm?: number
+          height?: number | null
+          height_mm?: number | null
           id?: string
           installation_type?: string | null
           internal_space_mm?: number | null
           is_level?: boolean | null
           is_plumb?: boolean | null
           is_square?: boolean | null
+          lat?: number | null
           laying_type?: string | null
+          lng?: number | null
           material?: string | null
           modification_notes?: string | null
           notes?: string | null
@@ -241,101 +974,171 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           photo_urls?: string[] | null
-          product_type?: string
+          product_id?: string | null
+          product_type?: string | null
           remove_old?: boolean | null
-          status?: string
-          survey_type?: string
-          updated_at?: string
-          user_id?: string
-          width_mm?: number
-        }
-        Relationships: []
-      }
-      news: {
-        Row: {
-          created_at: string
-          id: string
-          image_url: string | null
-          link: string | null
-          published: boolean
-          social_link: string | null
-          summary: string
-          tag: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          link?: string | null
-          published?: boolean
-          social_link?: string | null
-          summary?: string
-          tag?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          link?: string | null
-          published?: boolean
-          social_link?: string | null
-          summary?: string
-          tag?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      payments: {
-        Row: {
-          amount: number
-          created_at: string
-          id: string
-          invoice_number: string | null
-          measurement_id: string
-          notes: string | null
-          payment_date: string
-          payment_method: string
-          reference_number: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount?: number
-          created_at?: string
-          id?: string
-          invoice_number?: string | null
-          measurement_id: string
-          notes?: string | null
-          payment_date?: string
-          payment_method?: string
-          reference_number?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          id?: string
-          invoice_number?: string | null
-          measurement_id?: string
-          notes?: string | null
-          payment_date?: string
-          payment_method?: string
-          reference_number?: string | null
-          updated_at?: string
-          user_id?: string
+          status?: string | null
+          supplier_id?: string | null
+          survey_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          width?: number | null
+          width_mm?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "payments_measurement_id_fkey"
-            columns: ["measurement_id"]
+            foreignKeyName: "measurements_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "measurements"
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "measurements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_position: string | null
+          image_url: string | null
+          link: string | null
+          published: boolean | null
+          social_link: string | null
+          summary: string | null
+          tag: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_position?: string | null
+          image_url?: string | null
+          link?: string | null
+          published?: boolean | null
+          social_link?: string | null
+          summary?: string | null
+          tag?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_position?: string | null
+          image_url?: string | null
+          link?: string | null
+          published?: boolean | null
+          social_link?: string | null
+          summary?: string | null
+          tag?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      operation_events: {
+        Row: {
+          dealer_id: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          meta: Json
+          occurred_at: string
+          operation: string
+        }
+        Insert: {
+          dealer_id: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          meta?: Json
+          occurred_at?: string
+          operation: string
+        }
+        Update: {
+          dealer_id?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          meta?: Json
+          occurred_at?: string
+          operation?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          quote_id: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          quote_id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          quote_id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -343,7 +1146,7 @@ export type Database = {
       portfolio_images: {
         Row: {
           created_at: string
-          description: string
+          description: string | null
           id: string
           image_url: string
           sort_order: number
@@ -351,15 +1154,15 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          description?: string
+          description?: string | null
           id?: string
           image_url: string
           sort_order?: number
-          title?: string
+          title: string
         }
         Update: {
           created_at?: string
-          description?: string
+          description?: string | null
           id?: string
           image_url?: string
           sort_order?: number
@@ -367,123 +1170,505 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      price_catalog: {
         Row: {
-          approved: boolean
-          client_code: string
-          company_name: string
-          created_at: string
-          email: string
+          base_price: number
+          created_at: string | null
+          door_model_id: string
+          height_max_mm: number
+          height_min_mm: number
           id: string
-          logo_url: string | null
-          phone: string
-          supplier_logos: Json | null
-          updated_at: string
-          user_id: string
+          width_max_mm: number
+          width_min_mm: number
         }
         Insert: {
-          approved?: boolean
-          client_code?: string
-          company_name?: string
-          created_at?: string
-          email?: string
+          base_price: number
+          created_at?: string | null
+          door_model_id: string
+          height_max_mm: number
+          height_min_mm: number
           id?: string
-          logo_url?: string | null
-          phone?: string
-          supplier_logos?: Json | null
-          updated_at?: string
-          user_id: string
+          width_max_mm: number
+          width_min_mm: number
         }
         Update: {
-          approved?: boolean
-          client_code?: string
-          company_name?: string
-          created_at?: string
-          email?: string
+          base_price?: number
+          created_at?: string | null
+          door_model_id?: string
+          height_max_mm?: number
+          height_min_mm?: number
           id?: string
-          logo_url?: string | null
-          phone?: string
-          supplier_logos?: Json | null
-          updated_at?: string
-          user_id?: string
+          width_max_mm?: number
+          width_min_mm?: number
         }
         Relationships: []
       }
-      sales_objectives: {
+      price_modifiers: {
         Row: {
-          brand: string | null
-          created_at: string
+          adjustment_type: string
+          adjustment_value: number
+          door_model_id: string | null
           id: string
-          month: number | null
-          period: string
-          product_type: string | null
-          target_amount: number | null
-          target_count: number | null
-          updated_at: string
-          user_id: string
-          year: number
+          label: string | null
+          modifier_id: string
+          modifier_type: string
         }
         Insert: {
-          brand?: string | null
-          created_at?: string
+          adjustment_type: string
+          adjustment_value: number
+          door_model_id?: string | null
           id?: string
-          month?: number | null
-          period?: string
-          product_type?: string | null
-          target_amount?: number | null
-          target_count?: number | null
-          updated_at?: string
-          user_id: string
-          year?: number
+          label?: string | null
+          modifier_id: string
+          modifier_type: string
         }
         Update: {
-          brand?: string | null
+          adjustment_type?: string
+          adjustment_value?: number
+          door_model_id?: string | null
+          id?: string
+          label?: string | null
+          modifier_id?: string
+          modifier_type?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          accounting_enabled: boolean
+          approved: boolean
+          client_code: string | null
+          company_name: string | null
+          created_at: string | null
+          dark_mode: boolean | null
+          email: string | null
+          full_name: string | null
+          id: string
+          logo_url: string | null
+          org_contacts: Json | null
+          phone: string | null
+          supplier_logos: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          accounting_enabled?: boolean
+          approved?: boolean
+          client_code?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          dark_mode?: boolean | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          logo_url?: string | null
+          org_contacts?: Json | null
+          phone?: string | null
+          supplier_logos?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          accounting_enabled?: boolean
+          approved?: boolean
+          client_code?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          dark_mode?: boolean | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          logo_url?: string | null
+          org_contacts?: Json | null
+          phone?: string | null
+          supplier_logos?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      quote_items: {
+        Row: {
+          id: string
+          measurement_id: string | null
+          price: number | null
+          quote_id: string | null
+        }
+        Insert: {
+          id?: string
+          measurement_id?: string | null
+          price?: number | null
+          quote_id?: string | null
+        }
+        Update: {
+          id?: string
+          measurement_id?: string | null
+          price?: number | null
+          quote_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "measurements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_lines: {
+        Row: {
+          description: string
+          id: string
+          is_bene_significativo: boolean
+          line_total: number
+          markup: number
+          product_ref: string | null
+          qty: number
+          quote_id: string
+          sort_order: number
+          unit_net_price: number
+          vat_rate: number
+        }
+        Insert: {
+          description?: string
+          id?: string
+          is_bene_significativo?: boolean
+          line_total?: number
+          markup?: number
+          product_ref?: string | null
+          qty?: number
+          quote_id: string
+          sort_order?: number
+          unit_net_price?: number
+          vat_rate?: number
+        }
+        Update: {
+          description?: string
+          id?: string
+          is_bene_significativo?: boolean
+          line_total?: number
+          markup?: number
+          product_ref?: string | null
+          qty?: number
+          quote_id?: string
+          sort_order?: number
+          unit_net_price?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_lines_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "dealer_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          created_at: string | null
+          id: string
+          status: string | null
+          total: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          total?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          total?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signatures: {
+        Row: {
+          id: string
+          order_id: string | null
+          signature_url: string | null
+          signed_at: string | null
+        }
+        Insert: {
+          id?: string
+          order_id?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
+        }
+        Update: {
+          id?: string
+          order_id?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signatures_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          measurement_id: string
+          new_status: string
+          note: string | null
+          old_status: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          measurement_id: string
+          new_status: string
+          note?: string | null
+          old_status?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          measurement_id?: string
+          new_status?: string
+          note?: string | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_history_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "measurements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_catalogs: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          pdf_url: string | null
+          sort_order: number
+          supplier_id: string
+        }
+        Insert: {
           created_at?: string
           id?: string
-          month?: number | null
-          period?: string
-          product_type?: string | null
-          target_amount?: number | null
-          target_count?: number | null
-          updated_at?: string
-          user_id?: string
-          year?: number
+          name: string
+          pdf_url?: string | null
+          sort_order?: number
+          supplier_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          pdf_url?: string | null
+          sort_order?: number
+          supplier_id?: string
         }
         Relationships: []
       }
       user_roles: {
         Row: {
+          created_at: string
           id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Insert: {
+          created_at?: string
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role?: string
           user_id: string
         }
         Update: {
+          created_at?: string
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          phone: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          phone?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      vat_rates: {
+        Row: {
+          active: boolean
+          id: string
+          is_default: boolean
+          label: string
+          rate: number
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          is_default?: boolean
+          label: string
+          rate: number
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          is_default?: boolean
+          label?: string
+          rate?: number
         }
         Relationships: []
       }
     }
     Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
+      v_account_balances: {
+        Row: {
+          account_code: string | null
+          dealer_id: string | null
+          description: string | null
+          saldo: number | null
+          section: string | null
+          tot_avere: number | null
+          tot_dare: number | null
+          type: string | null
         }
-        Returns: boolean
+        Relationships: [
+          {
+            foreignKeyName: "journal_lines_account_code_fkey"
+            columns: ["account_code"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      v_status_durations: {
+        Row: {
+          changed_at: string | null
+          dealer_id: string | null
+          duration_seconds: number | null
+          from_status: string | null
+          measurement_id: string | null
+          prev_changed_at: string | null
+          to_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "measurements_user_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "status_history_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "measurements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_status_median_durations: {
+        Row: {
+          avg_seconds: number | null
+          dealer_id: string | null
+          from_status: string | null
+          median_seconds: number | null
+          to_status: string | null
+          transitions: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "measurements_user_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
+    Functions: {
+      get_vat_report: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          iva_credito: number
+          iva_debito: number
+          saldo: number
+        }[]
+      }
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+    }
     Enums: {
-      app_role: "admin" | "dealer" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -609,9 +1794,10 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
-    Enums: {
-      app_role: ["admin", "dealer", "user"],
-    },
+    Enums: {},
   },
 } as const
