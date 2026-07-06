@@ -50,13 +50,13 @@ export default function OrdiniContabilita() {
     setBusy(e.id);
     try {
       const patch: any = { stato: 'registrata' };
-      // La fattura attiva prende il progressivo dell'anno alla conferma (non da bozza).
+      // La fattura attiva prende il progressivo dell'anno alla conferma (non da bozza),
+      // in modo atomico (niente numeri duplicati/saltati).
       if (e.tipo === 'attiva') {
         const anno = new Date(e.data).getFullYear();
-        const { data: c } = await supabase.from('invoice_counters' as any).select('last_number').eq('dealer_id', user.id).eq('anno', anno).maybeSingle();
-        const numero = ((c as any)?.last_number ?? 0) + 1;
+        const { data: numero, error: numErr } = await supabase.rpc('next_invoice_number' as any, { p_anno: anno });
+        if (numErr || numero == null) throw numErr ?? new Error('Numerazione non riuscita');
         patch.numero = String(numero);
-        await supabase.from('invoice_counters' as any).upsert({ dealer_id: user.id, anno, last_number: numero }, { onConflict: 'dealer_id,anno' });
       }
       const { error } = await supabase.from('journal_entries' as any).update(patch).eq('id', e.id);
       if (error) throw error;

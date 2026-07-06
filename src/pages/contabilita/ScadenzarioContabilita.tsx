@@ -24,7 +24,7 @@ export default function ScadenzarioContabilita() {
     if (!user) return;
     supabase.from('journal_entries' as any)
       .select('id,data,controparte,numero,tipo,journal_lines(account_code,dare,avere)')
-      .eq('dealer_id', user.id).in('tipo', ['passiva', 'attiva']).order('data', { ascending: true })
+      .eq('dealer_id', user.id).eq('stato', 'registrata').in('tipo', ['passiva', 'attiva']).order('data', { ascending: true })
       .then(({ data }) => setEntries((data as unknown as Entry[]) ?? []));
   }, [user]);
 

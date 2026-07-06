@@ -1818,6 +1818,7 @@ export type Database = {
         }[]
       }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      next_invoice_number: { Args: { p_anno: number }; Returns: number }
     }
     Enums: {
       [_ in never]: never

@@ -44,9 +44,9 @@ export default function FattureAttiveContabilita() {
     setBusy(true);
     const anno = new Date().getFullYear();
 
-    // Progressivo per anno (read-modify-write; single dealer)
-    const { data: counter } = await supabase.from('invoice_counters' as any).select('last_number').eq('dealer_id', user.id).eq('anno', anno).maybeSingle();
-    const numero = ((counter as any)?.last_number ?? 0) + 1;
+    // Progressivo per anno — atomico (INSERT..ON CONFLICT DO UPDATE RETURNING)
+    const { data: numero, error: numErr } = await supabase.rpc('next_invoice_number' as any, { p_anno: anno });
+    if (numErr || numero == null) { setBusy(false); toast.error(numErr?.message ?? 'Numerazione non riuscita'); return; }
     const data = new Date().toISOString().slice(0, 10);
 
     const lines = scritturaFatturaAttiva(imponibile, iva);
@@ -59,8 +59,6 @@ export default function FattureAttiveContabilita() {
     }).select('id').single();
     if (error || !entry) { setBusy(false); toast.error(error?.message ?? 'Errore'); return; }
     await supabase.from('journal_lines' as any).insert(lines.map((l, i) => ({ entry_id: (entry as any).id, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })));
-
-    await supabase.from('invoice_counters' as any).upsert({ dealer_id: user.id, anno, last_number: numero }, { onConflict: 'dealer_id,anno' });
 
     // XML FatturaPA (bozza)
     const xml = buildXml(company, form, { numero, data, imponibile, iva, totale });
