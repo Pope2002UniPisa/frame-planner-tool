@@ -20,7 +20,8 @@ interface ApptMarker {
 }
 
 async function nominatimSearch(q: string): Promise<[number, number] | null> {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=it&countrycodes=it`;
+  const query = /italia|italy/i.test(q) ? q : `${q}, Italia`;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=it&countrycodes=it`;
   const res = await fetch(url, { headers: { 'User-Agent': 'PratelliRappresentanze/1.0' } });
   const data = await res.json();
   return data?.[0] ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;

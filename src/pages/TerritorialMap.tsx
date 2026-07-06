@@ -6,7 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { RefreshCw } from 'lucide-react';
 import { formatEuro } from '@/lib/format';
 import { geocodeAddress, buildAddress } from '@/lib/geocode';
 
@@ -49,6 +51,7 @@ export default function TerritorialMap() {
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState<Record<EntityType, boolean>>({ cliente: true, lead: true, preventivo: true, ordine: true });
   const [geocoding, setGeocoding] = useState(0);
+  const [recalc, setRecalc] = useState(0);
 
   // ── Carica clienti, lead, misurazioni ──
   useEffect(() => {
@@ -79,17 +82,20 @@ export default function TerritorialMap() {
     load();
   }, [user]);
 
-  // ── Backfill coordinate mancanti (throttled, persistite) ──
+  // ── Geocoding (throttled, persistito). Normalmente solo i mancanti; con
+  //    "Ricalcola" (recalc>0) rifà TUTTI gli indirizzi anche se già geocodati. ──
   useEffect(() => {
     if (loading || !user) return;
-    const missing = entities.filter(e => (e.lat == null || e.lng == null) && e.subtitle);
-    if (missing.length === 0) return;
+    const target = recalc > 0
+      ? entities.filter(e => e.subtitle)
+      : entities.filter(e => (e.lat == null || e.lng == null) && e.subtitle);
+    if (target.length === 0) return;
     let cancelled = false;
     (async () => {
-      for (const e of missing) {
+      for (const e of target) {
         if (cancelled) break;
         setGeocoding(g => g + 1);
-        const coords = await geocodeAddress(e.subtitle);
+        const coords = await geocodeAddress(e.subtitle, e.city);
         if (coords && !cancelled) {
           const [lat, lng] = coords;
           const [prefix, realId] = e.id.split(/-(.+)/);
@@ -103,7 +109,7 @@ export default function TerritorialMap() {
     })();
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
+  }, [loading, recalc]);
 
   // ── Init mappa (una volta) ──
   useEffect(() => {
@@ -167,6 +173,9 @@ export default function TerritorialMap() {
                 {TYPE_META[t].label}
               </label>
             ))}
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRecalc(n => n + 1)} disabled={geocoding > 0}>
+              <RefreshCw className={`h-4 w-4 ${geocoding > 0 ? 'animate-spin' : ''}`} /> Ricalcola posizioni
+            </Button>
           </div>
         </div>
 
