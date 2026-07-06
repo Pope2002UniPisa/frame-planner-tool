@@ -44,7 +44,7 @@ export default function OperationsAnalytics() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-tour="tempi-kpi">
           {kpis.map(k => (
             <Card key={k.label}>
               <CardContent className="p-4">
@@ -58,7 +58,7 @@ export default function OperationsAnalytics() {
           ))}
         </div>
 
-        <Card>
+        <Card data-tour="tempi-table">
           <CardHeader><CardTitle className="font-heading text-base">Dettaglio per transizione</CardTitle></CardHeader>
           <CardContent>
             {isLoading ? (

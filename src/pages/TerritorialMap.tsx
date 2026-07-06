@@ -165,7 +165,7 @@ export default function TerritorialMap() {
             <h1 className="text-xl font-bold font-heading text-foreground">Mappa territoriale</h1>
             <p className="text-sm text-muted-foreground">Clienti, lead e ordini geolocalizzati — conversione per zona.</p>
           </div>
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-4 flex-wrap" data-tour="map-controls">
             {(Object.keys(TYPE_META) as EntityType[]).map(t => (
               <label key={t} className="flex items-center gap-1.5 text-sm cursor-pointer">
                 <Checkbox checked={enabled[t]} onCheckedChange={v => setEnabled(prev => ({ ...prev, [t]: !!v }))} />
@@ -181,7 +181,7 @@ export default function TerritorialMap() {
 
         <Card>
           <CardContent className="p-0">
-            <div className="relative">
+            <div className="relative" data-tour="map-canvas">
               <div ref={containerRef} style={{ height: 480 }} className="w-full rounded-lg overflow-hidden" />
               {geocoding > 0 && (
                 <div className="absolute bottom-2 left-2 z-[500] rounded bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
@@ -193,7 +193,7 @@ export default function TerritorialMap() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="map-zones">
           <CardHeader><CardTitle className="font-heading text-base">Conversione per zona</CardTitle></CardHeader>
           <CardContent>
             {zones.length === 0 ? (

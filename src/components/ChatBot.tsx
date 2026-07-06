@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/hooks/useDashboardQueries';
 import { startTour } from '@/components/TourController';
+import { MicWaveform } from '@/components/MicWaveform';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -113,6 +114,19 @@ export function ChatBot() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
+  // Auto-avvio guida: se Silvia propone un tour, parte da solo (nessun click richiesto).
+  const autoTourRan = useRef(-1);
+  useEffect(() => {
+    const idx = messages.length - 1;
+    const last = messages[idx];
+    if (last?.role === 'assistant' && last.action?.type === 'start_tour' && autoTourRan.current !== idx) {
+      autoTourRan.current = idx;
+      setOpen(false);
+      startTour(last.action.data?.tour ?? '');
+      setMessages(prev => prev.map((m, j) => j === idx ? { ...m, actionDone: true } : m));
+    }
+  }, [messages]);
+
   // Cleanup recognition al chiudere
   useEffect(() => {
     if (!open) {
@@ -150,7 +164,7 @@ export function ChatBot() {
 
     const recognition = new SR();
     recognition.lang = 'it-IT';
-    recognition.continuous = false;
+    recognition.continuous = true;   // non si ferma alle pause: stop solo con click sul microfono
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
@@ -304,12 +318,10 @@ export function ChatBot() {
   // ── Gestione click microfono ─────────────────────────────────
   const handleMicClick = () => {
     if (voiceState === 'listening') {
-      // Annulla
-      recognitionRef.current?.abort();
+      // Ferma e invia (non annulla): stop() finalizza e onend/ onstop inviano il testo.
+      recognitionRef.current?.stop();
       mediaRecRef.current?.stop();
       if (timerRef.current) clearInterval(timerRef.current);
-      setVoiceState('idle');
-      setInterimText('');
       return;
     }
     if (voiceState !== 'idle') return;
@@ -412,7 +424,7 @@ export function ChatBot() {
             </div>
             <div>
               <p className="text-sm font-semibold font-heading">Silvia</p>
-              <p className="text-[10px] opacity-60">Assistente AI · accede ai tuoi dati reali</p>
+              <p className="text-[10px] opacity-60">Assistente AI</p>
             </div>
             {/* Indicatore ascolto nell'header */}
             {voiceState === 'listening' && (
@@ -491,11 +503,11 @@ export function ChatBot() {
                 <button
                   type="button"
                   onClick={handleMicClick}
-                  title={voiceState === 'listening' ? 'Annulla' : 'Parla con Silvia'}
+                  title={voiceState === 'listening' ? 'Ferma e invia' : 'Parla con Silvia'}
                   className={cn(
-                    'shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90',
+                    'shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-colors duration-150 active:scale-90',
                     voiceState === 'listening'
-                      ? 'bg-accent text-white animate-pulse'
+                      ? 'bg-accent text-white'
                       : 'bg-muted text-muted-foreground hover:bg-accent hover:text-white'
                   )}
                 >
@@ -505,7 +517,12 @@ export function ChatBot() {
                 </button>
               )}
 
-              {voiceState === 'transcribing' ? (
+              {voiceState === 'listening' ? (
+                <div className="flex-1 flex items-center gap-2 px-3 h-9 rounded-full bg-accent/10 overflow-hidden">
+                  <MicWaveform className="flex-1 h-7" />
+                  <span className="text-[10px] font-medium text-accent shrink-0">In ascolto</span>
+                </div>
+              ) : voiceState === 'transcribing' ? (
                 <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-amber-400/10 text-amber-600 text-sm">
                   <Loader2 className="h-4 w-4 animate-spin shrink-0" />
                   <span>Trascrizione…</span>
@@ -515,9 +532,9 @@ export function ChatBot() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-                  placeholder={voiceState === 'listening' ? '🎙 In ascolto…' : 'Scrivi o parla con Silvia…'}
+                  placeholder="Scrivi o parla con Silvia…"
                   className="text-sm"
-                  disabled={loading || voiceState === 'listening'}
+                  disabled={loading}
                 />
               )}
 
