@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import { ChatBot } from "./components/ChatBot";
+import OfflineStatus from "./components/OfflineStatus";
 import TourController from "./components/TourController";
 
 function PageLoader() {
@@ -69,6 +70,7 @@ const App = () => (
           <AuthProvider>
             <TourController />
             <ChatBot />
+            <OfflineStatus />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />

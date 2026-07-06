@@ -2,6 +2,7 @@ import { memo, useMemo, useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { enqueueMeasurement, isNetworkError, type PendingRow } from '@/lib/offlineQueue';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -420,31 +421,62 @@ export default function NewMeasurement() {
     order_total_items: totalItems ?? null,
   } as any);
 
-  const createAccessoryRecords = async (status: string) => {
+  // Righe accessori (zanzariera/persiana come misure separate). Estratto così da
+  // riusarlo sia online (insert) sia offline (coda).
+  const buildAccessoryRows = (status: string): Record<string, any>[] => {
     const accessoryMap = [
       { flag: form.has_mosquito_net, type: 'zanzariera', config: { mosquito_type: accessoriesConfig.mosquito_type, mosquito_color: accessoriesConfig.mosquito_color } },
       { flag: form.has_shutter, type: 'persiana', config: { shutter_color: accessoriesConfig.shutter_color, shutter_operation: accessoriesConfig.shutter_operation } },
     ];
-    for (const acc of accessoryMap) {
-      if (!acc.flag) continue;
-      await supabase.from('measurements').insert({
-        user_id: user.id,
-        product_type: acc.type,
-        client_name: form.client_name,
-        client_address: form.client_address,
-        survey_type: form.survey_type || 'foro_muro',
-        width_mm: parseInt(form.width_mm) || 0,
-        height_mm: parseInt(form.height_mm) || 0,
-        status,
-        accessories_config: acc.config as any,
-        notes: `Accessorio di ${form.product_type} - ${form.client_name}`,
-      });
+    return accessoryMap.filter(a => a.flag).map(acc => ({
+      user_id: user.id,
+      product_type: acc.type,
+      client_name: form.client_name,
+      client_address: form.client_address,
+      survey_type: form.survey_type || 'foro_muro',
+      width_mm: parseInt(form.width_mm) || 0,
+      height_mm: parseInt(form.height_mm) || 0,
+      status,
+      accessories_config: acc.config as any,
+      notes: `Accessorio di ${form.product_type} - ${form.client_name}`,
+    }));
+  };
+
+  const createAccessoryRecords = async (status: string) => {
+    for (const row of buildAccessoryRows(status)) {
+      await supabase.from('measurements').insert(row);
     }
+  };
+
+  // Costruisce le righe + foto per la coda offline (id pre-assegnato → sync idempotente).
+  const buildOfflineSubmission = (status: string) => {
+    const rows: PendingRow[] = [];
+    const attach = status !== 'bozza';
+    if (isMultiProduct) {
+      const groupId = crypto.randomUUID();
+      multiItems.forEach((it, i) => rows.push({ data: { id: crypto.randomUUID(), ...buildInsertData(status, [], it, groupId, i + 1, multiItems.length) }, attachPhotos: attach }));
+    } else {
+      rows.push({ data: { id: crypto.randomUUID(), ...buildInsertData(status) }, attachPhotos: attach });
+      buildAccessoryRows(status).forEach(r => rows.push({ data: { id: crypto.randomUUID(), ...r }, attachPhotos: false }));
+    }
+    const photos = attach ? photoFiles.map(f => ({ name: f.name, blob: f as Blob })) : [];
+    return { rows, photos };
+  };
+
+  const saveOffline = async (status: string) => {
+    const { rows, photos } = buildOfflineSubmission(status);
+    await enqueueMeasurement({ localId: crypto.randomUUID(), userId: user.id, clientName: form.client_name, photos, rows });
+    toast.success('Misura salvata sul dispositivo', { description: 'Verrà inviata da sola appena torni online.' });
+    navigate('/dashboard');
   };
 
   const handleSaveDraft = async () => {
     setSavingDraft(true);
     try {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await saveOffline('bozza');
+        return;
+      }
       if (isMultiProduct) {
         const groupId = crypto.randomUUID();
         for (let i = 0; i < multiItems.length; i++) {
@@ -461,7 +493,12 @@ export default function NewMeasurement() {
       toast.success(getDraftName(), { description: 'Puoi aggiungere le foto in seguito.' });
       navigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.message || 'Errore durante il salvataggio');
+      if (isNetworkError(err)) {
+        try { await saveOffline('bozza'); return; }
+        catch (e2: any) { toast.error(e2?.message || 'Errore salvataggio offline'); }
+      } else {
+        toast.error(err.message || 'Errore durante il salvataggio');
+      }
     } finally {
       setSavingDraft(false);
     }
@@ -470,6 +507,11 @@ export default function NewMeasurement() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      // Offline: salva in coda locale e sincronizza al rientro (online invariato).
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await saveOffline('submitted');
+        return;
+      }
       let photo_urls: string[] = [];
       for (const file of photoFiles) {
         const fileName = `${user.id}/${Date.now()}_${file.name}`;
@@ -533,7 +575,13 @@ export default function NewMeasurement() {
       toast.success('Preventivo inviato con successo!', { description: 'Riceverai una risposta a breve.' });
       navigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.message || "Errore durante l'invio");
+      // Se la submit è fallita per mancanza di rete, ripiega sulla coda offline.
+      if (isNetworkError(err)) {
+        try { await saveOffline('submitted'); return; }
+        catch (e2: any) { toast.error(e2?.message || 'Errore salvataggio offline'); }
+      } else {
+        toast.error(err.message || "Errore durante l'invio");
+      }
     } finally {
       setSubmitting(false);
     }
