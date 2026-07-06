@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { productLabels, statusLabels, WORKFLOW_STEPS, getWorkflowIndex, productIcons, APPOINTMENT_TYPES, MONTH_NAMES, ADMIN_EMAIL } from '@/lib/constants';
 import { NotificationBell } from '@/components/NotificationBell';
 import { createNotification } from '@/lib/notifications';
+import { generateOrderInvoices } from '@/lib/generateOrderInvoices';
 import { recordStatusChange } from '@/lib/statusHistory';
 import { AppSidebar } from '@/components/AppSidebar';
 import { AppointmentMap } from '@/components/AppointmentMap';
@@ -260,6 +261,7 @@ export default function Dashboard() {
     if (error) { toast.error(error.message); return; }
     const measurement = measurements.find(m => m.id === measurementId);
     await recordStatusChange(measurementId, measurement?.status ?? null, newStatus, !accept && modificationNotes ? modificationNotes : undefined);
+    if (accept && user) { try { await generateOrderInvoices(measurementId, user.id); } catch (e) { console.log('gen invoices:', e); } }
     if (user) {
       queryClient.setQueryData<Measurement[]>(QUERY_KEYS.measurements(user.id), (old = []) =>
         old.map(m => m.id === measurementId ? { ...m, ...updates } : m)
@@ -289,6 +291,7 @@ export default function Dashboard() {
     if (error) { toast.error(error.message); return; }
     await recordStatusChange(m.id, m.status, 'ordered');
     if (user) {
+      try { await generateOrderInvoices(m.id, user.id); } catch (e) { console.log('gen invoices:', e); }
       queryClient.setQueryData<Measurement[]>(QUERY_KEYS.measurements(user.id), (old = []) =>
         old.map(x => x.id === m.id ? { ...x, status: 'ordered' } : x)
       );

@@ -13,6 +13,8 @@ const TABS = [
   { label: 'Scadenzario', href: '/contabilita/scadenzario' },
   { label: 'Cespiti', href: '/contabilita/cespiti' },
   { label: 'Fatture attive', href: '/contabilita/fatture-attive' },
+  { label: 'Ordini', href: '/contabilita/ordini' },
+  { label: 'Riconciliazione', href: '/contabilita/riconciliazione' },
   { label: 'Bilancio', href: '/contabilita/bilancio' },
 ];
 

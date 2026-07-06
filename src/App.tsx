@@ -43,6 +43,8 @@ const IvaContabilita = lazy(() => import("./pages/contabilita/IvaContabilita"));
 const ScadenzarioContabilita = lazy(() => import("./pages/contabilita/ScadenzarioContabilita"));
 const CespitiContabilita = lazy(() => import("./pages/contabilita/CespitiContabilita"));
 const FattureAttiveContabilita = lazy(() => import("./pages/contabilita/FattureAttiveContabilita"));
+const RiconciliazioneContabilita = lazy(() => import("./pages/contabilita/RiconciliazioneContabilita"));
+const OrdiniContabilita = lazy(() => import("./pages/contabilita/OrdiniContabilita"));
 const BilancioContabilita = lazy(() => import("./pages/contabilita/BilancioContabilita"));
 const DeliverySummary = lazy(() => import("./pages/DeliverySummary"));
 const PaymentSummaryPage = lazy(() => import("./pages/PaymentSummaryPage"));
@@ -94,6 +96,8 @@ const App = () => (
                 <Route path="/contabilita/scadenzario" element={<ScadenzarioContabilita />} />
                 <Route path="/contabilita/cespiti" element={<CespitiContabilita />} />
                 <Route path="/contabilita/fatture-attive" element={<FattureAttiveContabilita />} />
+                <Route path="/contabilita/ordini" element={<OrdiniContabilita />} />
+                <Route path="/contabilita/riconciliazione" element={<RiconciliazioneContabilita />} />
                 <Route path="/contabilita/bilancio" element={<BilancioContabilita />} />
                 <Route path="/profilo" element={<Profile />} />
                 <Route path="/admin" element={<AdminDashboard />} />

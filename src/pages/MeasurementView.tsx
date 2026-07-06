@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import { productLabels, statusLabels } from '@/lib/constants';
 import { recordStatusChange } from '@/lib/statusHistory';
 import { StatusTimeline } from '@/components/StatusTimeline';
+import PaymentSheet from '@/components/PaymentSheet';
+import { generateOrderInvoices } from '@/lib/generateOrderInvoices';
 import { ORDINARY_VAT_RATE } from '@/lib/quoteEngine';
 
 const isQuoteStatus = (status: string) => ['ricevuto', 'submitted', 'quoted', 'quote_accepted', 'quote_modifications'].includes(status);
@@ -59,6 +61,10 @@ export default function MeasurementView() {
     if (error) { toast.error(error.message); return; }
     await recordStatusChange(id!, m?.status ?? null, 'ordered');
     setM((prev: any) => ({ ...prev, status: 'ordered' }));
+    // Fase 3 — genera le bozze contabili (attiva + passiva) dell'ordine (non bloccante)
+    if (user && m?.user_id === user.id) {
+      try { await generateOrderInvoices(id!, user.id); } catch (e) { console.log('gen invoices:', e); }
+    }
     toast.success('Ordine confermato!');
     setEmailSelected(buildDefaultEmails());
     setEmailCustom('');
@@ -332,6 +338,16 @@ export default function MeasurementView() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Foglio pagamento + QR (solo ordini) */}
+        {isOrder && (
+          <PaymentSheet
+            dealerId={m.user_id}
+            paymentCode={m.payment_code ?? null}
+            totalDue={totalWithIva}
+            amountPaid={Number(m.amount_paid) || 0}
+          />
         )}
 
         {m.photo_urls && m.photo_urls.length > 0 && (

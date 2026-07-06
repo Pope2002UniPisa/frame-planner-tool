@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       appointments: {
@@ -654,10 +629,13 @@ export type Database = {
           data: string
           dealer_id: string
           id: string
+          incompleta: boolean
           intra_ue: boolean
+          measurement_id: string | null
           mov_tipo: string | null
           note: string | null
           numero: string
+          origine: string | null
           source_xml_url: string | null
           stato: string
           tipo: string
@@ -669,10 +647,13 @@ export type Database = {
           data: string
           dealer_id: string
           id?: string
+          incompleta?: boolean
           intra_ue?: boolean
+          measurement_id?: string | null
           mov_tipo?: string | null
           note?: string | null
           numero?: string
+          origine?: string | null
           source_xml_url?: string | null
           stato?: string
           tipo?: string
@@ -684,15 +665,26 @@ export type Database = {
           data?: string
           dealer_id?: string
           id?: string
+          incompleta?: boolean
           intra_ue?: boolean
+          measurement_id?: string | null
           mov_tipo?: string | null
           note?: string | null
           numero?: string
+          origine?: string | null
           source_xml_url?: string | null
           stato?: string
           tipo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "measurements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       journal_lines: {
         Row: {
@@ -1954,9 +1946,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
