@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { useAccountingAccess } from '@/hooks/useAccountingAccess';
 import {
   useMeasurements, useProfile, useNewsItems, usePortfolioImages, useAppointments,
   QUERY_KEYS,
@@ -55,6 +56,7 @@ function buildGoogleMapsUrl(appointments: Array<{ location: string | null; time:
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { isAdmin } = useAdminCheck();
+  const { enabled: accountingEnabled } = useAccountingAccess();
   const navigate = useNavigate();
 
   // ── Dati remoti via React Query (no useState manuale) ──────────────────────
@@ -485,6 +487,7 @@ export default function Dashboard() {
         profile={profile}
         userEmail={user?.email || ''}
         isAdmin={isAdmin}
+        accountingEnabled={accountingEnabled}
         darkMode={isDark}
         onToggleDarkMode={toggleDarkMode}
         onSignOut={signOut}
