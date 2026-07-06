@@ -113,8 +113,27 @@ export default function ClientSummary() {
       }
     });
 
+    // Includi anche i clienti anagrafici senza misurazioni (es. lead convertiti):
+    // altrimenti una scheda cliente creata dalla conversione non comparirebbe in lista.
+    // Solo nella vista senza filtri sulle misurazioni (con un filtro attivo la lista
+    // è un rollup delle misurazioni, e un cliente a zero misurazioni non è pertinente).
+    const noMeasurementFilters =
+      statusFilter === 'all' && productFilter === 'all' && paymentFilter === 'all' && !dateFrom && !dateTo;
+    if (noMeasurementFilters) {
+      endClients.forEach((ec) => {
+        const name = (ec.name || 'Senza nome').trim();
+        if (searchText && !name.toLowerCase().includes(searchText.toLowerCase())) return;
+        if (!map[name]) {
+          map[name] = {
+            name, total: 0, drafts: 0, sent: 0, quoted: 0, completed: 0,
+            estimatedRevenue: 0, realizedRevenue: 0, collectedRevenue: 0, measurements: [],
+          };
+        }
+      });
+    }
+
     return Object.values(map).sort((a: any, b: any) => a.name.localeCompare(b.name, 'it'));
-  }, [filteredMeasurements, searchText]);
+  }, [filteredMeasurements, searchText, endClients, statusFilter, productFilter, paymentFilter, dateFrom, dateTo]);
 
   const createClientRecord = async (clientName: string) => {
     if (!user) return;
