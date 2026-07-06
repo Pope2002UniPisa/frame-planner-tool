@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/hooks/useDashboardQueries';
+import { startTour } from '@/components/TourController';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -35,6 +36,7 @@ const ACTION_LABELS: Record<string, string> = {
   create_appointment: '📅 Crea appuntamento',
   update_status:      '🔄 Aggiorna stato',
   send_notification:  '🔔 Invia notifica',
+  start_tour:         '📖 Mostrami la guida',
 };
 
 export function ChatBot() {
@@ -334,6 +336,13 @@ export function ChatBot() {
   // ── Esegui azione ────────────────────────────────────────────
   const executeAction = async (action: { type: string; data: Record<string, any> }, i: number) => {
     if (!user) return;
+    // Guida interattiva: gestita nel frontend (naviga + avvia il tour), niente backend.
+    if (action.type === 'start_tour') {
+      setOpen(false);
+      startTour(action.data?.tour ?? '');
+      setMessages(prev => prev.map((m, j) => j === i ? { ...m, actionDone: true } : m));
+      return;
+    }
     setMessages(prev => prev.map((m, j) => j === i ? { ...m, actionLoading: true } : m));
     try {
       const { data, error } = await supabase.functions.invoke('agent-action', {

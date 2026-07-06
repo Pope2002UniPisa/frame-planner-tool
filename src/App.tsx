@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import { ChatBot } from "./components/ChatBot";
+import TourController from "./components/TourController";
 
 function PageLoader() {
   return (
@@ -64,6 +65,7 @@ const App = () => (
       <BrowserRouter>
         <ErrorBoundary>
           <AuthProvider>
+            <TourController />
             <ChatBot />
             <Suspense fallback={<PageLoader />}>
               <Routes>

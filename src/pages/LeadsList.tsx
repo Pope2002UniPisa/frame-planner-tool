@@ -11,10 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Phone, Search, PhoneCall } from 'lucide-react';
+import { Plus, Phone, Search, PhoneCall, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { LEAD_STATUSES, leadStatusLabels, leadSourceLabels } from '@/lib/constants';
 import type { Lead } from '@/hooks/useDashboardQueries';
+import { startTour } from '@/components/TourController';
 
 const emptyForm = () => ({
   name: '', email: '', phone: '', address: '', city: '',
@@ -104,9 +105,13 @@ export default function LeadsList() {
             <h1 className="text-xl font-bold font-heading text-foreground">Lead — pre-vendita</h1>
             <p className="text-sm text-muted-foreground">Pipeline dei contatti prima della vendita.</p>
           </div>
+          <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => startTour('lead')}>
+            <HelpCircle className="h-4 w-4" /> Guida
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-1.5"><Plus className="h-4 w-4" /> Nuovo lead</Button>
+              <Button className="gap-1.5" data-tour="lead-new"><Plus className="h-4 w-4" /> Nuovo lead</Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>Nuovo lead</DialogTitle></DialogHeader>
@@ -167,11 +172,12 @@ export default function LeadsList() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Da richiamare oggi */}
         {toRecall.length > 0 && (
-          <Card className="border-accent/40">
+          <Card className="border-accent/40" data-tour="lead-recall">
             <CardHeader className="pb-3">
               <CardTitle className="font-heading text-base flex items-center gap-2">
                 <PhoneCall className="h-4 w-4 text-accent" /> Da richiamare ({toRecall.length})
@@ -196,7 +202,7 @@ export default function LeadsList() {
         )}
 
         {/* Filtri */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap" data-tour="lead-filters">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Cerca nome, città, telefono…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
@@ -216,7 +222,7 @@ export default function LeadsList() {
             {LEAD_STATUSES.map(s => <div key={s} className="h-40 animate-pulse rounded-lg bg-muted" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3" data-tour="lead-pipeline">
             {LEAD_STATUSES.map(status => {
               const items = byStatus(status);
               const cfg = leadStatusLabels[status];
