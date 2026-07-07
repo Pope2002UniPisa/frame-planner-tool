@@ -51,44 +51,50 @@
         color: rgba(255,255,255,.6); font: 500 12px/1 -apple-system, system-ui, sans-serif;
         letter-spacing: .02em; pointer-events: none;
       }
-      #splash.hide { opacity: 0; }
+      #splash.hide { opacity: 0; pointer-events: none; }
     </style>
   </head>
 
   <body>
     <div id="splash">
-      <video id="splash-video" autoplay muted playsinline preload="auto" poster="/intro-poster.jpg">
-        <source src="/intro.mp4" type="video/mp4" />
-      </video>
+      <video id="splash-video" autoplay muted playsinline preload="auto"></video>
       <span class="skip">tocca per saltare</span>
     </div>
     <script>
       (function () {
         var splash = document.getElementById('splash');
-        if (!splash) return;
-        // Riappare quando apri l'app dopo una pausa (>5 min): così parte ai veri
-        // "avvii" (anche sul telefono, dove la sessione resta viva in background)
-        // ma non a ogni refresh ravvicinato mentre lavori.
-        var GAP = 5 * 60 * 1000;
-        try {
-          var last = +localStorage.getItem('introSeenAt') || 0;
-          if (Date.now() - last < GAP) { splash.remove(); return; }
-          localStorage.setItem('introSeenAt', String(Date.now()));
-        } catch (e) {}
         var vid = document.getElementById('splash-video');
-        var done = false;
+        if (!splash || !vid) return;
+
+        // Versione dedicata: verticale sul telefono, orizzontale su iPad/desktop.
+        var isPhone = window.matchMedia('(max-width: 640px)').matches;
+        vid.setAttribute('poster', isPhone ? '/intro-mobile-poster.jpg' : '/intro-poster.jpg');
+        vid.style.objectFit = isPhone ? 'cover' : 'contain';
+        vid.src = isPhone ? '/intro-mobile.mp4' : '/intro.mp4';
+
+        var timer;
         function hide() {
-          if (done) return; done = true;
+          clearTimeout(timer);
           splash.classList.add('hide');
-          setTimeout(function () { if (splash && splash.parentNode) splash.parentNode.removeChild(splash); }, 550);
+          if (vid) vid.pause();
         }
-        if (vid) {
-          vid.addEventListener('ended', hide);
-          var p = vid.play && vid.play();
-          if (p && p.catch) p.catch(function () {}); // se l'autoplay è bloccato, resta il timer sotto
+        function show() {
+          splash.classList.remove('hide');
+          if (vid) { try { vid.currentTime = 0; } catch (e) {} var p = vid.play && vid.play(); if (p && p.catch) p.catch(function () {}); }
+          clearTimeout(timer); timer = setTimeout(hide, 6500);
         }
-        setTimeout(hide, 6500);            // fallback: max ~6s
+
+        vid.addEventListener('ended', hide);
         splash.addEventListener('click', hide); // tocca per saltare
+        show(); // all'apertura
+
+        // Ricompare ad ogni ritorno in primo piano dopo una pausa (>90s): così
+        // parte anche riaprendo l'app installata, che resta viva in background.
+        var hiddenAt = 0;
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) { hiddenAt = Date.now(); }
+          else if (hiddenAt && Date.now() - hiddenAt > 90000) { show(); }
+        });
       })();
     </script>
     <div id="root"></div>
