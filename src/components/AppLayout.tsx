@@ -65,7 +65,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Backdrop mobile con animazione */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-black/50 z-[1200] lg:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
