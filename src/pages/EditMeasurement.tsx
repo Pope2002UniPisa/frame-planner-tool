@@ -113,7 +113,7 @@ export default function EditMeasurement() {
   };
 
   const getDraftName = () => {
-    const parts = [];
+    const parts: string[] = [];
     if (form.client_address) parts.push(form.client_address);
     if (form.client_name) parts.push(form.client_name);
     return parts.length > 0 ? `${parts.join('; ')} - Bozza Salvata` : 'Bozza Salvata';
@@ -169,7 +169,7 @@ export default function EditMeasurement() {
       const { error } = await supabase.from('measurements').update({
         ...buildUpdateData(),
         photo_urls: photo_urls.length > 0 ? photo_urls : null,
-      }).eq('id', id);
+      }).eq('id', id!);
       if (error) throw error;
       toast.success(getDraftName(), { description: 'Bozza aggiornata con successo.' });
       navigate('/dashboard');
@@ -197,7 +197,7 @@ export default function EditMeasurement() {
         ...buildUpdateData(resubmitStatus),
         photo_urls: photo_urls.length > 0 ? photo_urls : null,
         has_modification: form.status === 'quote_modifications' ? true : form.has_modification,
-      }).eq('id', id);
+      }).eq('id', id!);
       if (error) throw error;
       toast.success(form.status === 'quote_modifications' ? 'Modifiche inviate! Attendi il nuovo preventivo.' : 'Misurazione inviata con successo!');
       navigate('/dashboard');

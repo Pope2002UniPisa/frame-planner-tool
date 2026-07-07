@@ -22,7 +22,7 @@ export default function ScadenzarioContabilita() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('journal_entries' as any)
+    supabase.from('journal_entries')
       .select('id,data,controparte,numero,tipo,journal_lines(account_code,dare,avere)')
       .eq('dealer_id', user.id).eq('stato', 'registrata').in('tipo', ['passiva', 'attiva']).order('data', { ascending: true })
       .then(({ data }) => setEntries((data as unknown as Entry[]) ?? []));

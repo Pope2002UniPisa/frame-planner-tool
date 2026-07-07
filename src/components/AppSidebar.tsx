@@ -28,7 +28,7 @@ const NAV = [
   { icon: Clock, label: 'Tempi', href: '/dashboard/tempi' },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export function AppSidebar({ profile, userEmail, isAdmin, accountingEnabled = false, darkMode: _darkMode, onToggleDarkMode: _onToggleDarkMode, onSignOut, onNavigate, isOpen = false, onClose = () => {} }: Props) {
   const location = useLocation();
   const initials = (profile?.full_name || userEmail || '?')[0].toUpperCase();

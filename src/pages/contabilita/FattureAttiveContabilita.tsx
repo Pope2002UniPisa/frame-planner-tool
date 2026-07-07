@@ -27,7 +27,7 @@ export default function FattureAttiveContabilita() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('company_profile' as any).select('*').eq('dealer_id', user.id).maybeSingle()
+    supabase.from('company_profile').select('*').eq('dealer_id', user.id).maybeSingle()
       .then(({ data }) => setCompany(data as unknown as Company | null));
     supabase.from('end_clients').select('*').eq('dealer_id', user.id).order('name')
       .then(({ data }) => setClients(((data as any[]) ?? []).map(c => ({ id: c.id, name: c.name, piva: c.piva ?? '' }))));
@@ -52,13 +52,13 @@ export default function FattureAttiveContabilita() {
     const lines = scritturaFatturaAttiva(imponibile, iva);
     if (!verificaQuadratura(lines).ok) { setBusy(false); toast.error('Scrittura non quadra'); return; }
 
-    const { data: entry, error } = await supabase.from('journal_entries' as any).insert({
+    const { data: entry, error } = await supabase.from('journal_entries').insert({
       dealer_id: user.id, chiave: `ATTIVA|${company.piva}|${numero}|${data}`, data,
       controparte: form.cliente, numero: String(numero), tipo: 'attiva',
       intra_ue: false, stato: 'registrata',
     }).select('id').single();
     if (error || !entry) { setBusy(false); toast.error(error?.message ?? 'Errore'); return; }
-    await supabase.from('journal_lines' as any).insert(lines.map((l, i) => ({ entry_id: (entry as any).id, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })));
+    await supabase.from('journal_lines').insert(lines.map((l, i) => ({ entry_id: (entry as any).id, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })));
 
     // XML FatturaPA (bozza)
     const xml = buildXml(company, form, { numero, data, imponibile, iva, totale });

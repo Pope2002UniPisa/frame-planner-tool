@@ -18,7 +18,7 @@ export default function GiornaleContabilita() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('journal_entries' as any)
+    supabase.from('journal_entries')
       .select('id,data,controparte,numero,tipo,intra_ue,journal_lines(account_code,descr,dare,avere,sort_order)')
       .eq('dealer_id', user.id).eq('stato', 'registrata').order('data', { ascending: false })
       .then(({ data }) => { setEntries((data as unknown as Entry[]) ?? []); setLoading(false); });

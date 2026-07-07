@@ -30,7 +30,7 @@ export default function PaymentSheet({ dealerId, paymentCode, totalDue, amountPa
 
   useEffect(() => {
     if (!dealerId) return;
-    supabase.from('company_profile' as any).select('denominazione,iban').eq('dealer_id', dealerId).maybeSingle()
+    supabase.from('company_profile').select('denominazione,iban').eq('dealer_id', dealerId).maybeSingle()
       .then(({ data }) => setCompany((data as any) ?? null));
   }, [dealerId]);
 

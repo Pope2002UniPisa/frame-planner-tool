@@ -4,7 +4,14 @@ import type { Database } from '@/integrations/supabase/types';
 
 // ─── Tipi derivati dalle tabelle Supabase ────────────────────────────────────
 
-export type Measurement = Database['public']['Tables']['measurements']['Row'];
+// Il file types.ts generato marca queste colonne come nullable, ma nel DB sono
+// NOT NULL (con default). Le restringiamo a non-null così i punti d'uso non
+// devono coalescere valori che a runtime esistono sempre.
+export type Measurement = Database['public']['Tables']['measurements']['Row'] & {
+  status: string;
+  created_at: string;
+  product_type: string;
+};
 export type Appointment  = Database['public']['Tables']['appointments']['Row'];
 
 // Il file types.ts generato non include full_name e dark_mode perché
@@ -18,6 +25,7 @@ export type Profile = Database['public']['Tables']['profiles']['Row'] & {
 // news ha image_position nel DB ma non nel file tipi generato → estensione locale
 export type NewsItem = Database['public']['Tables']['news']['Row'] & {
   image_position?: string | null;
+  created_at: string;
 };
 
 export type PortfolioItem = Database['public']['Tables']['portfolio_images']['Row'];
@@ -44,7 +52,9 @@ export function useMeasurements(userId: string | undefined) {
         .eq('user_id', userId!)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      // Le colonne status/created_at/product_type sono NOT NULL nel DB: il cast
+      // riconcilia i tipi generati (nullable) con il tipo Measurement raffinato.
+      return (data ?? []) as Measurement[];
     },
     enabled: !!userId,
   });
@@ -168,7 +178,7 @@ export function useLeads(userId: string | undefined) {
     queryKey: userId ? ['leads', userId] : ['leads', null],
     queryFn: async (): Promise<Lead[]> => {
       const { data, error } = await supabase
-        .from('leads' as any)
+        .from('leads')
         .select('*')
         .eq('dealer_id', userId!)
         .order('created_at', { ascending: false });
@@ -195,7 +205,7 @@ export function useOperationTimings(userId: string | undefined) {
     queryKey: userId ? ['operationTimings', userId] : ['operationTimings', null],
     queryFn: async (): Promise<StatusTiming[]> => {
       const { data, error } = await supabase
-        .from('v_status_median_durations' as any)
+        .from('v_status_median_durations')
         .select('*')
         .eq('dealer_id', userId!);
       if (error) throw error;

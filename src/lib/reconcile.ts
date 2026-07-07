@@ -10,7 +10,7 @@ export interface CsvTable { headers: string[]; rows: string[][]; }
 
 /** Parser CSV minimale con supporto a virgolette e delimitatore ; o ,. */
 export function parseCsv(text: string): CsvTable {
-  const clean = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n').trim();
+  const clean = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trim();
   if (!clean) return { headers: [], rows: [] };
   const firstLine = clean.slice(0, clean.indexOf('\n') >= 0 ? clean.indexOf('\n') : clean.length);
   const delim = (firstLine.match(/;/g)?.length ?? 0) >= (firstLine.match(/,/g)?.length ?? 0) ? ';' : ',';

@@ -81,7 +81,7 @@ export default function RiconciliazioneContabilita() {
         const extId = movementKey(r.date, r.amount, r.causale);
         const doReconcile = r.selected && r.meas && r.amount > 0;
         // 1) inserisci movimento (anti-dup via unique (dealer,source,external_id))
-        const { data: mv, error: mvErr } = await supabase.from('bank_movements' as any).insert({
+        const { data: mv, error: mvErr } = await supabase.from('bank_movements').insert({
           dealer_id: user.id,
           movement_date: r.date ?? new Date().toISOString().slice(0, 10),
           amount: r.amount, causale: r.causale, source: 'csv', external_id: extId,
@@ -114,7 +114,7 @@ export default function RiconciliazioneContabilita() {
           payment_method: 'bonifico',
         }).eq('id', r.meas.id);
 
-        await supabase.from('bank_movements' as any).update({ payment_id: (pay as any).id }).eq('id', (mv as any).id);
+        await supabase.from('bank_movements').update({ payment_id: (pay as any).id }).eq('id', (mv as any).id);
         reconciled++;
       }
       toast.success(`Import: ${imported} movimenti, ${reconciled} riconciliati${dup ? `, ${dup} già presenti` : ''}`);

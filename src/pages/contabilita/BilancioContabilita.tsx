@@ -14,7 +14,7 @@ export default function BilancioContabilita() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('v_account_balances' as any).select('*').eq('dealer_id', user.id)
+    supabase.from('v_account_balances').select('*').eq('dealer_id', user.id)
       .then(({ data }) => { setBal((data as unknown as Bal[]) ?? []); setLoading(false); });
   }, [user]);
 

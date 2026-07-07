@@ -213,7 +213,7 @@ export default function NewMeasurement() {
     let cancelled = false;
     (async () => {
       const { data: baseRow } = await supabase
-        .from('price_catalog' as any)
+        .from('price_catalog')
         .select('base_price')
         .eq('door_model_id', doorModelId)
         .lte('width_min_mm', w)
@@ -224,7 +224,7 @@ export default function NewMeasurement() {
       if (cancelled || !baseRow) { if (!cancelled) setDbPrice(null); return; }
       let price = Number((baseRow as any).base_price);
       const { data: modifiers } = await supabase
-        .from('price_modifiers' as any)
+        .from('price_modifiers')
         .select('modifier_type, modifier_id, adjustment_type, adjustment_value')
         .or(`door_model_id.is.null,door_model_id.eq.${doorModelId}`);
       if (!cancelled && modifiers) {
@@ -249,9 +249,6 @@ export default function NewMeasurement() {
     })();
     return () => { cancelled = true; };
   }, [pricingKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (loading) return <LoadingSpinner />;
-  if (!user) return <Navigate to="/auth" replace />;
 
   const update = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
 
@@ -339,7 +336,7 @@ export default function NewMeasurement() {
   };
 
   const getDraftName = () => {
-    const parts = [];
+    const parts: string[] = [];
     if (form.client_address) parts.push(form.client_address);
     if (form.client_name) parts.push(form.client_name);
     const suffix = isMultiProduct ? ` (${multiItems.length} prodotti)` : '';
@@ -366,7 +363,7 @@ export default function NewMeasurement() {
   };
 
   const buildInsertData = (status: string, photo_urls: string[] = [], itemOverrides?: Partial<ProductItem>, groupId?: string, itemIndex?: number, totalItems?: number) => ({
-    user_id: user.id,
+    user_id: user!.id,
     product_type: form.product_type,
     client_name: form.client_name,
     client_address: form.client_address,
@@ -429,7 +426,7 @@ export default function NewMeasurement() {
       { flag: form.has_shutter, type: 'persiana', config: { shutter_color: accessoriesConfig.shutter_color, shutter_operation: accessoriesConfig.shutter_operation } },
     ];
     return accessoryMap.filter(a => a.flag).map(acc => ({
-      user_id: user.id,
+      user_id: user!.id,
       product_type: acc.type,
       client_name: form.client_name,
       client_address: form.client_address,
@@ -465,7 +462,7 @@ export default function NewMeasurement() {
 
   const saveOffline = async (status: string) => {
     const { rows, photos } = buildOfflineSubmission(status);
-    await enqueueMeasurement({ localId: crypto.randomUUID(), userId: user.id, clientName: form.client_name, photos, rows });
+    await enqueueMeasurement({ localId: crypto.randomUUID(), userId: user!.id, clientName: form.client_name, photos, rows });
     toast.success('Misura salvata sul dispositivo', { description: 'Verrà inviata da sola appena torni online.' });
     navigate('/dashboard');
   };
@@ -512,9 +509,9 @@ export default function NewMeasurement() {
         await saveOffline('submitted');
         return;
       }
-      let photo_urls: string[] = [];
+      const photo_urls: string[] = [];
       for (const file of photoFiles) {
-        const fileName = `${user.id}/${Date.now()}_${file.name}`;
+        const fileName = `${user!.id}/${Date.now()}_${file.name}`;
         const { error: uploadError } = await supabase.storage.from('measurement-photos').upload(fileName, file);
         if (!uploadError) {
           const { data: { publicUrl } } = supabase.storage.from('measurement-photos').getPublicUrl(fileName);
@@ -542,7 +539,7 @@ export default function NewMeasurement() {
       try {
         await supabase.functions.invoke('notify-measurement', {
           body: {
-            userId: user.id,
+            userId: user!.id,
             measurementId: insertedId,
             clientName: form.client_name,
             clientAddress: form.client_address,
@@ -756,6 +753,10 @@ export default function NewMeasurement() {
     </div>
   );
 
+  // Guard dopo tutti gli hook (React: gli hook non possono essere condizionali)
+  if (loading) return <LoadingSpinner />;
+  if (!user) return <Navigate to="/auth" replace />;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card shadow-card">
@@ -854,13 +855,13 @@ export default function NewMeasurement() {
                       const familyMap = new Map<string, typeof currentModels>();
                       const sortedModels = [...currentModels].sort((a, b) => a.name.localeCompare(b.name));
                       sortedModels.forEach(model => {
-                        const family = model.name.split(/[\s\/]/)[0]; // e.g. "Yncisa", "Equa", "Suite"
+                        const family = model.name.split(/[\s/]/)[0]; // e.g. "Yncisa", "Equa", "Suite"
                         if (!familyMap.has(family)) familyMap.set(family, []);
                         familyMap.get(family)!.push(model);
                       });
                       const families = [...familyMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
                       // Find which family the selected model belongs to
-                      const selectedFamily = form.door_model ? sortedModels.find(m => m.id === form.door_model)?.name.split(/[\s\/]/)[0] : null;
+                      const selectedFamily = form.door_model ? sortedModels.find(m => m.id === form.door_model)?.name.split(/[\s/]/)[0] : null;
 
                       return (
                         <Accordion type="single" collapsible value={selectedFamily || undefined} className="space-y-2">

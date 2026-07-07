@@ -48,7 +48,7 @@ async function nominatimGeocode(address: string): Promise<[number, number] | nul
       const r3 = await nominatimSearch(parts[parts.length - 1].trim());
       if (r3) return r3;
     }
-  } catch {}
+  } catch { /* geocoding best-effort: ignora errori di rete/parsing */ }
   return null;
 }
 

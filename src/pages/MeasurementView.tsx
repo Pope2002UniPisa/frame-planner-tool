@@ -57,7 +57,7 @@ export default function MeasurementView() {
   }, [user, id]);
 
   const handleAcceptQuote = async () => {
-    const { error } = await supabase.from('measurements').update({ status: 'ordered' }).eq('id', id);
+    const { error } = await supabase.from('measurements').update({ status: 'ordered' }).eq('id', id!);
     if (error) { toast.error(error.message); return; }
     await recordStatusChange(id!, m?.status ?? null, 'ordered');
     setM((prev: any) => ({ ...prev, status: 'ordered' }));
@@ -101,7 +101,7 @@ export default function MeasurementView() {
       status: 'quote_modifications',
       modification_notes: modNotes,
       has_modification: true
-    }).eq('id', id);
+    }).eq('id', id!);
     if (error) { toast.error(error.message); return; }
     await recordStatusChange(id!, m?.status ?? null, 'quote_modifications', modNotes || undefined);
     setM((prev: any) => ({ ...prev, status: 'quote_modifications', modification_notes: modNotes }));

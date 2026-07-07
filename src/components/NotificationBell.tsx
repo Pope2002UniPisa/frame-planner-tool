@@ -137,7 +137,7 @@ export function NotificationBell() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        n.read ? markAsUnread(n.id) : markAsRead(n.id);
+                        if (n.read) markAsUnread(n.id); else markAsRead(n.id);
                       }}
                       className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                       title={n.read ? 'Segna come non letta' : 'Segna come letta'}

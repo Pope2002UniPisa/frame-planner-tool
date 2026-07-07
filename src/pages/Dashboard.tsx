@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -33,7 +33,8 @@ import { generateOrderInvoices } from '@/lib/generateOrderInvoices';
 import { recordStatusChange } from '@/lib/statusHistory';
 import { AppSidebar } from '@/components/AppSidebar';
 import { AppointmentMap } from '@/components/AppointmentMap';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+// Recharts è pesante (~360 KB): caricato in lazy solo quando il grafico è visibile.
+const WeeklyActivityChart = lazy(() => import('@/components/WeeklyActivityChart'));
 
 
 function formatDateKey(date: Date) {
@@ -154,7 +155,7 @@ export default function Dashboard() {
   const toggleProductType = (type: string) =>
     setExpandedProductTypes(prev => {
       const next = new Set(prev);
-      next.has(type) ? next.delete(type) : next.add(type);
+      if (next.has(type)) next.delete(type); else next.add(type);
       return next;
     });
 
@@ -597,31 +598,9 @@ export default function Dashboard() {
                         color: 'hsl(var(--muted-foreground))',
                       }}>Ultime 12 settimane</span>
                     </div>
-                    <ResponsiveContainer width="100%" height={160}>
-                      <AreaChart data={weeklyStats} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                        <defs>
-                          {[['gradBozza','#a09080'],['gradPrev','#C8874A'],['gradOrd','#7A9AB5'],['gradComp','#7AAF8A']].map(([id, color]) => (
-                            <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={color} stopOpacity={0.45} />
-                              <stop offset="95%" stopColor={color} stopOpacity={0} />
-                            </linearGradient>
-                          ))}
-                        </defs>
-                        <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'hsl(25 10% 42%)' }} tickLine={false} axisLine={false} />
-                        <YAxis tick={{ fontSize: 9, fill: 'hsl(25 10% 42%)' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                        <Tooltip contentStyle={{
-                          fontSize: 11, borderRadius: 10,
-                          background: 'hsl(30 9% 13%)',
-                          border: '1px solid hsl(30 9% 18%)',
-                          color: 'hsl(35 25% 85%)',
-                          boxShadow: '0 8px 24px -4px hsl(30 15% 3% / 0.6)',
-                        }} />
-                        <Area type="monotone" dataKey="Bozza" stroke="#a09080" fill="url(#gradBozza)" strokeWidth={1.5} />
-                        <Area type="monotone" dataKey="Preventivo" stroke="#C8874A" fill="url(#gradPrev)" strokeWidth={1.5} />
-                        <Area type="monotone" dataKey="Ordinato" stroke="#7A9AB5" fill="url(#gradOrd)" strokeWidth={1.5} />
-                        <Area type="monotone" dataKey="Completato" stroke="#7AAF8A" fill="url(#gradComp)" strokeWidth={1.5} />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    <Suspense fallback={<div className="h-40 w-full animate-pulse rounded-lg bg-muted/40" />}>
+                      <WeeklyActivityChart data={weeklyStats} />
+                    </Suspense>
                     {/* Chart legend */}
                     <div className="flex items-center gap-5 mt-3 flex-wrap">
                       {[['Bozza','#a09080'],['Preventivo','#C8874A'],['Ordinato','#7A9AB5'],['Completato','#7AAF8A']].map(([lbl,color]) => (

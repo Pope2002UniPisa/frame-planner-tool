@@ -6,9 +6,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
-import { ChatBot } from "./components/ChatBot";
 import OfflineStatus from "./components/OfflineStatus";
 import TourController from "./components/TourController";
+
+// ChatBot è un overlay globale non necessario al primo paint: caricato in lazy
+// così il suo codice esce dal bundle iniziale.
+const ChatBot = lazy(() => import("./components/ChatBot").then(m => ({ default: m.ChatBot })));
 
 function PageLoader() {
   return (
@@ -69,7 +72,9 @@ const App = () => (
         <ErrorBoundary>
           <AuthProvider>
             <TourController />
-            <ChatBot />
+            <Suspense fallback={null}>
+              <ChatBot />
+            </Suspense>
             <OfflineStatus />
             <Suspense fallback={<PageLoader />}>
               <Routes>

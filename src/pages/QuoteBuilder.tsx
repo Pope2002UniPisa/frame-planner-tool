@@ -42,12 +42,12 @@ export default function QuoteBuilder() {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data: detr } = await supabase.from('detrazioni' as any).select('*').eq('active', true);
+      const { data: detr } = await supabase.from('detrazioni').select('*').eq('active', true);
       setDetrazioni((detr as unknown as Detrazione[]) ?? []);
 
       if (id) {
         // Carica preventivo esistente
-        const { data: q } = await supabase.from('dealer_quotes' as any).select('*').eq('id', id).eq('dealer_id', user.id).single();
+        const { data: q } = await supabase.from('dealer_quotes').select('*').eq('id', id).eq('dealer_id', user.id).single();
         const quote = q as any;
         if (quote) {
           setTitle(quote.title ?? 'Preventivo');
@@ -57,7 +57,7 @@ export default function QuoteBuilder() {
           setDetrazioneId(quote.detrazione_id ?? 'none');
           setLinkedMeasurement(quote.measurement_id ?? null);
           setAgevolata((quote.vat_10_base ?? 0) > 0);
-          const { data: ql } = await supabase.from('quote_lines' as any).select('*').eq('quote_id', id).order('sort_order');
+          const { data: ql } = await supabase.from('quote_lines').select('*').eq('quote_id', id).order('sort_order');
           const rows = (ql as any[]) ?? [];
           if (rows.length) {
             setLines(rows.map(r => ({
@@ -70,10 +70,10 @@ export default function QuoteBuilder() {
         // Prefill da misurazione
         const { data: m } = await supabase.from('measurements').select('product_type,estimated_price,client_name').eq('id', measurementId).single();
         if (m) {
-          setTitle(`Preventivo — ${m.client_name || productLabels[m.product_type] || 'misurazione'}`);
+          setTitle(`Preventivo — ${m.client_name || productLabels[m.product_type ?? ''] || 'misurazione'}`);
           setLines([{
             key: crypto.randomUUID(),
-            description: productLabels[m.product_type] || m.product_type,
+            description: productLabels[m.product_type ?? ''] || m.product_type || '',
             qty: 1, unitNetPrice: Number(m.estimated_price ?? 0), markup: 0,
             vatRate: ORDINARY_VAT_RATE, isBeneSignificativo: true,
           }]);
@@ -119,21 +119,21 @@ export default function QuoteBuilder() {
     };
     let quoteId = id;
     if (id) {
-      const { error } = await supabase.from('dealer_quotes' as any).update(payload).eq('id', id);
+      const { error } = await supabase.from('dealer_quotes').update(payload).eq('id', id);
       if (error) { setSaving(false); toast.error(error.message); return; }
-      await supabase.from('quote_lines' as any).delete().eq('quote_id', id);
+      await supabase.from('quote_lines').delete().eq('quote_id', id);
     } else {
-      const { data, error } = await supabase.from('dealer_quotes' as any).insert(payload).select('id').single();
+      const { data, error } = await supabase.from('dealer_quotes').insert(payload).select('id').single();
       if (error || !data) { setSaving(false); toast.error(error?.message ?? 'Errore'); return; }
       quoteId = (data as any).id;
     }
     const lineRows = lines.map((l, i) => ({
-      quote_id: quoteId, description: l.description ?? '', qty: Number(l.qty) || 0,
+      quote_id: quoteId!, description: l.description ?? '', qty: Number(l.qty) || 0,
       unit_net_price: Number(l.unitNetPrice) || 0, markup: Number(l.markup) || 0,
       line_total: result.lines[i]?.lineTaxable ?? 0, vat_rate: Number(l.vatRate),
       is_bene_significativo: !!l.isBeneSignificativo, sort_order: i,
     }));
-    const { error: lErr } = await supabase.from('quote_lines' as any).insert(lineRows);
+    const { error: lErr } = await supabase.from('quote_lines').insert(lineRows);
     setSaving(false);
     if (lErr) { toast.error(lErr.message); return; }
     toast.success('Preventivo salvato');

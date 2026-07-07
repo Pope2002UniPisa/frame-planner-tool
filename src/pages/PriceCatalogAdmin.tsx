@@ -92,8 +92,8 @@ export default function PriceCatalogAdmin() {
   useEffect(() => {
     if (!isAdmin) return;
     Promise.all([
-      supabase.from('price_catalog' as any).select('*').order('door_model_id').order('width_min_mm'),
-      supabase.from('price_modifiers' as any).select('*').order('modifier_type').order('modifier_id'),
+      supabase.from('price_catalog').select('*').order('door_model_id').order('width_min_mm'),
+      supabase.from('price_modifiers').select('*').order('modifier_type').order('modifier_id'),
     ]).then(([c, m]) => {
       setCatalog((c.data as any[]) || []);
       setModifiers((m.data as any[]) || []);
@@ -110,7 +110,7 @@ export default function PriceCatalogAdmin() {
     if (!row.door_model_id || !row.base_price) { toast.error('Compila tutti i campi'); return; }
     setSaving(true);
     if (row.id) {
-      const { error } = await (supabase.from('price_catalog' as any) as any).update({
+      const { error } = await (supabase.from('price_catalog') as any).update({
         door_model_id: row.door_model_id, width_min_mm: row.width_min_mm, width_max_mm: row.width_max_mm,
         height_min_mm: row.height_min_mm, height_max_mm: row.height_max_mm, base_price: row.base_price,
       }).eq('id', row.id);
@@ -118,7 +118,7 @@ export default function PriceCatalogAdmin() {
       setCatalog(prev => prev.map(r => r.id === row.id ? { ...r, ...row } as PriceCatalogRow : r));
       toast.success('Aggiornato');
     } else {
-      const { data, error } = await (supabase.from('price_catalog' as any) as any).insert({
+      const { data, error } = await (supabase.from('price_catalog') as any).insert({
         door_model_id: row.door_model_id, width_min_mm: row.width_min_mm, width_max_mm: row.width_max_mm,
         height_min_mm: row.height_min_mm, height_max_mm: row.height_max_mm, base_price: row.base_price,
       }).select('*').single();
@@ -131,7 +131,7 @@ export default function PriceCatalogAdmin() {
   };
 
   const deleteCatalog = async (id: string) => {
-    const { error } = await (supabase.from('price_catalog' as any) as any).delete().eq('id', id);
+    const { error } = await (supabase.from('price_catalog') as any).delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
     setCatalog(prev => prev.filter(r => r.id !== id));
     toast.success('Eliminato');
@@ -151,12 +151,12 @@ export default function PriceCatalogAdmin() {
       adjustment_value: Number(row.adjustment_value), label: row.label || null,
     };
     if (row.id) {
-      const { error } = await (supabase.from('price_modifiers' as any) as any).update(payload).eq('id', row.id);
+      const { error } = await (supabase.from('price_modifiers') as any).update(payload).eq('id', row.id);
       if (error) { toast.error(error.message); setSaving(false); return; }
       setModifiers(prev => prev.map(r => r.id === row.id ? { ...r, ...payload, id: row.id } as PriceModifierRow : r));
       toast.success('Aggiornato');
     } else {
-      const { data, error } = await (supabase.from('price_modifiers' as any) as any).insert(payload).select('*').single();
+      const { data, error } = await (supabase.from('price_modifiers') as any).insert(payload).select('*').single();
       if (error) { toast.error(error.message); setSaving(false); return; }
       setModifiers(prev => [...prev, data as PriceModifierRow]);
       toast.success('Aggiunto');
@@ -166,7 +166,7 @@ export default function PriceCatalogAdmin() {
   };
 
   const deleteModifier = async (id: string) => {
-    const { error } = await (supabase.from('price_modifiers' as any) as any).delete().eq('id', id);
+    const { error } = await (supabase.from('price_modifiers') as any).delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
     setModifiers(prev => prev.filter(r => r.id !== id));
     toast.success('Eliminato');

@@ -22,14 +22,15 @@ export default function CespitiContabilita() {
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase.from('assets' as any).select('*').eq('dealer_id', user.id).order('anno_acquisto', { ascending: false });
+    const { data } = await supabase.from('assets').select('*').eq('dealer_id', user.id).order('anno_acquisto', { ascending: false });
     setAssets((data as unknown as AssetRow[]) ?? []);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [user]);
 
   const addAsset = async () => {
     if (!user || !form.descrizione || !form.valore) { toast.error('Descrizione e valore obbligatori'); return; }
-    const { error } = await supabase.from('assets' as any).insert({
+    const { error } = await supabase.from('assets').insert({
       dealer_id: user.id, descrizione: form.descrizione, valore: Number(form.valore),
       anno_acquisto: Number(form.anno_acquisto), perc_amm: Number(form.perc_amm), categoria: form.categoria || null,
     });
@@ -51,12 +52,12 @@ export default function CespitiContabilita() {
       { account_code: '10', descr: 'Fondo ammortamento', dare: 0, avere: totale, sort_order: 1 },
     ];
     if (!verificaQuadratura(lines).ok) { setBusy(false); toast.error('Scrittura non quadra'); return; }
-    const { data: entry, error } = await supabase.from('journal_entries' as any).insert({
+    const { data: entry, error } = await supabase.from('journal_entries').insert({
       dealer_id: user.id, chiave: `AMM|${anno}`, data: `${anno}-12-31`, controparte: 'Ammortamenti',
       numero: '', tipo: 'movimento', mov_tipo: 'ammortamento', stato: 'registrata',
     }).select('id').single();
     if (error || !entry) { setBusy(false); toast.error(error?.message?.includes('duplicate') ? 'Ammortamento già registrato per questo anno' : (error?.message ?? 'Errore')); return; }
-    await supabase.from('journal_lines' as any).insert(lines.map(l => ({ ...l, entry_id: (entry as any).id })));
+    await supabase.from('journal_lines').insert(lines.map(l => ({ ...l, entry_id: (entry as any).id })));
     setBusy(false);
     toast.success(`Ammortamento ${anno} registrato: ${formatEuro(totale)}`);
   };

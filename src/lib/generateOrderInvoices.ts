@@ -16,7 +16,7 @@ export async function generateOrderInvoices(measurementId: string, userId: strin
 
   // Idempotenza: già generate?
   const { data: existing } = await supabase
-    .from('journal_entries' as any)
+    .from('journal_entries')
     .select('id').eq('measurement_id', measurementId).eq('origine', 'ordine').limit(1);
   if (existing && existing.length) return { created: false, note: 'già generate' };
 
@@ -29,7 +29,7 @@ export async function generateOrderInvoices(measurementId: string, userId: strin
 
   // Preventivo dettagliato più recente (se esiste): imponibile/IVA vendita + netto acquisto
   const { data: q } = await supabase
-    .from('dealer_quotes' as any)
+    .from('dealer_quotes')
     .select('taxable_base,vat_amount,subtotal_net')
     .eq('measurement_id', measurementId).eq('dealer_id', userId)
     .order('created_at', { ascending: false }).limit(1).maybeSingle();
@@ -50,7 +50,7 @@ export async function generateOrderInvoices(measurementId: string, userId: strin
   const insertEntry = async (
     tipo: 'attiva' | 'passiva', controparte: string, lines: JournalLine[], incompleta: boolean, note: string,
   ) => {
-    const { data: entry, error } = await supabase.from('journal_entries' as any).insert({
+    const { data: entry, error } = await supabase.from('journal_entries').insert({
       dealer_id: userId,
       chiave: `ORD-${tipo.toUpperCase()}|${measurementId}`,
       data: today, controparte, numero: '', tipo,
@@ -59,7 +59,7 @@ export async function generateOrderInvoices(measurementId: string, userId: strin
     }).select('id').single();
     if (error) throw error;
     if (lines.length) {
-      const { error: le } = await supabase.from('journal_lines' as any).insert(
+      const { error: le } = await supabase.from('journal_lines').insert(
         lines.map((l, i) => ({ entry_id: (entry as any).id, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })),
       );
       if (le) throw le;

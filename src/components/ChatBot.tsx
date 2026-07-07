@@ -155,7 +155,7 @@ export function ChatBot() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id]);  
 
   // ── Web Speech API (primario) ────────────────────────────────
   const startSpeechRecognition = useCallback(() => {

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 export type NotificationType = 'appointment' | 'measurement' | 'payment' | 'status' | 'info';
 
@@ -21,7 +22,7 @@ export async function createNotification(opts: CreateNotificationOptions): Promi
     type,
     title,
     body: body ?? null,
-    metadata: metadata ?? null,
+    metadata: (metadata ?? null) as Json,
   });
 
   if (error) {

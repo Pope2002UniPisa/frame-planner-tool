@@ -60,7 +60,7 @@ export default function TerritorialMap() {
     const load = async () => {
       const [clients, leads, measurements] = await Promise.all([
         supabase.from('end_clients').select('id,name,address,city,lat,lng').eq('dealer_id', user.id),
-        supabase.from('leads' as any).select('id,name,address,city,lat,lng,status,estimated_value,converted_client_id').eq('dealer_id', user.id),
+        supabase.from('leads').select('id,name,address,city,lat,lng,status,estimated_value,converted_client_id').eq('dealer_id', user.id),
         supabase.from('measurements').select('id,client_name,client_address,status,estimated_price,lat,lng').eq('user_id', user.id),
       ]);
 

@@ -27,7 +27,7 @@ export default function OrdiniContabilita() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { data: es } = await supabase.from('journal_entries' as any)
+    const { data: es } = await supabase.from('journal_entries')
       .select('id,tipo,controparte,numero,data,stato,incompleta,note')
       .eq('dealer_id', user.id).eq('origine', 'ordine')
       .order('created_at', { ascending: false });
@@ -35,7 +35,7 @@ export default function OrdiniContabilita() {
     const ids = list.map(e => e.id);
     const totals = new Map<string, number>();
     if (ids.length) {
-      const { data: ls } = await supabase.from('journal_lines' as any).select('entry_id,dare').in('entry_id', ids);
+      const { data: ls } = await supabase.from('journal_lines').select('entry_id,dare').in('entry_id', ids);
       ((ls as any[]) ?? []).forEach(l => totals.set(l.entry_id, (totals.get(l.entry_id) ?? 0) + Number(l.dare || 0)));
     }
     setEntries(list.map(e => ({ ...e, totale: Math.round((totals.get(e.id) ?? 0) * 100) / 100 })));
@@ -58,7 +58,7 @@ export default function OrdiniContabilita() {
         if (numErr || numero == null) throw numErr ?? new Error('Numerazione non riuscita');
         patch.numero = String(numero);
       }
-      const { error } = await supabase.from('journal_entries' as any).update(patch).eq('id', e.id);
+      const { error } = await supabase.from('journal_entries').update(patch).eq('id', e.id);
       if (error) throw error;
       toast.success(`${e.tipo === 'attiva' ? 'Fattura attiva' : 'Fattura passiva'} registrata${patch.numero ? ` (n. ${patch.numero})` : ''}`);
       load();
@@ -68,7 +68,7 @@ export default function OrdiniContabilita() {
   const elimina = async (e: Entry) => {
     if (!confirm('Eliminare questa bozza?')) return;
     setBusy(e.id);
-    const { error } = await supabase.from('journal_entries' as any).delete().eq('id', e.id);
+    const { error } = await supabase.from('journal_entries').delete().eq('id', e.id);
     if (error) toast.error(error.message); else { toast.success('Bozza eliminata'); load(); }
     setBusy(null);
   };
@@ -87,12 +87,12 @@ export default function OrdiniContabilita() {
         natura: '', intra_ue: false, descrizione: 'Acquisto merci per ordine',
       };
       const lines = scritturaFatturaPassiva(inv, PURCHASE_COST_ACCOUNT);
-      await supabase.from('journal_lines' as any).delete().eq('entry_id', e.id);
-      const { error } = await supabase.from('journal_lines' as any).insert(
+      await supabase.from('journal_lines').delete().eq('entry_id', e.id);
+      const { error } = await supabase.from('journal_lines').insert(
         lines.map((l, i) => ({ entry_id: e.id, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })),
       );
       if (error) throw error;
-      await supabase.from('journal_entries' as any).update({ incompleta: false, note: 'Fattura passiva da ordine (bozza) — costo inserito manualmente' }).eq('id', e.id);
+      await supabase.from('journal_entries').update({ incompleta: false, note: 'Fattura passiva da ordine (bozza) — costo inserito manualmente' }).eq('id', e.id);
       toast.success('Costo inserito');
       setCostInput(s => ({ ...s, [e.id]: '' }));
       load();

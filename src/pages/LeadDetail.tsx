@@ -45,7 +45,7 @@ export default function LeadDetail() {
     if (!user || !id) return;
     const fetchAll = async () => {
       const { data: leadData } = await supabase
-        .from('leads' as any)
+        .from('leads')
         .select('*')
         .eq('id', id)
         .eq('dealer_id', user.id)
@@ -62,7 +62,7 @@ export default function LeadDetail() {
         notes: l.notes ?? '',
       });
       const { data: actData } = await supabase
-        .from('lead_activities' as any)
+        .from('lead_activities')
         .select('*')
         .eq('lead_id', id)
         .order('created_at', { ascending: false });
@@ -75,7 +75,7 @@ export default function LeadDetail() {
   const logActivity = async (type: string, note: string) => {
     if (!user || !id) return;
     const { data } = await supabase
-      .from('lead_activities' as any)
+      .from('lead_activities')
       .insert({ lead_id: id, dealer_id: user.id, type, note, created_by: user.id })
       .select()
       .single();
@@ -87,7 +87,7 @@ export default function LeadDetail() {
     setSaving(true);
     const statusChanged = form.status !== lead.status;
     const { error } = await supabase
-      .from('leads' as any)
+      .from('leads')
       .update({
         name: form.name, email: form.email || null, phone: form.phone || null,
         address: form.address || null, city: form.city || null, source: form.source,
@@ -129,7 +129,7 @@ export default function LeadDetail() {
       .select()
       .single();
     if (cErr || !client) { setConverting(false); toast.error(cErr?.message ?? 'Errore'); return; }
-    await supabase.from('leads' as any).update({ converted_client_id: client.id, status: 'vinto' }).eq('id', id);
+    await supabase.from('leads').update({ converted_client_id: client.id, status: 'vinto' }).eq('id', id);
     await logActivity('cambio_stato', 'Convertito in cliente');
     setConverting(false);
     toast.success('Lead convertito in cliente');

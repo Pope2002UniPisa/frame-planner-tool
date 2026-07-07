@@ -39,7 +39,7 @@ export default function LeadsList() {
     if (!user) return;
     const fetchLeads = async () => {
       const { data, error } = await supabase
-        .from('leads' as any)
+        .from('leads')
         .select('*')
         .eq('dealer_id', user.id)
         .order('created_at', { ascending: false });
@@ -73,7 +73,7 @@ export default function LeadsList() {
     if (!user || !form.name.trim()) { toast.error('Il nome è obbligatorio'); return; }
     setSaving(true);
     const { data, error } = await supabase
-      .from('leads' as any)
+      .from('leads')
       .insert({
         dealer_id: user.id,
         name: form.name.trim(),

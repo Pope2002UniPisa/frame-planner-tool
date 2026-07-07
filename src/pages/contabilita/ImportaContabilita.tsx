@@ -35,10 +35,10 @@ export default function ImportaContabilita() {
   const loadAll = async () => {
     if (!user) return;
     const [acc, kw, cr, q] = await Promise.all([
-      supabase.from('chart_of_accounts' as any).select('code,description,type'),
-      supabase.from('coding_keywords' as any).select('keywords,account_code,priority'),
-      supabase.from('coding_rules' as any).select('piva,account_code').eq('dealer_id', user.id),
-      supabase.from('invoices_raw' as any).select('*').eq('dealer_id', user.id).eq('status', 'da_approvare').order('data', { ascending: false }),
+      supabase.from('chart_of_accounts').select('code,description,type'),
+      supabase.from('coding_keywords').select('keywords,account_code,priority'),
+      supabase.from('coding_rules').select('piva,account_code').eq('dealer_id', user.id),
+      supabase.from('invoices_raw').select('*').eq('dealer_id', user.id).eq('status', 'da_approvare').order('data', { ascending: false }),
     ]);
     setAccounts((acc.data as unknown as Account[]) ?? []);
     setKeywords(((kw.data as unknown as { keywords: string[]; account_code: string; priority: number }[]) ?? []));
@@ -48,7 +48,8 @@ export default function ImportaContabilita() {
     setQueue((q.data as unknown as RawInvoice[]) ?? []);
   };
 
-  useEffect(() => { loadAll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadAll(); }, [user]);
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || !user) return;
@@ -73,7 +74,7 @@ export default function ImportaContabilita() {
     }
     if (rows.length) {
       // Anti-duplicato: unique(dealer_id, chiave)
-      const { error, count } = await supabase.from('invoices_raw' as any)
+      const { error, count } = await supabase.from('invoices_raw')
         .upsert(rows, { onConflict: 'dealer_id,chiave', ignoreDuplicates: true, count: 'exact' });
       if (error) toast.error(error.message);
       dup = rows.length - (count ?? rows.length);
@@ -97,22 +98,22 @@ export default function ImportaContabilita() {
     const q = verificaQuadratura(lines);
     if (!q.ok) { toast.error(`Scrittura non quadra (D ${q.totDare} ≠ A ${q.totAvere})`); return; }
 
-    const { data: entry, error: eErr } = await supabase.from('journal_entries' as any).insert({
+    const { data: entry, error: eErr } = await supabase.from('journal_entries').insert({
       dealer_id: user.id, chiave: inv.chiave, data: inv.data, controparte: inv.fornitore,
       numero: inv.numero, tipo: 'passiva', intra_ue: inv.intra_ue, stato: 'registrata',
     }).select('id').single();
     if (eErr || !entry) { toast.error(eErr?.message ?? 'Errore'); return; }
     const entryId = (entry as any).id;
 
-    const { error: lErr } = await supabase.from('journal_lines' as any).insert(
+    const { error: lErr } = await supabase.from('journal_lines').insert(
       lines.map((l, i) => ({ entry_id: entryId, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })),
     );
     if (lErr) { toast.error(lErr.message); return; }
 
-    await supabase.from('invoices_raw' as any).update({ status: 'registrata', entry_id: entryId }).eq('id', inv.id);
+    await supabase.from('invoices_raw').update({ status: 'registrata', entry_id: entryId }).eq('id', inv.id);
 
     if (learn[inv.id] && inv.piva_fornitore) {
-      await supabase.from('coding_rules' as any).upsert(
+      await supabase.from('coding_rules').upsert(
         { dealer_id: user.id, piva: inv.piva_fornitore, account_code: conto },
         { onConflict: 'dealer_id,piva' },
       );
