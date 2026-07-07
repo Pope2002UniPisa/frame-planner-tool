@@ -7,7 +7,11 @@ import { useAdminCheck } from '@/hooks/useAdminCheck';
 export function useAccountingAccess() {
   const { user } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.id);
-  const { isAdmin } = useAdminCheck();
+  const { isAdmin, loading: adminLoading } = useAdminCheck();
   const enabled = !!(profile as { accounting_enabled?: boolean } | undefined)?.accounting_enabled || isAdmin;
-  return { enabled, loading: isLoading };
+  // Aspetta ENTRAMBe le verifiche (profilo + ruolo admin): l'accesso dipende da
+  // isAdmin, che è una query separata. Senza questo, con il profilo già in cache
+  // ma l'admin-check ancora in corso, enabled risultava false e loading false →
+  // redirect indebito alla dashboard passando tra le pagine di contabilità.
+  return { enabled, loading: isLoading || adminLoading };
 }
