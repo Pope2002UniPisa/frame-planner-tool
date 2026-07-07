@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errors';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { SignedImage } from '@/components/SignedImage';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -435,8 +437,8 @@ export default function Dashboard() {
         if (error || !data?.success) { if (!data?.skipped) throw new Error(data?.error || 'Errore'); }
         if (data?.skipped) toast.info('WhatsApp non configurato — messaggio simulato');
         else sent++;
-      } catch (err: any) {
-        toast.error(`Errore per ${to}: ${err.message}`);
+      } catch (err) {
+        toast.error(`Errore per ${to}: ${getErrorMessage(err)}`);
       }
     }
     if (sent > 0) toast.success(`Riepilogo inviato a ${sent} destinatar${sent === 1 ? 'io' : 'i'} WhatsApp`);
@@ -1015,7 +1017,7 @@ export default function Dashboard() {
                                 {photos.slice(0, 4).map((url: string, i: number) => (
                                   <div key={i} className="w-10 h-10 rounded border border-border overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all"
                                     onClick={(e) => { e.stopPropagation(); setSelectedPhoto(url); }}>
-                                    <img src={url} alt="" className="w-full h-full object-cover" />
+                                    <SignedImage src={url} alt="" className="w-full h-full object-cover" />
                                   </div>
                                 ))}
                                 {photos.length > 4 && (
@@ -1182,7 +1184,7 @@ export default function Dashboard() {
       <Dialog open={!!selectedPhoto} onOpenChange={open => !open && setSelectedPhoto(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle className="font-heading">Foto</DialogTitle></DialogHeader>
-          {selectedPhoto && <img src={selectedPhoto} alt="" className="w-full rounded-lg" />}
+          {selectedPhoto && <SignedImage src={selectedPhoto} alt="" className="w-full rounded-lg" />}
         </DialogContent>
       </Dialog>
 

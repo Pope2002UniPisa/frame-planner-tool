@@ -10,6 +10,12 @@ import { Truck, Search, Filter, Eye, MapPin, Clock, AlertTriangle, CheckCircle2,
 import { productLabels, statusLabels } from '@/lib/constants';
 import AppLayout from '@/components/AppLayout';
 import { useNavigate } from 'react-router-dom';
+import type { Database } from '@/integrations/supabase/types';
+
+type MeasurementRow = Database['public']['Tables']['measurements']['Row'] & {
+  status: string;
+  product_type: string;
+};
 
 function getDaysRemaining(dateStr: string | null): number | null {
   if (!dateStr) return null;
@@ -34,7 +40,7 @@ export default function DeliverySummary() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  const [measurements, setMeasurements] = useState<any[]>([]);
+  const [measurements, setMeasurements] = useState<MeasurementRow[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   const [searchText, setSearchText] = useState('');
@@ -50,7 +56,7 @@ export default function DeliverySummary() {
         .select('*')
         .in('status', ['quoted', 'ordered', 'completed'])
         .order('created_at', { ascending: false });
-      setMeasurements(data || []);
+      setMeasurements((data || []) as MeasurementRow[]);
       setLoadingData(false);
     };
     fetch();
@@ -191,7 +197,7 @@ export default function DeliverySummary() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {sorted.map((m: any) => {
+            {sorted.map((m) => {
               const days = getDaysRemaining(m.estimated_delivery_date);
               const urgency = getUrgencyBadge(days);
               const UrgencyIcon = urgency.icon;
@@ -218,7 +224,7 @@ export default function DeliverySummary() {
                         {m.estimated_delivery_date && (
                           <span className="text-[10px] text-muted-foreground">{new Date(m.estimated_delivery_date).toLocaleDateString('it-IT')}</span>
                         )}
-                        {m.estimated_price > 0 && <span className="text-[10px] font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
+                        {(m.estimated_price ?? 0) > 0 && <span className="text-[10px] font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/misurazione/${m.id}`)}>
                           <Eye className="h-3 w-3" />
                         </Button>

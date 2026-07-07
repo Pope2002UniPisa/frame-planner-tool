@@ -48,7 +48,7 @@ export default function QuoteBuilder() {
       if (id) {
         // Carica preventivo esistente
         const { data: q } = await supabase.from('dealer_quotes').select('*').eq('id', id).eq('dealer_id', user.id).single();
-        const quote = q as any;
+        const quote = q;
         if (quote) {
           setTitle(quote.title ?? 'Preventivo');
           setPosa(String(quote.posa_amount ?? 0));
@@ -58,7 +58,7 @@ export default function QuoteBuilder() {
           setLinkedMeasurement(quote.measurement_id ?? null);
           setAgevolata((quote.vat_10_base ?? 0) > 0);
           const { data: ql } = await supabase.from('quote_lines').select('*').eq('quote_id', id).order('sort_order');
-          const rows = (ql as any[]) ?? [];
+          const rows = ql ?? [];
           if (rows.length) {
             setLines(rows.map(r => ({
               key: r.id, description: r.description ?? '', qty: Number(r.qty), unitNetPrice: Number(r.unit_net_price),
@@ -125,7 +125,7 @@ export default function QuoteBuilder() {
     } else {
       const { data, error } = await supabase.from('dealer_quotes').insert(payload).select('id').single();
       if (error || !data) { setSaving(false); toast.error(error?.message ?? 'Errore'); return; }
-      quoteId = (data as any).id;
+      quoteId = data.id;
     }
     const lineRows = lines.map((l, i) => ({
       quote_id: quoteId!, description: l.description ?? '', qty: Number(l.qty) || 0,

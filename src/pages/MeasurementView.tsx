@@ -1,8 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type MeasurementRow = Database['public']['Tables']['measurements']['Row'] & {
+  status: string;
+  product_type: string;
+  created_at: string;
+  user_id: string;
+};
+// Forma dei dati salvati in accessories_config (JSON): campi porte/accessori.
+interface StoredAccessoriesConfig {
+  door_model?: string;
+  door_model_name?: string;
+  door_handle_model_id?: string;
+  door_handle_finish_id?: string;
+  door_color_id?: string;
+  door_color_name?: string;
+  door_frame_id?: string;
+  [key: string]: unknown;
+}
+type ColorInfo = { hex: string; name: string } | undefined;
 import { Button } from '@/components/ui/button';
+import { SignedImage } from '@/components/SignedImage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -27,8 +48,8 @@ export default function MeasurementView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [m, setM] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [m, setM] = useState<MeasurementRow | null>(null);
+  const [profile, setProfile] = useState<{ email: string | null; company_name: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [modDialog, setModDialog] = useState(false);
   const [modNotes, setModNotes] = useState('');
@@ -50,7 +71,7 @@ export default function MeasurementView() {
       supabase.from('measurements').select('*').eq('id', id).eq('user_id', user.id).single(),
       supabase.from('profiles').select('email, company_name').eq('user_id', user.id).single(),
     ]).then(([{ data: mData }, { data: pData }]) => {
-      setM(mData);
+      setM(mData as MeasurementRow | null);
       setProfile(pData);
       setLoading(false);
     });
@@ -60,7 +81,7 @@ export default function MeasurementView() {
     const { error } = await supabase.from('measurements').update({ status: 'ordered' }).eq('id', id!);
     if (error) { toast.error(error.message); return; }
     await recordStatusChange(id!, m?.status ?? null, 'ordered');
-    setM((prev: any) => ({ ...prev, status: 'ordered' }));
+    setM(prev => prev ? { ...prev, status: 'ordered' } : prev);
     // Fase 3 — genera le bozze contabili (attiva + passiva) dell'ordine (non bloccante)
     if (user && m?.user_id === user.id) {
       try { await generateOrderInvoices(id!, user.id); } catch (e) { console.log('gen invoices:', e); }
@@ -104,7 +125,7 @@ export default function MeasurementView() {
     }).eq('id', id!);
     if (error) { toast.error(error.message); return; }
     await recordStatusChange(id!, m?.status ?? null, 'quote_modifications', modNotes || undefined);
-    setM((prev: any) => ({ ...prev, status: 'quote_modifications', modification_notes: modNotes }));
+    setM(prev => prev ? { ...prev, status: 'quote_modifications', modification_notes: modNotes } : prev);
     setModDialog(false);
     setModNotes('');
     toast.success('Richiesta di modifiche inviata.');
@@ -117,7 +138,7 @@ export default function MeasurementView() {
   const isOrder = ['ordered', 'in_production', 'delivering', 'completed'].includes(m.status);
   const pageTitle = isOrder ? 'Dettaglio Ordine' : isQuote ? 'Dettaglio Preventivo' : 'Dettaglio Misurazione';
 
-  const acc = m.accessories_config as any;
+  const acc = (m.accessories_config ?? {}) as StoredAccessoriesConfig;
   const doorHandleModel = acc?.door_handle_model_id || '';
   const doorHandleFinish = acc?.door_handle_finish_id || '';
   const doorColorName = acc?.door_color_name || '';
@@ -167,9 +188,9 @@ export default function MeasurementView() {
   const doorModelId = acc?.door_model || '';
   const doorModelName = acc?.door_model_name || (doorModelId ? getDoorModel(doorModelId)?.name : null);
   const isDoor = ['porta', 'porta_finestrata', 'porta_filomuro'].includes(m.product_type);
-  const fields: [string, any, any?][] = [
+  const fields: [string, ReactNode, ColorInfo?][] = [
     ['Prodotto', doorModelName || (productLabels[m.product_type] || m.product_type)],
-    ['Tipo rilievo', { foro_muro: 'Foro muro', luce_netta: 'Luce netta', grezzo: 'Grezzo', finito: 'Finito' }[m.survey_type] || m.survey_type],
+    ['Tipo rilievo', { foro_muro: 'Foro muro', luce_netta: 'Luce netta', grezzo: 'Grezzo', finito: 'Finito' }[m.survey_type ?? ''] || m.survey_type],
     ['Larghezza (mm)', m.width_mm],
     ['Altezza (mm)', m.height_mm],
     m.depth_mm && ['Profondità (mm)', m.depth_mm],
@@ -189,9 +210,9 @@ export default function MeasurementView() {
     m.laying_type && ['Tipo posa', { standard: 'Standard', certificata: 'Certificata' }[m.laying_type] || m.laying_type],
     m.remove_old && ['Rimozione vecchio', 'Sì'],
     m.notes && ['Note', m.notes],
-  ].filter(Boolean) as [string, any, any?][];
+  ].filter(Boolean) as [string, ReactNode, ColorInfo?][];
 
-  const renderColorValue = (value: any, colorInfo: any) => {
+  const renderColorValue = (value: ReactNode, colorInfo: ColorInfo) => {
     if (!colorInfo) return <span className="text-sm font-medium text-foreground">{value}</span>;
     return (
       <div className="flex items-center gap-2">
@@ -279,7 +300,7 @@ export default function MeasurementView() {
               frameType={isDoor ? (acc?.door_frame_id || m.frame_type || 'standard') : (m.frame_type || 'standard')}
               colorInternal={m.color_internal || ''}
               colorExternal={m.color_external || ''}
-              doorColorHex={isDoor ? (getColorLabel(acc?.door_color_id)?.hex) : undefined}
+              doorColorHex={isDoor ? (getColorLabel(acc?.door_color_id || '')?.hex) : undefined}
               doorHandleFinishId={isDoor ? (acc?.door_handle_finish_id || undefined) : undefined}
               doorHandleModelId={isDoor ? (acc?.door_handle_model_id || undefined) : undefined}
               doorModelId={isDoor ? (acc?.door_model || undefined) : undefined}
@@ -356,7 +377,7 @@ export default function MeasurementView() {
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
                 {m.photo_urls.map((url: string, i: number) => (
-                  <img key={i} src={url} alt={`Foto ${i + 1}`} className="rounded-lg w-full h-40 object-cover" />
+                  <SignedImage key={i} src={url} alt={`Foto ${i + 1}`} className="rounded-lg w-full h-40 object-cover" />
                 ))}
               </div>
             </CardContent>

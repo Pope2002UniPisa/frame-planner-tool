@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import { getErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,8 +78,8 @@ function LoginForm() {
     try {
       await signIn(email, password);
       toast.success('Accesso effettuato!');
-    } catch (err: any) {
-      toast.error(err.message || 'Errore durante l\'accesso');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Errore durante l\'accesso'));
     } finally {
       setSubmitting(false);
     }
@@ -129,8 +130,8 @@ function RegisterForm() {
         client_code: form.client_code,
       });
       toast.success('Registrazione completata! Controlla la tua email per confermare.');
-    } catch (err: any) {
-      toast.error(err.message || 'Errore durante la registrazione');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Errore durante la registrazione'));
     } finally {
       setSubmitting(false);
     }

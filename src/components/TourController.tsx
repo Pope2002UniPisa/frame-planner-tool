@@ -6,6 +6,7 @@ import '@/styles/tour.css';
 import { TOURS } from '@/lib/tours';
 
 // Avvia un tour da qualsiasi punto dell'app (es. da Silvia o da un pulsante "Guida").
+// eslint-disable-next-line react-refresh/only-export-components
 export function startTour(id: string) {
   window.dispatchEvent(new CustomEvent('mm:start-tour', { detail: id }));
 }

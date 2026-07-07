@@ -16,6 +16,17 @@ import { Save, User, BarChart3, FileText, Edit3, Send, Package, CheckCircle, Bui
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 import { productLabels, WORKFLOW_STEPS, getWorkflowIndex, statusLabels } from '@/lib/constants';
+import type { Database } from '@/integrations/supabase/types';
+import type { Profile as ProfileType } from '@/hooks/useDashboardQueries';
+import { getErrorMessage } from '@/lib/errors';
+
+type MeasurementRow = Database['public']['Tables']['measurements']['Row'] & {
+  status: string;
+  created_at: string;
+  product_type: string;
+  user_id: string;
+};
+type SalesObjectiveRow = Database['public']['Tables']['sales_objectives']['Row'];
 
 const LINE_COLORS: Record<string, string> = {
   Finestra: '#f97316', 'Porta Finestra': '#3b82f6', Porta: '#a855f7',
@@ -36,10 +47,10 @@ const DOOR_PRODUCT_TYPES = ['porta', 'porta_finestrata', 'porta_filomuro'];
 const WINDOW_PRODUCT_TYPES = ['finestra', 'porta_finestra'];
 const PVC_MATERIALS = ['pvc', 'alluminio'];
 
-function getSupplierForMeasurement(m: any): string | null {
+function getSupplierForMeasurement(m: MeasurementRow): string | null {
   const pt: string = m.product_type || '';
   const mat: string = m.material || '';
-  const sid: string = (m as any).supplier_id || '';
+  const sid: string = m.supplier_id || '';
   if (DOOR_PRODUCT_TYPES.includes(pt)) return 'ferrerolegno';
   if (pt === 'basculante') return 'denardi';
   if (WINDOW_PRODUCT_TYPES.includes(pt)) {
@@ -66,9 +77,9 @@ export default function Profile() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
-  const [profile, setProfile] = useState<any>(null);
-  const [measurements, setMeasurements] = useState<any[]>([]);
-  const [objectives, setObjectives] = useState<any[]>([]);
+  const [profile, setProfile] = useState<ProfileType | null>(null);
+  const [measurements, setMeasurements] = useState<MeasurementRow[]>([]);
+  const [objectives, setObjectives] = useState<SalesObjectiveRow[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ company_name: '', phone: '', email: '', client_code: '' });
@@ -106,11 +117,11 @@ export default function Profile() {
           setOrgContacts(pData.org_contacts as typeof DEFAULT_ORG_ROLES);
         }
       }
-      setMeasurements(mData || []);
+      setMeasurements((mData || []) as MeasurementRow[]);
       setObjectives(oData || []);
       // Group catalogs by supplier_id
       const grouped: Record<string, Array<{ id: string; name: string; pdf_url: string | null }>> = {};
-      (cData || []).forEach((c: any) => {
+      (cData || []).forEach((c) => {
         if (!grouped[c.supplier_id]) grouped[c.supplier_id] = [];
         grouped[c.supplier_id].push({ id: c.id, name: c.name, pdf_url: c.pdf_url });
       });
@@ -135,10 +146,10 @@ export default function Profile() {
     const sent = filteredMeasurements.filter(m => m.status === 'ricevuto' || m.status === 'submitted' || m.status === 'in_review').length;
     const quoted = filteredMeasurements.filter(m => m.status === 'quoted').length;
     const completed = filteredMeasurements.filter(m => m.status === 'completed' || m.status === 'ordered').length;
-    const totalEstimated = filteredMeasurements.reduce((s, m) => s + (Number((m as any).estimated_price) || 0), 0);
-    const totalPaid = filteredMeasurements.reduce((s, m) => s + (Number((m as any).amount_paid) || 0), 0);
-    const disputes = filteredMeasurements.filter(m => (m as any).has_dispute).length;
-    const modifications = filteredMeasurements.filter(m => (m as any).has_modification).length;
+    const totalEstimated = filteredMeasurements.reduce((s, m) => s + (Number(m.estimated_price) || 0), 0);
+    const totalPaid = filteredMeasurements.reduce((s, m) => s + (Number(m.amount_paid) || 0), 0);
+    const disputes = filteredMeasurements.filter(m => m.has_dispute).length;
+    const modifications = filteredMeasurements.filter(m => m.has_modification).length;
     return { total, drafts, sent, quoted, completed, totalEstimated, totalPaid, remaining: totalEstimated - totalPaid, disputes, modifications };
   }, [filteredMeasurements]);
 
@@ -181,7 +192,7 @@ export default function Profile() {
     const byType: Record<string, { count: number; total: number }> = {};
     filteredMeasurements.forEach(m => {
       const label = productLabels[m.product_type] || m.product_type;
-      const price = Number((m as any).estimated_price) || 0;
+      const price = Number(m.estimated_price) || 0;
       if (!byType[label]) byType[label] = { count: 0, total: 0 };
       byType[label].count++;
       if (price > 0) byType[label].total += price;
@@ -190,7 +201,7 @@ export default function Profile() {
   }, [filteredMeasurements]);
 
   const supplierStatsMap = useMemo(() => {
-    const calcStats = (filtered: any[]) => ({
+    const calcStats = (filtered: MeasurementRow[]) => ({
       drafts:    filtered.filter(m => m.status === 'bozza').length,
       sent:      filtered.filter(m => ['ricevuto', 'submitted'].includes(m.status)).length,
       quoted:    filtered.filter(m => ['quoted', 'quote_accepted', 'quote_modifications'].includes(m.status)).length,
@@ -210,8 +221,8 @@ export default function Profile() {
       const { error } = await supabase.from('profiles').update({ org_contacts: orgContacts }).eq('id', profile.id);
       if (error) throw error;
       toast.success('Organigramma salvato!');
-    } catch (err: any) {
-      toast.error(err.message || 'Errore');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSavingOrg(false);
     }
@@ -236,11 +247,11 @@ export default function Profile() {
       new Date(m.created_at).toLocaleDateString('it-IT'),
       productLabels[m.product_type] || m.product_type,
       m.client_name, m.client_address, m.status,
-      Number((m as any).estimated_price) || 0,
-      Number((m as any).amount_paid) || 0,
-      (Number((m as any).estimated_price) || 0) - (Number((m as any).amount_paid) || 0),
-      (m as any).has_dispute ? 'Sì' : 'No',
-      (m as any).has_modification ? 'Sì' : 'No',
+      Number(m.estimated_price) || 0,
+      Number(m.amount_paid) || 0,
+      (Number(m.estimated_price) || 0) - (Number(m.amount_paid) || 0),
+      m.has_dispute ? 'Sì' : 'No',
+      m.has_modification ? 'Sì' : 'No',
     ]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -296,9 +307,9 @@ export default function Profile() {
         <td>${productLabels[m.product_type] || m.product_type}</td>
         <td>${m.client_name}</td>
         <td>${m.status}</td>
-        <td>${fmt(Number((m as any).estimated_price) || 0)}</td>
-        <td>${fmt(Number((m as any).amount_paid) || 0)}</td>
-        <td>${fmt((Number((m as any).estimated_price) || 0) - (Number((m as any).amount_paid) || 0))}</td>
+        <td>${fmt(Number(m.estimated_price) || 0)}</td>
+        <td>${fmt(Number(m.amount_paid) || 0)}</td>
+        <td>${fmt((Number(m.estimated_price) || 0) - (Number(m.amount_paid) || 0))}</td>
       </tr>`).join('')}
       </tbody></table>
       <div class="footer">Documento generato automaticamente dal portale misurazioni</div>
@@ -318,8 +329,8 @@ export default function Profile() {
       }).eq('id', profile.id);
       if (error) throw error;
       toast.success('Profilo aggiornato!');
-    } catch (err: any) {
-      toast.error(err.message || 'Errore');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -338,8 +349,8 @@ export default function Profile() {
       if (dbErr) throw dbErr;
       setLogoUrl(publicUrl);
       toast.success('Logo caricato!');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
       setUploadingLogo(false);
     }
@@ -654,10 +665,10 @@ export default function Profile() {
                           <p className="text-xs text-muted-foreground">Contestazioni attive</p>
                         </div>
                       </div>
-                      {filteredMeasurements.filter(m => (m as any).has_dispute).map(m => (
+                      {filteredMeasurements.filter(m => m.has_dispute).map(m => (
                         <div key={m.id} className="rounded-lg border border-red-200 p-3">
                           <p className="text-sm font-medium text-foreground">{m.client_name} — {productLabels[m.product_type] || m.product_type}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{(m as any).dispute_notes || 'Dettagli in fase di revisione'}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{m.dispute_notes || 'Dettagli in fase di revisione'}</p>
                         </div>
                       ))}
                     </div>
@@ -684,10 +695,10 @@ export default function Profile() {
                           <p className="text-xs text-muted-foreground">Modifiche richieste</p>
                         </div>
                       </div>
-                      {filteredMeasurements.filter(m => (m as any).has_modification).map(m => (
+                      {filteredMeasurements.filter(m => m.has_modification).map(m => (
                         <div key={m.id} className="rounded-lg border border-amber-200 p-3">
                           <p className="text-sm font-medium text-foreground">{m.client_name} — {productLabels[m.product_type] || m.product_type}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{(m as any).modification_notes || 'In fase di valutazione'}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{m.modification_notes || 'In fase di valutazione'}</p>
                         </div>
                       ))}
                     </div>
@@ -704,7 +715,7 @@ export default function Profile() {
                   <CardDescription>I tuoi obiettivi commerciali e il progresso attuale</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {objectives.map((obj: any) => {
+                  {objectives.map((obj) => {
                     const periodLabel = obj.period === 'monthly' ? `${String(obj.month).padStart(2, '0')}/${obj.year}` : obj.period === 'quarterly' ? `Q${obj.month ? Math.ceil(obj.month / 3) : '?'}/${obj.year}` : `${obj.year}`;
                     const productLabel = obj.product_type ? (productLabels[obj.product_type] || obj.product_type) : 'Tutti i prodotti';
                     const brandLabel = obj.brand || 'Tutte le marche';
@@ -717,7 +728,7 @@ export default function Profile() {
                     });
 
                     const currentCount = relevantMeasurements.length;
-                    const currentAmount = relevantMeasurements.reduce((s: number, m: any) => s + (Number(m.estimated_price) || 0), 0);
+                    const currentAmount = relevantMeasurements.reduce((s: number, m) => s + (Number(m.estimated_price) || 0), 0);
                     const countProgress = obj.target_count ? Math.min(100, Math.round((currentCount / obj.target_count) * 100)) : null;
                     const amountProgress = obj.target_amount ? Math.min(100, Math.round((currentAmount / obj.target_amount) * 100)) : null;
 

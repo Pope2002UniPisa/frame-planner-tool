@@ -35,17 +35,17 @@ export async function generateOrderInvoices(measurementId: string, userId: strin
     .order('created_at', { ascending: false }).limit(1).maybeSingle();
 
   const quote: QuoteTotals | null = q
-    ? { taxableTotal: Number((q as any).taxable_base) || 0, vatAmount: Number((q as any).vat_amount) || 0, purchaseNet: Number((q as any).subtotal_net) || 0 }
+    ? { taxableTotal: Number(q.taxable_base) || 0, vatAmount: Number(q.vat_amount) || 0, purchaseNet: Number(q.subtotal_net) || 0 }
     : null;
 
   const docs = buildOrderDocuments({
-    estimatedPrice: Number((m as any).estimated_price) || 0,
+    estimatedPrice: Number(m.estimated_price) || 0,
     quote,
     purchaseIntraUe: false, // produttori italiani (extra/intra-UE più avanti)
   });
 
   const today = new Date().toISOString().slice(0, 10);
-  const clientName = (m as any).client_name || 'Cliente';
+  const clientName = m.client_name || 'Cliente';
 
   const insertEntry = async (
     tipo: 'attiva' | 'passiva', controparte: string, lines: JournalLine[], incompleta: boolean, note: string,
@@ -60,11 +60,11 @@ export async function generateOrderInvoices(measurementId: string, userId: strin
     if (error) throw error;
     if (lines.length) {
       const { error: le } = await supabase.from('journal_lines').insert(
-        lines.map((l, i) => ({ entry_id: (entry as any).id, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })),
+        lines.map((l, i) => ({ entry_id: entry!.id, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })),
       );
       if (le) throw le;
     }
-    return (entry as any).id as string;
+    return entry!.id as string;
   };
 
   // Ciclo attivo (vendita)

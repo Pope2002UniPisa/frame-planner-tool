@@ -57,7 +57,7 @@ export default function CespitiContabilita() {
       numero: '', tipo: 'movimento', mov_tipo: 'ammortamento', stato: 'registrata',
     }).select('id').single();
     if (error || !entry) { setBusy(false); toast.error(error?.message?.includes('duplicate') ? 'Ammortamento già registrato per questo anno' : (error?.message ?? 'Errore')); return; }
-    await supabase.from('journal_lines').insert(lines.map(l => ({ ...l, entry_id: (entry as any).id })));
+    await supabase.from('journal_lines').insert(lines.map(l => ({ ...l, entry_id: entry.id })));
     setBusy(false);
     toast.success(`Ammortamento ${anno} registrato: ${formatEuro(totale)}`);
   };

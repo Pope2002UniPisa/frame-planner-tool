@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { formatEuro } from '@/lib/format';
+import { getErrorMessage, getErrorCode } from '@/lib/errors';
 import { CheckCircle2, Upload } from 'lucide-react';
 import {
   parseCsv, parseItalianAmount, parseDate, findPaymentCode, movementKey, guessColumn, type CsvTable,
@@ -31,7 +32,7 @@ export default function RiconciliazioneContabilita() {
   useEffect(() => {
     if (!user) return;
     supabase.from('measurements').select('id,payment_code,estimated_price,amount_paid,client_name').eq('user_id', user.id)
-      .then(({ data }) => setMeas((data as any[] ?? []) as Meas[]));
+      .then(({ data }) => setMeas((data ?? []) as Meas[]));
   }, [user]);
 
   const codeIndex = useMemo(() => {
@@ -88,7 +89,7 @@ export default function RiconciliazioneContabilita() {
           matched_code: r.code, status: doReconcile ? 'abbinato' : (r.code ? 'da_abbinare' : 'ignorato'),
         }).select('id').single();
         if (mvErr) {
-          if ((mvErr as any).code === '23505') { dup++; continue; } // già importato
+          if (getErrorCode(mvErr) === '23505') { dup++; continue; } // già importato
           throw mvErr;
         }
         imported++;
@@ -114,16 +115,16 @@ export default function RiconciliazioneContabilita() {
           payment_method: 'bonifico',
         }).eq('id', r.meas.id);
 
-        await supabase.from('bank_movements').update({ payment_id: (pay as any).id }).eq('id', (mv as any).id);
+        await supabase.from('bank_movements').update({ payment_id: pay.id }).eq('id', mv.id);
         reconciled++;
       }
       toast.success(`Import: ${imported} movimenti, ${reconciled} riconciliati${dup ? `, ${dup} già presenti` : ''}`);
       setRows([]); setTable(null); if (fileRef.current) fileRef.current.value = '';
       // ricarica misurazioni per saldi aggiornati
       const { data } = await supabase.from('measurements').select('id,payment_code,estimated_price,amount_paid,client_name').eq('user_id', user.id);
-      setMeas((data as any[] ?? []) as Meas[]);
-    } catch (e: any) {
-      toast.error(e.message ?? 'Errore durante l\'import');
+      setMeas((data ?? []) as Meas[]);
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Errore durante l\'import'));
     } finally {
       setBusy(false);
     }

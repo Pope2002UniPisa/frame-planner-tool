@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot, Loader2, Mic, MicOff, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getErrorMessage } from '@/lib/errors';
 import { useAuth } from '@/lib/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/hooks/useDashboardQueries';
@@ -21,15 +22,46 @@ import { toast } from 'sonner';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  action?: { type: string; data: Record<string, any> };
+  action?: { type: string; data: Record<string, unknown> };
   actionDone?: boolean;
   actionLoading?: boolean;
 }
 
+// Tipi minimi per la Web Speech API (non inclusa nella lib DOM standard).
+interface SpeechRecognitionAlternativeLike { readonly transcript: string }
+interface SpeechRecognitionResultLike {
+  readonly isFinal: boolean;
+  readonly length: number;
+  readonly [index: number]: SpeechRecognitionAlternativeLike;
+}
+interface SpeechRecognitionResultListLike {
+  readonly length: number;
+  readonly [index: number]: SpeechRecognitionResultLike;
+}
+interface SpeechRecognitionEventLike {
+  readonly resultIndex: number;
+  readonly results: SpeechRecognitionResultListLike;
+}
+interface SpeechRecognitionErrorEventLike { readonly error: string }
+interface SpeechRecognitionInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
 declare global {
   interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
   }
 }
 
@@ -55,7 +87,7 @@ export function ChatBot() {
   // ── Stato voce ───────────────────────────────────────────────
   const [voiceState, setVoiceState] = useState<'idle' | 'listening' | 'transcribing'>('idle');
   const [interimText, setInterimText] = useState('');
-  const recognitionRef  = useRef<any>(null);
+  const recognitionRef  = useRef<SpeechRecognitionInstance | null>(null);
   const lastInterimRef  = useRef('');   // fallback se onend arriva senza risultati finali
 
   // Ref sempre aggiornato ai messaggi — evita stale closure nei callback async
@@ -122,7 +154,7 @@ export function ChatBot() {
     if (last?.role === 'assistant' && last.action?.type === 'start_tour' && autoTourRan.current !== idx) {
       autoTourRan.current = idx;
       setOpen(false);
-      startTour(last.action.data?.tour ?? '');
+      startTour((last.action.data?.tour as string) ?? '');
       setMessages(prev => prev.map((m, j) => j === idx ? { ...m, actionDone: true } : m));
     }
   }, [messages]);
@@ -178,7 +210,7 @@ export function ChatBot() {
       lastInterimRef.current = '';
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
       let interim = '';
       let final   = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -199,7 +231,7 @@ export function ChatBot() {
       }
     };
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
       if (event.error === 'aborted' || event.error === 'no-speech') {
         // no-speech è normale — se abbiamo già del testo interim, inviamolo
         const fallback = finalTranscript.trim() || lastInterimRef.current.trim();
@@ -240,8 +272,8 @@ export function ChatBot() {
     try {
       recognition.start();
       return true;
-    } catch (e: any) {
-      toast.error('Impossibile avviare il microfono: ' + (e?.message ?? String(e)));
+    } catch (e) {
+      toast.error('Impossibile avviare il microfono: ' + getErrorMessage(e));
       return false;
     }
   }, [sendToAssistant]);
@@ -293,8 +325,8 @@ export function ChatBot() {
           setMessages(next);
           setVoiceState('idle');
           sendToAssistant(next);
-        } catch (e: any) {
-          toast.error('Trascrizione fallita: ' + e.message);
+        } catch (e) {
+          toast.error('Trascrizione fallita: ' + getErrorMessage(e));
           setVoiceState('idle');
         }
       };
@@ -307,10 +339,10 @@ export function ChatBot() {
         if (s >= 119) { mr.stop(); return s; }
         return s + 1;
       }), 1000);
-    } catch (e: any) {
-      const msg = e?.name === 'NotAllowedError'
+    } catch (e) {
+      const msg = e instanceof Error && e.name === 'NotAllowedError'
         ? 'Permesso microfono negato — consenti il microfono e ricarica la pagina'
-        : 'Microfono non accessibile: ' + e.message;
+        : 'Microfono non accessibile: ' + getErrorMessage(e);
       toast.error(msg);
     }
   }, [sendToAssistant]);
@@ -346,12 +378,12 @@ export function ChatBot() {
   };
 
   // ── Esegui azione ────────────────────────────────────────────
-  const executeAction = async (action: { type: string; data: Record<string, any> }, i: number) => {
+  const executeAction = async (action: { type: string; data: Record<string, unknown> }, i: number) => {
     if (!user) return;
     // Guida interattiva: gestita nel frontend (naviga + avvia il tour), niente backend.
     if (action.type === 'start_tour') {
       setOpen(false);
-      startTour(action.data?.tour ?? '');
+      startTour((action.data?.tour as string) ?? '');
       setMessages(prev => prev.map((m, j) => j === i ? { ...m, actionDone: true } : m));
       return;
     }
@@ -367,9 +399,9 @@ export function ChatBot() {
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments(user.id) });
       if (action.type === 'update_status')
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.measurements(user.id) });
-    } catch (e: any) {
+    } catch (e) {
       setMessages(prev => prev.map((m, j) => j === i ? { ...m, actionLoading: false } : m));
-      toast.error('Errore: ' + (e?.message ?? String(e)));
+      toast.error('Errore: ' + getErrorMessage(e));
     }
   };
 

@@ -7,7 +7,7 @@ import { formatEuro } from '@/lib/format';
 import { Copy, Printer, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface Company { denominazione?: string; iban?: string; }
+interface Company { denominazione?: string | null; iban?: string | null; }
 
 interface Props {
   /** owner (dealer) della misurazione: chiave del company_profile */
@@ -31,7 +31,7 @@ export default function PaymentSheet({ dealerId, paymentCode, totalDue, amountPa
   useEffect(() => {
     if (!dealerId) return;
     supabase.from('company_profile').select('denominazione,iban').eq('dealer_id', dealerId).maybeSingle()
-      .then(({ data }) => setCompany((data as any) ?? null));
+      .then(({ data }) => setCompany(data ?? null));
   }, [dealerId]);
 
   const causale = paymentCode ? `Pagamento ordine ${paymentCode}` : '';

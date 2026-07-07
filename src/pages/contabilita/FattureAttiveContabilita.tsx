@@ -30,7 +30,7 @@ export default function FattureAttiveContabilita() {
     supabase.from('company_profile').select('*').eq('dealer_id', user.id).maybeSingle()
       .then(({ data }) => setCompany(data as unknown as Company | null));
     supabase.from('end_clients').select('*').eq('dealer_id', user.id).order('name')
-      .then(({ data }) => setClients(((data as any[]) ?? []).map(c => ({ id: c.id, name: c.name, piva: c.piva ?? '' }))));
+      .then(({ data }) => setClients((data ?? []).map(c => ({ id: c.id, name: c.name, piva: c.piva ?? '' }))));
   }, [user]);
 
   const imponibile = Number(form.imponibile) || 0;
@@ -45,7 +45,7 @@ export default function FattureAttiveContabilita() {
     const anno = new Date().getFullYear();
 
     // Progressivo per anno — atomico (INSERT..ON CONFLICT DO UPDATE RETURNING)
-    const { data: numero, error: numErr } = await supabase.rpc('next_invoice_number' as any, { p_anno: anno });
+    const { data: numero, error: numErr } = await supabase.rpc('next_invoice_number', { p_anno: anno });
     if (numErr || numero == null) { setBusy(false); toast.error(numErr?.message ?? 'Numerazione non riuscita'); return; }
     const data = new Date().toISOString().slice(0, 10);
 
@@ -58,7 +58,7 @@ export default function FattureAttiveContabilita() {
       intra_ue: false, stato: 'registrata',
     }).select('id').single();
     if (error || !entry) { setBusy(false); toast.error(error?.message ?? 'Errore'); return; }
-    await supabase.from('journal_lines').insert(lines.map((l, i) => ({ entry_id: (entry as any).id, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })));
+    await supabase.from('journal_lines').insert(lines.map((l, i) => ({ entry_id: entry.id, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })));
 
     // XML FatturaPA (bozza)
     const xml = buildXml(company, form, { numero, data, imponibile, iva, totale });

@@ -45,7 +45,14 @@ function formatItDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-async function dbGet(path: string): Promise<any[]> {
+interface ReminderMeasurement {
+  id: string; product_type: string | null; client_name: string | null;
+  estimated_price: number | null; amount_paid?: number | null;
+  estimated_delivery_date?: string | null; user_id: string;
+}
+interface ReminderProfile { email: string | null; company_name: string | null }
+
+async function dbGet<T = Record<string, unknown>>(path: string): Promise<T[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: {
       'apikey': SUPABASE_SERVICE_ROLE_KEY,
@@ -196,14 +203,14 @@ serve(async (req) => {
       const targetDate = toISODate(addDays(today, days));
 
       // Misurazioni con consegna in esattamente 'days' giorni e non ancora completate
-      const measurements = await dbGet(
+      const measurements = await dbGet<ReminderMeasurement>(
         `measurements?estimated_delivery_date=eq.${targetDate}` +
         `&status=neq.completed&status=neq.bozza&select=id,product_type,client_name,estimated_price,user_id`
       );
 
       for (const m of measurements) {
         // Recupera il profilo del rivenditore per avere l'email
-        const profiles = await dbGet(`profiles?user_id=eq.${m.user_id}&select=email,company_name`);
+        const profiles = await dbGet<ReminderProfile>(`profiles?user_id=eq.${m.user_id}&select=email,company_name`);
         const profile = profiles[0];
         if (!profile?.email) continue;
 
@@ -247,14 +254,14 @@ serve(async (req) => {
     // ── 2. Solleciti pagamento (consegna > 14 gg fa, non pagati) ────────────
     const overdueDate = toISODate(addDays(today, -14));
 
-    const unpaidMeasurements = await dbGet(
+    const unpaidMeasurements = await dbGet<ReminderMeasurement>(
       `measurements?estimated_delivery_date=lte.${overdueDate}` +
       `&payment_status=neq.paid&status=in.(delivering,completed)` +
       `&select=id,product_type,client_name,estimated_price,amount_paid,estimated_delivery_date,user_id`
     );
 
     for (const m of unpaidMeasurements) {
-      const profiles = await dbGet(`profiles?user_id=eq.${m.user_id}&select=email,company_name`);
+      const profiles = await dbGet<ReminderProfile>(`profiles?user_id=eq.${m.user_id}&select=email,company_name`);
       const profile = profiles[0];
       if (!profile?.email) continue;
 
@@ -295,8 +302,8 @@ serve(async (req) => {
       results.paymentOverdue++;
     }
 
-  } catch (e: any) {
-    console.error('send-reminders error:', e.message);
+  } catch (e) {
+    console.error('send-reminders error:', e instanceof Error ? e.message : String(e));
     results.errors++;
   }
 

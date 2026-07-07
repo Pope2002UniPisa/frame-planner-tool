@@ -3,6 +3,7 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { SignedImage } from '@/components/SignedImage';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,6 +15,21 @@ import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, Check, Ruler, Upload, Save, Clock, Truck, ZoomIn, ZoomOut } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import AccessoryConfig, { type AccessoriesConfig } from '@/components/AccessoryConfig';
+import type { Json } from '@/integrations/supabase/types';
+import { getErrorMessage } from '@/lib/errors';
+
+interface EditForm {
+  product_type: string; client_name: string; client_address: string; survey_type: string;
+  width_mm: string; height_mm: string; depth_mm: string; is_square: boolean; out_of_square_mm: string;
+  is_plumb: boolean; is_level: boolean; internal_space_mm: string; external_space_mm: string;
+  num_panels: string; panel_type: string; opening_direction: string; frame_type: string; material: string;
+  color_internal: string; color_external: string; handle_type: string; glass_type: string;
+  has_mosquito_net: boolean; has_shutter: boolean; has_box: boolean; has_motorization: boolean;
+  installation_type: string; laying_type: string; remove_old: boolean;
+  delivery_time: string; delivery_date: string; notes: string; photo_urls: string[]; status: string;
+  has_modification?: boolean;
+}
+type AccKey = 'has_mosquito_net' | 'has_shutter' | 'has_box' | 'has_motorization';
 
 const STEPS = [
   { id: 'product', label: 'Prodotto' },
@@ -40,7 +56,7 @@ export default function EditMeasurement() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<any>(null);
+  const [form, setForm] = useState<EditForm | null>(null);
   const [accessoriesConfig, setAccessoriesConfig] = useState<AccessoriesConfig>({});
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -54,7 +70,7 @@ export default function EditMeasurement() {
     supabase.from('measurements').select('*').eq('id', id).single().then(({ data }) => {
       if (data) {
         setForm({
-          product_type: data.product_type,
+          product_type: data.product_type ?? '',
           client_name: data.client_name || '',
           client_address: data.client_address || '',
           survey_type: data.survey_type || '',
@@ -87,9 +103,10 @@ export default function EditMeasurement() {
           delivery_date: '',
           notes: data.notes || '',
           photo_urls: data.photo_urls || [],
-          status: data.status,
+          status: data.status ?? '',
+          has_modification: data.has_modification || false,
         });
-        setAccessoriesConfig((data.accessories_config as any) || {});
+        setAccessoriesConfig((data.accessories_config as unknown as AccessoriesConfig) || {});
       }
       setLoading(false);
     });
@@ -100,7 +117,8 @@ export default function EditMeasurement() {
   if (!form) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Misurazione non trovata</div>;
   if (!['bozza', 'quote_modifications'].includes(form.status)) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Solo le bozze e le misurazioni con modifiche richieste possono essere modificate</div>;
 
-  const update = (key: string, value: any) => setForm((prev: any) => ({ ...prev, [key]: value }));
+  const update = <K extends keyof EditForm>(key: K, value: EditForm[K]) =>
+    setForm(prev => prev ? { ...prev, [key]: value } : prev);
 
   const canGoNext = (): boolean => {
     switch (step) {
@@ -150,7 +168,7 @@ export default function EditMeasurement() {
     laying_type: form.laying_type || null,
     remove_old: form.remove_old,
     notes: form.notes || null,
-    accessories_config: accessoriesConfig as any,
+    accessories_config: accessoriesConfig as unknown as Json,
     ...(status ? { status } : {}),
   });
 
@@ -173,8 +191,8 @@ export default function EditMeasurement() {
       if (error) throw error;
       toast.success(getDraftName(), { description: 'Bozza aggiornata con successo.' });
       navigate('/dashboard');
-    } catch (err: any) {
-      toast.error(err.message || 'Errore');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSavingDraft(false);
     }
@@ -201,8 +219,8 @@ export default function EditMeasurement() {
       if (error) throw error;
       toast.success(form.status === 'quote_modifications' ? 'Modifiche inviate! Attendi il nuovo preventivo.' : 'Misurazione inviata con successo!');
       navigate('/dashboard');
-    } catch (err: any) {
-      toast.error(err.message || "Errore durante l'invio");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Errore durante l'invio"));
     } finally {
       setSubmitting(false);
     }
@@ -215,7 +233,7 @@ export default function EditMeasurement() {
   const showDiagram = step >= 3 && step <= 6 && !!form.product_type;
   const showDualDiagram = step === 5;
 
-  const ColorSelectField = ({ label, value, field }: { label: string; value: string; field: string }) => (
+  const ColorSelectField = ({ label, value, field }: { label: string; value: string; field: keyof EditForm }) => (
     <div className="space-y-2">
       <Label>{label}</Label>
       <Select value={value} onValueChange={v => update(field, v)}>
@@ -349,10 +367,10 @@ export default function EditMeasurement() {
                 </div>
                 <div className="space-y-3 pt-4">
                   <Label className="text-base font-semibold">Controlli tecnici</Label>
-                  <div className="flex items-center gap-3"><Checkbox id="sq" checked={form.is_square} onCheckedChange={v => update('is_square', v)} /><Label htmlFor="sq">Squadrato</Label></div>
+                  <div className="flex items-center gap-3"><Checkbox id="sq" checked={form.is_square} onCheckedChange={v => update('is_square', v === true)} /><Label htmlFor="sq">Squadrato</Label></div>
                   {!form.is_square && <div className="ml-8 space-y-2"><Label>Fuori squadro (mm)</Label><Input type="number" value={form.out_of_square_mm} onChange={e => update('out_of_square_mm', e.target.value)} /></div>}
-                  <div className="flex items-center gap-3"><Checkbox id="pl" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} /><Label htmlFor="pl">A piombo</Label></div>
-                  <div className="flex items-center gap-3"><Checkbox id="lv" checked={form.is_level} onCheckedChange={v => update('is_level', v)} /><Label htmlFor="lv">Livellato</Label></div>
+                  <div className="flex items-center gap-3"><Checkbox id="pl" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v === true)} /><Label htmlFor="pl">A piombo</Label></div>
+                  <div className="flex items-center gap-3"><Checkbox id="lv" checked={form.is_level} onCheckedChange={v => update('is_level', v === true)} /><Label htmlFor="lv">Livellato</Label></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <div className="space-y-2"><Label>Spazio interno (mm)</Label><Input type="number" value={form.internal_space_mm} onChange={e => update('internal_space_mm', e.target.value)} /></div>
@@ -458,14 +476,14 @@ export default function EditMeasurement() {
                 <CardTitle className="font-heading">Accessori</CardTitle>
                 <div className="space-y-3">
                   {([
-                    { key: 'has_mosquito_net', label: '🦟 Zanzariera', type: 'mosquito_net' as const },
-                    { key: 'has_shutter', label: '🪟 Tapparella', type: 'shutter' as const },
-                    { key: 'has_box', label: '📦 Cassonetto', type: 'box' as const },
-                    { key: 'has_motorization', label: '⚡ Motorizzazione', type: 'motorization' as const },
+                    { key: 'has_mosquito_net' as AccKey, label: '🦟 Zanzariera', type: 'mosquito_net' as const },
+                    { key: 'has_shutter' as AccKey, label: '🪟 Tapparella', type: 'shutter' as const },
+                    { key: 'has_box' as AccKey, label: '📦 Cassonetto', type: 'box' as const },
+                    { key: 'has_motorization' as AccKey, label: '⚡ Motorizzazione', type: 'motorization' as const },
                   ]).map(acc => (
                     <div key={acc.key}>
                       <Label htmlFor={acc.key} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form[acc.key] ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                        <Checkbox id={acc.key} checked={form[acc.key]} onCheckedChange={v => update(acc.key, v)} />
+                        <Checkbox id={acc.key} checked={form[acc.key]} onCheckedChange={v => update(acc.key, v === true)} />
                         <span className="text-lg">{acc.label}</span>
                       </Label>
                       {form[acc.key] && <AccessoryConfig type={acc.type} config={accessoriesConfig} onChange={setAccessoriesConfig} />}
@@ -500,7 +518,7 @@ export default function EditMeasurement() {
                       </RadioGroup>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Checkbox id="ero" checked={form.remove_old} onCheckedChange={v => update('remove_old', v)} />
+                      <Checkbox id="ero" checked={form.remove_old} onCheckedChange={v => update('remove_old', v === true)} />
                       <Label htmlFor="ero">Rimozione vecchio infisso</Label>
                     </div>
                   </>
@@ -543,7 +561,7 @@ export default function EditMeasurement() {
                   <Textarea value={form.notes} onChange={e => update('notes', e.target.value)} rows={4} />
                 </div>
                 {form.photo_urls && form.photo_urls.length > 0 && (
-                  <div><Label className="mb-2 block">Foto esistenti</Label><div className="grid grid-cols-3 gap-2">{form.photo_urls.map((url: string, i: number) => <img key={i} src={url} alt={`Foto ${i+1}`} className="rounded-lg w-full h-24 object-cover" />)}</div></div>
+                  <div><Label className="mb-2 block">Foto esistenti</Label><div className="grid grid-cols-3 gap-2">{form.photo_urls.map((url: string, i: number) => <SignedImage key={i} src={url} alt={`Foto ${i+1}`} className="rounded-lg w-full h-24 object-cover" />)}</div></div>
                 )}
                 <div className="rounded-lg border-2 border-dashed border-border p-6 text-center">
                   <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />

@@ -65,15 +65,16 @@ export default function TerritorialMap() {
       ]);
 
       const list: MapEntity[] = [];
-      for (const c of (clients.data as any[]) ?? []) {
+      for (const c of clients.data ?? []) {
         list.push({ id: `c-${c.id}`, type: 'cliente', title: c.name, subtitle: buildAddress(c), city: c.city, lat: c.lat, lng: c.lng, value: 0 });
       }
-      for (const l of (leads.data as any[]) ?? []) {
+      for (const l of leads.data ?? []) {
         list.push({ id: `l-${l.id}`, type: 'lead', title: l.name, subtitle: buildAddress(l), city: l.city, lat: l.lat, lng: l.lng, value: Number(l.estimated_value ?? 0), won: l.status === 'vinto', converted: !!l.converted_client_id });
       }
-      for (const m of (measurements.data as any[]) ?? []) {
-        if (!isPreventivo(m.status) && !isOrdine(m.status)) continue;
-        const type: EntityType = isOrdine(m.status) ? 'ordine' : 'preventivo';
+      for (const m of measurements.data ?? []) {
+        const status = m.status ?? '';
+        if (!isPreventivo(status) && !isOrdine(status)) continue;
+        const type: EntityType = isOrdine(status) ? 'ordine' : 'preventivo';
         const city = (m.client_address ?? '').split(',').pop()?.trim() || null;
         list.push({ id: `m-${m.id}`, type, title: m.client_name || 'Misurazione', subtitle: m.client_address ?? '', city, lat: m.lat, lng: m.lng, value: Number(m.estimated_price ?? 0) });
       }
@@ -100,8 +101,11 @@ export default function TerritorialMap() {
         if (coords && !cancelled) {
           const [lat, lng] = coords;
           const [prefix, realId] = e.id.split(/-(.+)/);
-          const table = prefix === 'c' ? 'end_clients' : prefix === 'l' ? 'leads' : 'measurements';
-          await supabase.from(table as any).update({ lat, lng, geocoded_at: new Date().toISOString() }).eq('id', realId);
+          const patch = { lat, lng, geocoded_at: new Date().toISOString() };
+          // .from() con nome tabella dinamico non è tipizzabile: smistiamo esplicitamente.
+          if (prefix === 'c') await supabase.from('end_clients').update(patch).eq('id', realId);
+          else if (prefix === 'l') await supabase.from('leads').update(patch).eq('id', realId);
+          else await supabase.from('measurements').update(patch).eq('id', realId);
           setEntities(prev => prev.map(x => x.id === e.id ? { ...x, lat, lng } : x));
         }
         setGeocoding(g => Math.max(0, g - 1));

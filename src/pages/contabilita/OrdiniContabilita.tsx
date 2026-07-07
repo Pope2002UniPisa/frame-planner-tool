@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { formatEuro } from '@/lib/format';
+import { getErrorMessage } from '@/lib/errors';
 import { CheckCircle2, Trash2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { scritturaFatturaPassiva, type ParsedInvoice } from '@/lib/accounting';
 import { DEFAULT_VAT_RATE, PURCHASE_COST_ACCOUNT } from '@/lib/orderInvoices';
@@ -31,12 +32,12 @@ export default function OrdiniContabilita() {
       .select('id,tipo,controparte,numero,data,stato,incompleta,note')
       .eq('dealer_id', user.id).eq('origine', 'ordine')
       .order('created_at', { ascending: false });
-    const list = (es as any[]) ?? [];
+    const list = es ?? [];
     const ids = list.map(e => e.id);
     const totals = new Map<string, number>();
     if (ids.length) {
       const { data: ls } = await supabase.from('journal_lines').select('entry_id,dare').in('entry_id', ids);
-      ((ls as any[]) ?? []).forEach(l => totals.set(l.entry_id, (totals.get(l.entry_id) ?? 0) + Number(l.dare || 0)));
+      (ls ?? []).forEach(l => totals.set(l.entry_id, (totals.get(l.entry_id) ?? 0) + Number(l.dare || 0)));
     }
     setEntries(list.map(e => ({ ...e, totale: Math.round((totals.get(e.id) ?? 0) * 100) / 100 })));
     setLoading(false);
@@ -49,12 +50,12 @@ export default function OrdiniContabilita() {
     if (e.incompleta) { toast.error('Completa prima il costo produttore'); return; }
     setBusy(e.id);
     try {
-      const patch: any = { stato: 'registrata' };
+      const patch: { stato: string; numero?: string } = { stato: 'registrata' };
       // La fattura attiva prende il progressivo dell'anno alla conferma (non da bozza),
       // in modo atomico (niente numeri duplicati/saltati).
       if (e.tipo === 'attiva') {
         const anno = new Date(e.data).getFullYear();
-        const { data: numero, error: numErr } = await supabase.rpc('next_invoice_number' as any, { p_anno: anno });
+        const { data: numero, error: numErr } = await supabase.rpc('next_invoice_number', { p_anno: anno });
         if (numErr || numero == null) throw numErr ?? new Error('Numerazione non riuscita');
         patch.numero = String(numero);
       }
@@ -62,7 +63,7 @@ export default function OrdiniContabilita() {
       if (error) throw error;
       toast.success(`${e.tipo === 'attiva' ? 'Fattura attiva' : 'Fattura passiva'} registrata${patch.numero ? ` (n. ${patch.numero})` : ''}`);
       load();
-    } catch (err: any) { toast.error(err.message ?? 'Errore'); } finally { setBusy(null); }
+    } catch (err) { toast.error(getErrorMessage(err)); } finally { setBusy(null); }
   };
 
   const elimina = async (e: Entry) => {
@@ -96,7 +97,7 @@ export default function OrdiniContabilita() {
       toast.success('Costo inserito');
       setCostInput(s => ({ ...s, [e.id]: '' }));
       load();
-    } catch (err: any) { toast.error(err.message ?? 'Errore'); } finally { setBusy(null); }
+    } catch (err) { toast.error(getErrorMessage(err)); } finally { setBusy(null); }
   };
 
   const attive = entries.filter(e => e.tipo === 'attiva');
