@@ -66,13 +66,19 @@
       (function () {
         var splash = document.getElementById('splash');
         if (!splash) return;
-        // Mostra il video una sola volta per sessione (all'apertura), non ad ogni refresh interno.
-        try { if (sessionStorage.getItem('introSeen')) { splash.remove(); return; } } catch (e) {}
+        // Riappare quando apri l'app dopo una pausa (>5 min): così parte ai veri
+        // "avvii" (anche sul telefono, dove la sessione resta viva in background)
+        // ma non a ogni refresh ravvicinato mentre lavori.
+        var GAP = 5 * 60 * 1000;
+        try {
+          var last = +localStorage.getItem('introSeenAt') || 0;
+          if (Date.now() - last < GAP) { splash.remove(); return; }
+          localStorage.setItem('introSeenAt', String(Date.now()));
+        } catch (e) {}
         var vid = document.getElementById('splash-video');
         var done = false;
         function hide() {
           if (done) return; done = true;
-          try { sessionStorage.setItem('introSeen', '1'); } catch (e) {}
           splash.classList.add('hide');
           setTimeout(function () { if (splash && splash.parentNode) splash.parentNode.removeChild(splash); }, 550);
         }
