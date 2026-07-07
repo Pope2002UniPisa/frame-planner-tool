@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type InvoiceRawInsert = Database['public']['Tables']['invoices_raw']['Insert'];
 import ContabilitaLayout from '@/components/ContabilitaLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,7 +46,7 @@ export default function ImportaContabilita() {
     setAccounts((acc.data as unknown as Account[]) ?? []);
     setKeywords(((kw.data as unknown as { keywords: string[]; account_code: string; priority: number }[]) ?? []));
     const rmap: Record<string, string> = {};
-    for (const r of (cr.data as any[]) ?? []) rmap[r.piva] = r.account_code;
+    for (const r of (cr.data ?? [])) rmap[r.piva] = r.account_code;
     setRules(rmap);
     setQueue((q.data as unknown as RawInvoice[]) ?? []);
   };
@@ -55,7 +58,7 @@ export default function ImportaContabilita() {
     if (!files || !user) return;
     setBusy(true);
     let ok = 0, dup = 0, err = 0;
-    const rows: any[] = [];
+    const rows: InvoiceRawInsert[] = [];
     for (const file of Array.from(files)) {
       try {
         const xml = await file.text();
@@ -103,7 +106,7 @@ export default function ImportaContabilita() {
       numero: inv.numero, tipo: 'passiva', intra_ue: inv.intra_ue, stato: 'registrata',
     }).select('id').single();
     if (eErr || !entry) { toast.error(eErr?.message ?? 'Errore'); return; }
-    const entryId = (entry as any).id;
+    const entryId = entry.id;
 
     const { error: lErr } = await supabase.from('journal_lines').insert(
       lines.map((l, i) => ({ entry_id: entryId, account_code: l.account_code, descr: l.descr, dare: l.dare, avere: l.avere, sort_order: i })),

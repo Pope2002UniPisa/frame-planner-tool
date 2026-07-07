@@ -10,17 +10,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Users, Search, Filter, ChevronDown, ChevronUp, Eye, User, Calendar } from 'lucide-react';
 import { productLabels, statusLabels } from '@/lib/constants';
 import AppLayout from '@/components/AppLayout';
+import type { Database } from '@/integrations/supabase/types';
 
 interface Appointment {
   id: string; date: string; type: string; title: string;
   time: string | null; location: string | null; description: string | null; color: string | null;
 }
 
+type MeasurementRow = Database['public']['Tables']['measurements']['Row'] & {
+  status: string;
+  product_type: string;
+  created_at: string;
+};
+interface ClientRollup {
+  name: string;
+  total: number; drafts: number; sent: number; quoted: number; completed: number;
+  estimatedRevenue: number; realizedRevenue: number; collectedRevenue: number;
+  measurements: MeasurementRow[];
+}
+
 export default function ClientSummary() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  const [measurements, setMeasurements] = useState<any[]>([]);
+  const [measurements, setMeasurements] = useState<MeasurementRow[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [endClients, setEndClients] = useState<{ id: string; name: string }[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -43,7 +56,7 @@ export default function ClientSummary() {
         supabase.from('appointments').select('*').gte('date', todayStr).order('date').order('time'),
         supabase.from('end_clients').select('id,name').eq('dealer_id', user.id),
       ]);
-      setMeasurements(mData || []);
+      setMeasurements((mData || []) as MeasurementRow[]);
       setAppointments(aData || []);
       setEndClients(ecData || []);
       setLoadingData(false);
@@ -75,7 +88,7 @@ export default function ClientSummary() {
   }, [measurements, statusFilter, productFilter, paymentFilter, dateFrom, dateTo]);
 
   const clientSummary = useMemo(() => {
-    const map: Record<string, any> = {};
+    const map: Record<string, ClientRollup> = {};
 
     filteredMeasurements.forEach((m) => {
       const name = (m.client_name || 'Senza nome').trim();
@@ -132,7 +145,7 @@ export default function ClientSummary() {
       });
     }
 
-    return Object.values(map).sort((a: any, b: any) => a.name.localeCompare(b.name, 'it'));
+    return Object.values(map).sort((a, b) => a.name.localeCompare(b.name, 'it'));
   }, [filteredMeasurements, searchText, endClients, statusFilter, productFilter, paymentFilter, dateFrom, dateTo]);
 
   const createClientRecord = async (clientName: string) => {
@@ -228,7 +241,7 @@ export default function ClientSummary() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {clientSummary.map((cs: any) => {
+            {clientSummary.map((cs) => {
               const isExpanded = expandedClientName === cs.name;
               const clientAppts = appointments.filter(a =>
                 a.title.toLowerCase().includes(cs.name.toLowerCase())
@@ -312,7 +325,7 @@ export default function ClientSummary() {
                         })()}
 
                         <div className="space-y-1.5">
-                          {cs.measurements.map((m: any) => (
+                          {cs.measurements.map((m) => (
                             <div key={m.id} className="flex items-center justify-between rounded-lg border border-border p-2 bg-background">
                               <div className="flex items-center gap-2 min-w-0 flex-1">
                                 <span className="text-xs font-medium text-foreground">{productLabels[m.product_type] || m.product_type}</span>
@@ -320,7 +333,7 @@ export default function ClientSummary() {
                                 <span className="text-[10px] text-muted-foreground">{m.width_mm}×{m.height_mm}mm</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                {m.estimated_price > 0 && <span className="text-[10px] font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
+                                {(m.estimated_price ?? 0) > 0 && <span className="text-[10px] font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
                                 {m.payment_status === 'pagato' && <span className="text-[10px]" role="img" aria-label="Pagato">💳</span>}
                                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/misurazione/${m.id}`)}>
                                   <Eye className="h-3 w-3" />

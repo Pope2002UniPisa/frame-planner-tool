@@ -8,10 +8,14 @@
  */
 import Dexie, { type Table } from 'dexie';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+import { getErrorMessage, getErrorCode } from '@/lib/errors';
+
+type MeasurementInsert = Database['public']['Tables']['measurements']['Insert'];
 
 export interface PendingRow {
   /** payload pronto per insert in `measurements` (id già assegnato → idempotente). */
-  data: Record<string, any>;
+  data: MeasurementInsert;
   /** se true riceve i photo_urls caricati in fase di sync. */
   attachPhotos: boolean;
 }
@@ -89,11 +93,11 @@ export async function syncPending(): Promise<{ synced: number; failed: number }>
           photo_urls: r.attachPhotos && urls.length ? urls : (r.data.photo_urls ?? null),
         }));
         const { error } = await supabase.from('measurements').insert(payload);
-        if (error && (error as any).code !== '23505') throw error; // 23505 = già inserita
+        if (error && getErrorCode(error) !== '23505') throw error; // 23505 = già inserita
         await offlineDb.pending.delete(it.id!);
         synced++;
-      } catch (e: any) {
-        await offlineDb.pending.update(it.id!, { status: 'error', lastError: e?.message ?? String(e) });
+      } catch (e) {
+        await offlineDb.pending.update(it.id!, { status: 'error', lastError: getErrorMessage(e) });
         failed++;
       }
     }
@@ -105,10 +109,10 @@ export async function syncPending(): Promise<{ synced: number; failed: number }>
 }
 
 /** Riconosce un errore da mancanza di rete (fetch fallito) per il fallback offline. */
-export function isNetworkError(err: any): boolean {
+export function isNetworkError(err: unknown): boolean {
   if (typeof navigator !== 'undefined' && !navigator.onLine) return true;
   if (err instanceof TypeError) return true; // fetch abortito/fallito
-  const msg = (err?.message ?? String(err ?? '')).toLowerCase();
+  const msg = getErrorMessage(err, '').toLowerCase();
   return /failed to fetch|networkerror|load failed|network request failed|fetch/.test(msg);
 }
 

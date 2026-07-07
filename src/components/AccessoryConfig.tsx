@@ -21,6 +21,13 @@ export interface AccessoriesConfig {
   motor_remote?: boolean;
   motor_sensor?: boolean;
   no_handle_mode?: 'none' | 'foro_maniglia' | 'foro_chiave' | 'foro_maniglia_chiave';
+  // Porte / accessori aggiuntivi
+  door_color_name?: string;
+  has_battiscopa?: boolean;
+  battiscopa_materiale?: string;
+  battiscopa_altezza?: string;
+  battiscopa_colore?: string;
+  battiscopa_quantita?: string;
 }
 
 interface AccessoryConfigProps {
@@ -56,7 +63,7 @@ function ColorSelect({ value, onChange, label }: { value: string; onChange: (v: 
 }
 
 export default function AccessoryConfig({ type, config, onChange }: AccessoryConfigProps) {
-  const update = (key: keyof AccessoriesConfig, value: any) => {
+  const update = <K extends keyof AccessoriesConfig>(key: K, value: AccessoriesConfig[K]) => {
     onChange({ ...config, [key]: value });
   };
 
@@ -162,7 +169,7 @@ export default function AccessoryConfig({ type, config, onChange }: AccessoryCon
           </Select>
         </div>
         <div className="flex items-center gap-3">
-          <Checkbox id="box-ins" checked={config.box_insulated || false} onCheckedChange={v => update('box_insulated', v)} />
+          <Checkbox id="box-ins" checked={config.box_insulated || false} onCheckedChange={v => update('box_insulated', v === true)} />
           <Label htmlFor="box-ins" className="text-sm">Coibentato</Label>
         </div>
         <div className="space-y-2">
@@ -193,11 +200,11 @@ export default function AccessoryConfig({ type, config, onChange }: AccessoryCon
           <Input value={config.motor_brand || ''} onChange={e => update('motor_brand', e.target.value)} placeholder="es. Somfy, Nice..." />
         </div>
         <div className="flex items-center gap-3">
-          <Checkbox id="motor-remote" checked={config.motor_remote || false} onCheckedChange={v => update('motor_remote', v)} />
+          <Checkbox id="motor-remote" checked={config.motor_remote || false} onCheckedChange={v => update('motor_remote', v === true)} />
           <Label htmlFor="motor-remote" className="text-sm">Telecomando incluso</Label>
         </div>
         <div className="flex items-center gap-3">
-          <Checkbox id="motor-sensor" checked={config.motor_sensor || false} onCheckedChange={v => update('motor_sensor', v)} />
+          <Checkbox id="motor-sensor" checked={config.motor_sensor || false} onCheckedChange={v => update('motor_sensor', v === true)} />
           <Label htmlFor="motor-sensor" className="text-sm">Sensore vento/sole</Label>
         </div>
       </div>

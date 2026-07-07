@@ -24,7 +24,7 @@ export default function IvaContabilita() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.rpc('get_vat_report' as any, { p_from: range.from, p_to: range.to });
+    const { data, error } = await supabase.rpc('get_vat_report', { p_from: range.from, p_to: range.to });
     setLoading(false);
     if (error) { setReport(null); return; }
     const row = Array.isArray(data) ? data[0] : data;

@@ -1,7 +1,9 @@
 import { memo, useMemo } from 'react';
 import { isDoorType, getDoorModel, ALL_HANDLE_MODELS, ALL_HANDLE_FINISHES } from '@/data/doorCatalog';
+import type { AccessoriesConfig } from '@/components/AccessoryConfig';
 
 // 10 predefined colors
+// eslint-disable-next-line react-refresh/only-export-components
 export const COLOR_OPTIONS = [
   { value: 'bianco', label: 'Bianco', hex: '#F5F5F0' },
   { value: 'avorio', label: 'Avorio', hex: '#FFFFF0' },
@@ -15,6 +17,7 @@ export const COLOR_OPTIONS = [
   { value: 'nero', label: 'Nero', hex: '#2A2A2A' },
 ];
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getColorHex(value: string): string {
   return COLOR_OPTIONS.find(c => c.value === value)?.hex || '#F5F5F0';
 }
@@ -1149,7 +1152,7 @@ const ProductDiagram = memo(function ProductDiagram({
 export default ProductDiagram;
 
 // Accessory diagrams
-export function AccessoryDiagram({ type, config }: { type: string; config: any }) {
+export function AccessoryDiagram({ type, config }: { type: string; config: AccessoriesConfig }) {
   const svgW = 280;
   const svgH = 200;
   const cx = svgW / 2;

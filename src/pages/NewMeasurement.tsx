@@ -2,7 +2,11 @@ import { memo, useMemo, useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database, Json } from '@/integrations/supabase/types';
+import { getErrorMessage } from '@/lib/errors';
 import { enqueueMeasurement, isNetworkError, type PendingRow } from '@/lib/offlineQueue';
+
+type MeasurementInsert = Database['public']['Tables']['measurements']['Insert'];
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,6 +108,7 @@ const initialForm = {
   delivery_time: '',
   delivery_date: '',
   notes: '',
+  maniglia_qty: '',
 };
 
 function ColorSelectField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
@@ -222,7 +227,7 @@ export default function NewMeasurement() {
         .gte('height_max_mm', h)
         .maybeSingle();
       if (cancelled || !baseRow) { if (!cancelled) setDbPrice(null); return; }
-      let price = Number((baseRow as any).base_price);
+      let price = Number(baseRow.base_price);
       const { data: modifiers } = await supabase
         .from('price_modifiers')
         .select('modifier_type, modifier_id, adjustment_type, adjustment_value')
@@ -237,7 +242,7 @@ export default function NewMeasurement() {
           laying: form.laying_type || '',
         };
         let pctBonus = 0;
-        for (const mod of (modifiers as any[])) {
+        for (const mod of modifiers) {
           if (selected[mod.modifier_type] && selected[mod.modifier_type] === mod.modifier_id) {
             if (mod.adjustment_type === 'fixed') price += Number(mod.adjustment_value);
             else if (mod.adjustment_type === 'percentage') pctBonus += Number(mod.adjustment_value);
@@ -250,9 +255,10 @@ export default function NewMeasurement() {
     return () => { cancelled = true; };
   }, [pricingKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const update = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
+  const update = <K extends keyof typeof initialForm>(key: K, value: (typeof initialForm)[K]) =>
+    setForm(prev => ({ ...prev, [key]: value }));
 
-  const updateItem = (index: number, key: keyof ProductItem, value: any) => {
+  const updateItem = <K extends keyof ProductItem>(index: number, key: K, value: ProductItem[K]) => {
     setMultiItems(prev => prev.map((item, i) => i === index ? { ...item, [key]: value } : item));
   };
 
@@ -279,7 +285,7 @@ export default function NewMeasurement() {
 
   const isStandaloneAccessory = form.product_type === 'battiscopa' || form.product_type === 'maniglia';
   const isSingleLeafDoor = isDoorType(form.product_type);
-  const noHandleMode = ((accessoriesConfig as any).no_handle_mode || 'none') as 'none' | 'foro_maniglia' | 'foro_chiave' | 'foro_maniglia_chiave';
+  const noHandleMode = (accessoriesConfig.no_handle_mode || 'none') as 'none' | 'foro_maniglia' | 'foro_chiave' | 'foro_maniglia_chiave';
   const hasNoHandleSelection = noHandleMode !== 'none';
 
   const normalizeOpeningDirectionForDb = (value: string): 'destra' | 'sinistra' | null => {
@@ -411,16 +417,16 @@ export default function NewMeasurement() {
         door_special_variant: form.door_special_variant,
         no_handle_mode: noHandleMode,
       } : {}),
-    } as any,
+    } as unknown as Json,
     estimated_price: status !== 'bozza' ? getEstimatedPrice(itemOverrides?.width_mm, itemOverrides?.height_mm) : null,
     order_group_id: groupId || null,
     order_item_index: itemIndex ?? null,
     order_total_items: totalItems ?? null,
-  } as any);
+  } satisfies MeasurementInsert);
 
   // Righe accessori (zanzariera/persiana come misure separate). Estratto così da
   // riusarlo sia online (insert) sia offline (coda).
-  const buildAccessoryRows = (status: string): Record<string, any>[] => {
+  const buildAccessoryRows = (status: string): MeasurementInsert[] => {
     const accessoryMap = [
       { flag: form.has_mosquito_net, type: 'zanzariera', config: { mosquito_type: accessoriesConfig.mosquito_type, mosquito_color: accessoriesConfig.mosquito_color } },
       { flag: form.has_shutter, type: 'persiana', config: { shutter_color: accessoriesConfig.shutter_color, shutter_operation: accessoriesConfig.shutter_operation } },
@@ -434,7 +440,7 @@ export default function NewMeasurement() {
       width_mm: parseInt(form.width_mm) || 0,
       height_mm: parseInt(form.height_mm) || 0,
       status,
-      accessories_config: acc.config as any,
+      accessories_config: acc.config as unknown as Json,
       notes: `Accessorio di ${form.product_type} - ${form.client_name}`,
     }));
   };
@@ -489,12 +495,12 @@ export default function NewMeasurement() {
       }
       toast.success(getDraftName(), { description: 'Puoi aggiungere le foto in seguito.' });
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err) {
       if (isNetworkError(err)) {
         try { await saveOffline('bozza'); return; }
-        catch (e2: any) { toast.error(e2?.message || 'Errore salvataggio offline'); }
+        catch (e2) { toast.error(getErrorMessage(e2, 'Errore salvataggio offline')); }
       } else {
-        toast.error(err.message || 'Errore durante il salvataggio');
+        toast.error(getErrorMessage(err, 'Errore durante il salvataggio'));
       }
     } finally {
       setSavingDraft(false);
@@ -555,7 +561,7 @@ export default function NewMeasurement() {
               material: form.material,
               color_internal: form.color_internal,
               color_external: form.color_external,
-              door_color_name: (accessoriesConfig as any).door_color_name || '',
+              door_color_name: accessoriesConfig.door_color_name || '',
               glass_type: form.glass_type,
               frame_type: form.frame_type,
               handle_type: form.handle_type,
@@ -571,13 +577,13 @@ export default function NewMeasurement() {
 
       toast.success('Preventivo inviato con successo!', { description: 'Riceverai una risposta a breve.' });
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err) {
       // Se la submit è fallita per mancanza di rete, ripiega sulla coda offline.
       if (isNetworkError(err)) {
         try { await saveOffline('submitted'); return; }
-        catch (e2: any) { toast.error(e2?.message || 'Errore salvataggio offline'); }
+        catch (e2) { toast.error(getErrorMessage(e2, 'Errore salvataggio offline')); }
       } else {
-        toast.error(err.message || "Errore durante l'invio");
+        toast.error(getErrorMessage(err, "Errore durante l'invio"));
       }
     } finally {
       setSubmitting(false);
@@ -693,7 +699,7 @@ export default function NewMeasurement() {
             <Label className="text-base font-semibold">Controlli tecnici</Label>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <Checkbox id={`square-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_square} onCheckedChange={v => updateItem(activeItemIndex, 'is_square', v)} />
+                <Checkbox id={`square-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_square} onCheckedChange={v => updateItem(activeItemIndex, 'is_square', v === true)} />
                 <Label htmlFor={`square-${activeItemIndex}`}>Squadrato</Label>
               </div>
               {!multiItems[activeItemIndex].is_square && (
@@ -703,11 +709,11 @@ export default function NewMeasurement() {
                 </div>
               )}
               <div className="flex items-center gap-3">
-                <Checkbox id={`plumb-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_plumb} onCheckedChange={v => updateItem(activeItemIndex, 'is_plumb', v)} />
+                <Checkbox id={`plumb-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_plumb} onCheckedChange={v => updateItem(activeItemIndex, 'is_plumb', v === true)} />
                 <Label htmlFor={`plumb-${activeItemIndex}`}>A piombo</Label>
               </div>
               <div className="flex items-center gap-3">
-                <Checkbox id={`level-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_level} onCheckedChange={v => updateItem(activeItemIndex, 'is_level', v)} />
+                <Checkbox id={`level-${activeItemIndex}`} checked={multiItems[activeItemIndex].is_level} onCheckedChange={v => updateItem(activeItemIndex, 'is_level', v === true)} />
                 <Label htmlFor={`level-${activeItemIndex}`}>Livellato</Label>
               </div>
             </div>
@@ -1109,7 +1115,7 @@ export default function NewMeasurement() {
                       <Label className="text-base font-semibold">Controlli tecnici</Label>
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                          <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v)} />
+                          <Checkbox id="square" checked={form.is_square} onCheckedChange={v => update('is_square', v === true)} />
                           <Label htmlFor="square">Squadrato</Label>
                         </div>
                         {!form.is_square && (
@@ -1119,11 +1125,11 @@ export default function NewMeasurement() {
                           </div>
                         )}
                         <div className="flex items-center gap-3">
-                          <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v)} />
+                          <Checkbox id="plumb" checked={form.is_plumb} onCheckedChange={v => update('is_plumb', v === true)} />
                           <Label htmlFor="plumb">A piombo</Label>
                         </div>
                         <div className="flex items-center gap-3">
-                          <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v)} />
+                          <Checkbox id="level" checked={form.is_level} onCheckedChange={v => update('is_level', v === true)} />
                           <Label htmlFor="level">Livellato</Label>
                         </div>
                       </div>
@@ -1170,7 +1176,7 @@ export default function NewMeasurement() {
                 </div>
                 <div className="space-y-2">
                   <Label>Quantità</Label>
-                  <Input type="number" placeholder="1" min="1" value={(form as any).maniglia_qty || '1'} onChange={e => update('maniglia_qty' as any, e.target.value)} />
+                  <Input type="number" placeholder="1" min="1" value={form.maniglia_qty || '1'} onChange={e => update('maniglia_qty', e.target.value)} />
                 </div>
               </div>
             ) : step === 4 && (
@@ -1464,7 +1470,7 @@ export default function NewMeasurement() {
                             <button
                               key={opt.value}
                               type="button"
-                              onClick={() => setAccessoriesConfig(prev => ({ ...prev, no_handle_mode: opt.value as any }))}
+                              onClick={() => setAccessoriesConfig(prev => ({ ...prev, no_handle_mode: opt.value as AccessoriesConfig['no_handle_mode'] }))}
                               className={`flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-sm transition-all text-left ${
                                 noHandleMode === opt.value
                                   ? 'border-accent bg-accent/10'
@@ -1617,21 +1623,21 @@ export default function NewMeasurement() {
                 {isDoorType(form.product_type) ? (
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="has_battiscopa" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${(accessoriesConfig as any).has_battiscopa ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                        <Checkbox id="has_battiscopa" checked={(accessoriesConfig as any).has_battiscopa || false} onCheckedChange={v => setAccessoriesConfig(prev => ({ ...prev, has_battiscopa: v }))} />
+                      <Label htmlFor="has_battiscopa" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${accessoriesConfig.has_battiscopa ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                        <Checkbox id="has_battiscopa" checked={accessoriesConfig.has_battiscopa || false} onCheckedChange={v => setAccessoriesConfig(prev => ({ ...prev, has_battiscopa: v === true }))} />
                         <span className="text-lg">🪵 Battiscopa</span>
                       </Label>
-                      {(accessoriesConfig as any).has_battiscopa && (
+                      {accessoriesConfig.has_battiscopa && (
                         <div className="mt-3 space-y-3 pl-4 border-l-2 border-accent/30">
                           <div className="space-y-2">
                             <Label>Materiale battiscopa</Label>
-                            <RadioGroup value={(accessoriesConfig as any).battiscopa_materiale || ''} onValueChange={v => setAccessoriesConfig(prev => ({ ...prev, battiscopa_materiale: v }))} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <RadioGroup value={accessoriesConfig.battiscopa_materiale || ''} onValueChange={v => setAccessoriesConfig(prev => ({ ...prev, battiscopa_materiale: v }))} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                               {[
                                 { value: 'legno_laccato', label: '🪵 Legno laccato' },
                                 { value: 'pvc', label: '🧱 PVC / Polimero' },
                                 { value: 'mdf', label: '📐 MDF rivestito' },
                               ].map(opt => (
-                                <Label key={opt.value} htmlFor={`batt-mat-${opt.value}`} className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${(accessoriesConfig as any).battiscopa_materiale === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                                <Label key={opt.value} htmlFor={`batt-mat-${opt.value}`} className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${accessoriesConfig.battiscopa_materiale === opt.value ? 'border-accent bg-accent/10' : 'border-border'}`}>
                                   <RadioGroupItem value={opt.value} id={`batt-mat-${opt.value}`} />
                                   {opt.label}
                                 </Label>
@@ -1640,9 +1646,9 @@ export default function NewMeasurement() {
                           </div>
                           <div className="space-y-2">
                             <Label>Altezza battiscopa</Label>
-                            <RadioGroup value={(accessoriesConfig as any).battiscopa_altezza || ''} onValueChange={v => setAccessoriesConfig(prev => ({ ...prev, battiscopa_altezza: v }))} className="flex gap-3">
+                            <RadioGroup value={accessoriesConfig.battiscopa_altezza || ''} onValueChange={v => setAccessoriesConfig(prev => ({ ...prev, battiscopa_altezza: v }))} className="flex gap-3">
                               {['6', '8', '10'].map(h => (
-                                <Label key={h} htmlFor={`batt-h-${h}`} className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm transition-all ${(accessoriesConfig as any).battiscopa_altezza === h ? 'border-accent bg-accent/10' : 'border-border'}`}>
+                                <Label key={h} htmlFor={`batt-h-${h}`} className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm transition-all ${accessoriesConfig.battiscopa_altezza === h ? 'border-accent bg-accent/10' : 'border-border'}`}>
                                   <RadioGroupItem value={h} id={`batt-h-${h}`} />
                                   {h} cm
                                 </Label>
@@ -1651,11 +1657,11 @@ export default function NewMeasurement() {
                           </div>
                           <div className="space-y-2">
                             <Label>Colore/Finitura battiscopa</Label>
-                            <Input placeholder="Es: Bianco optical, Tortora..." value={(accessoriesConfig as any).battiscopa_colore || ''} onChange={e => setAccessoriesConfig(prev => ({ ...prev, battiscopa_colore: e.target.value }))} />
+                            <Input placeholder="Es: Bianco optical, Tortora..." value={accessoriesConfig.battiscopa_colore || ''} onChange={e => setAccessoriesConfig(prev => ({ ...prev, battiscopa_colore: e.target.value }))} />
                           </div>
                           <div className="space-y-2">
                             <Label>Quantità (metri lineari)</Label>
-                            <Input type="number" placeholder="Es: 12" value={(accessoriesConfig as any).battiscopa_quantita || ''} onChange={e => setAccessoriesConfig(prev => ({ ...prev, battiscopa_quantita: e.target.value }))} />
+                            <Input type="number" placeholder="Es: 12" value={accessoriesConfig.battiscopa_quantita || ''} onChange={e => setAccessoriesConfig(prev => ({ ...prev, battiscopa_quantita: e.target.value }))} />
                           </div>
                         </div>
                       )}
@@ -1665,28 +1671,28 @@ export default function NewMeasurement() {
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="has_mosquito_net" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_mosquito_net ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                        <Checkbox id="has_mosquito_net" checked={form.has_mosquito_net} onCheckedChange={v => update('has_mosquito_net', v)} />
+                        <Checkbox id="has_mosquito_net" checked={form.has_mosquito_net} onCheckedChange={v => update('has_mosquito_net', v === true)} />
                         <span className="text-lg">🦟 Zanzariera</span>
                       </Label>
                       {form.has_mosquito_net && <AccessoryConfig type="mosquito_net" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
                     </div>
                     <div>
                       <Label htmlFor="has_shutter" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_shutter ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                        <Checkbox id="has_shutter" checked={form.has_shutter} onCheckedChange={v => update('has_shutter', v)} />
+                        <Checkbox id="has_shutter" checked={form.has_shutter} onCheckedChange={v => update('has_shutter', v === true)} />
                         <span className="text-lg">🪟 Tapparella</span>
                       </Label>
                       {form.has_shutter && <AccessoryConfig type="shutter" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
                     </div>
                     <div>
                       <Label htmlFor="has_box" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_box ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                        <Checkbox id="has_box" checked={form.has_box} onCheckedChange={v => update('has_box', v)} />
+                        <Checkbox id="has_box" checked={form.has_box} onCheckedChange={v => update('has_box', v === true)} />
                         <span className="text-lg">📦 Cassonetto</span>
                       </Label>
                       {form.has_box && <AccessoryConfig type="box" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
                     </div>
                     <div>
                       <Label htmlFor="has_motorization" className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${form.has_motorization ? 'border-accent bg-accent/10' : 'border-border'}`}>
-                        <Checkbox id="has_motorization" checked={form.has_motorization} onCheckedChange={v => update('has_motorization', v)} />
+                        <Checkbox id="has_motorization" checked={form.has_motorization} onCheckedChange={v => update('has_motorization', v === true)} />
                         <span className="text-lg">⚡ Motorizzazione</span>
                       </Label>
                       {form.has_motorization && <AccessoryConfig type="motorization" config={accessoriesConfig} onChange={setAccessoriesConfig} />}
@@ -1728,7 +1734,7 @@ export default function NewMeasurement() {
                       </RadioGroup>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Checkbox id="remove-old" checked={form.remove_old} onCheckedChange={v => update('remove_old', v)} />
+                      <Checkbox id="remove-old" checked={form.remove_old} onCheckedChange={v => update('remove_old', v === true)} />
                       <Label htmlFor="remove-old">Rimozione vecchio infisso</Label>
                     </div>
                   </>

@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
 import pratelliLogo from '@/assets/pratelli-logo.png';
 import { formatEuro } from '@/lib/format';
+import type { Database } from '@/integrations/supabase/types';
+
+type QuoteRow = Database['public']['Tables']['dealer_quotes']['Row'] & { created_at: string };
 
 interface QuoteLine { id: string; description: string; qty: number; unit_net_price: number; markup: number; line_total: number; vat_rate: number; is_bene_significativo: boolean; sort_order: number; }
 
@@ -13,7 +16,7 @@ export default function QuotePrint() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [quote, setQuote] = useState<any>(null);
+  const [quote, setQuote] = useState<QuoteRow | null>(null);
   const [lines, setLines] = useState<QuoteLine[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +31,7 @@ export default function QuotePrint() {
     if (!user || !id) return;
     const load = async () => {
       const { data: q } = await supabase.from('dealer_quotes').select('*').eq('id', id).eq('dealer_id', user.id).single();
-      setQuote(q);
+      setQuote(q as QuoteRow | null);
       const { data: ql } = await supabase.from('quote_lines').select('*').eq('quote_id', id).order('sort_order');
       setLines((ql as unknown as QuoteLine[]) ?? []);
       setLoading(false);

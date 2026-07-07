@@ -2,7 +2,25 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type MeasurementRow = Database['public']['Tables']['measurements']['Row'] & {
+  status: string;
+  product_type: string;
+  created_at: string;
+};
+interface StoredAccessoriesConfig {
+  door_handle_model_id?: string;
+  door_handle_finish_id?: string;
+  door_color_name?: string;
+  door_model?: string;
+  door_model_name?: string;
+  door_color_id?: string;
+  door_frame_id?: string;
+  [key: string]: unknown;
+}
 import { Button } from '@/components/ui/button';
+import { SignedImage } from '@/components/SignedImage';
 import { ArrowLeft, Printer } from 'lucide-react';
 import ProductDiagram, { COLOR_OPTIONS } from '@/components/ProductDiagram';
 import { getColorLabel, ALL_HANDLE_FINISHES, ALL_HANDLE_MODELS, ALL_FRAMES, getDoorModel, getHandleFinishHex } from '@/data/doorCatalog';
@@ -46,7 +64,7 @@ export default function MeasurementPrint() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [m, setM] = useState<any>(null);
+  const [m, setM] = useState<MeasurementRow | null>(null);
   const [loading, setLoading] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -67,7 +85,7 @@ export default function MeasurementPrint() {
       .eq('user_id', user.id)
       .single()
       .then(({ data }) => {
-      setM(data);
+      setM(data as MeasurementRow | null);
       setLoading(false);
     });
   }, [user, id]);
@@ -115,7 +133,7 @@ export default function MeasurementPrint() {
     return frame ? frame.name : id;
   };
 
-  const acc = m.accessories_config as any;
+  const acc = (m.accessories_config ?? {}) as StoredAccessoriesConfig;
   const doorHandleModel = acc?.door_handle_model_id || '';
   const doorHandleFinish = acc?.door_handle_finish_id || '';
   const doorColorName = acc?.door_color_name || '';
@@ -134,7 +152,7 @@ export default function MeasurementPrint() {
   const supplierLabel = (() => {
     if (isDoor) return null; // Ferrero Legno shown via logo
     if (m.product_type === 'basculante') return 'Denardi';
-    if (['pvc', 'alluminio'].includes(m.material)) {
+    if (['pvc', 'alluminio'].includes(m.material ?? '')) {
       if (m.supplier_id === 'nurith') return 'Nurith';
       if (m.supplier_id === 'madrugada') return 'Madrugada';
       return 'Nurith / Madrugada';
@@ -144,7 +162,7 @@ export default function MeasurementPrint() {
 
   const rows: [string, string][] = [
     ['Prodotto', doorModelName || (productLabels[m.product_type] || m.product_type)],
-    ['Tipo rilievo', surveyLabels[m.survey_type] || m.survey_type],
+    ['Tipo rilievo', surveyLabels[m.survey_type ?? ''] || m.survey_type || ''],
     ['Larghezza', `${m.width_mm} mm`],
     ['Altezza', `${m.height_mm} mm`],
     ...(m.depth_mm ? [['Profondità muro', `${m.depth_mm} mm`] as [string, string]] : []),
@@ -224,7 +242,7 @@ export default function MeasurementPrint() {
                 frameType={isDoor ? (acc?.door_frame_id || m.frame_type || 'standard') : (m.frame_type || 'standard')}
                 colorInternal={m.color_internal || ''}
                 colorExternal={m.color_external || ''}
-                doorColorHex={isDoor ? (getColorLabel(acc?.door_color_id)?.hex) : undefined}
+                doorColorHex={isDoor ? (getColorLabel(acc?.door_color_id || '')?.hex) : undefined}
                 doorHandleFinishId={isDoor ? (acc?.door_handle_finish_id || undefined) : undefined}
                 doorHandleModelId={isDoor ? (acc?.door_handle_model_id || undefined) : undefined}
                 doorModelId={isDoor ? (acc?.door_model || undefined) : undefined}
@@ -295,7 +313,7 @@ export default function MeasurementPrint() {
               <h3 className="font-heading font-bold text-foreground mb-3">Foto rilievo</h3>
               <div className="grid grid-cols-2 gap-3">
                 {m.photo_urls.map((url: string, i: number) => (
-                  <img key={i} src={url} alt={`Foto ${i + 1}`} className="rounded-lg w-full h-32 object-cover print:h-24" />
+                  <SignedImage key={i} src={url} alt={`Foto ${i + 1}`} className="rounded-lg w-full h-32 object-cover print:h-24" />
                 ))}
               </div>
             </div>

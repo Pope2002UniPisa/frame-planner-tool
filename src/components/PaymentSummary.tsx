@@ -16,6 +16,17 @@ import {
   AlertCircle, Clock, Receipt, Download, Plus, Banknote
 } from 'lucide-react';
 import { productLabels } from '@/lib/constants';
+import type { Database } from '@/integrations/supabase/types';
+import { getErrorMessage } from '@/lib/errors';
+
+type MeasurementRow = Database['public']['Tables']['measurements']['Row'] & { product_type: string };
+type PaymentRow = Database['public']['Tables']['payments']['Row'];
+type EnrichedMeasurement = MeasurementRow & {
+  payments: PaymentRow[];
+  totalPaid: number;
+  remaining: number;
+  isPaidInFull: boolean;
+};
 
 const PAYMENT_METHODS = [
   { value: 'bonifico', label: '🏦 Bonifico Bancario', icon: Banknote },
@@ -34,14 +45,14 @@ interface PaymentSummaryProps {
 
 export default function PaymentSummary({ userId }: PaymentSummaryProps) {
   const navigate = useNavigate();
-  const [measurements, setMeasurements] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
+  const [measurements, setMeasurements] = useState<MeasurementRow[]>([]);
+  const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
   const [methodFilter, setMethodFilter] = useState('all');
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [selectedMeasurement, setSelectedMeasurement] = useState<any>(null);
+  const [selectedMeasurement, setSelectedMeasurement] = useState<EnrichedMeasurement | null>(null);
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
     payment_method: 'bonifico',
@@ -65,7 +76,7 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
           .eq('user_id', userId)
           .order('payment_date', { ascending: false }),
       ]);
-      setMeasurements(mData || []);
+      setMeasurements((mData || []) as MeasurementRow[]);
       setPayments(pData || []);
       setLoadingData(false);
     };
@@ -73,7 +84,7 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
   }, [userId]);
 
   const paymentsByMeasurement = useMemo(() => {
-    const map: Record<string, any[]> = {};
+    const map: Record<string, PaymentRow[]> = {};
     payments.forEach(p => {
       if (!map[p.measurement_id]) map[p.measurement_id] = [];
       map[p.measurement_id].push(p);
@@ -84,7 +95,7 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
   const enrichedMeasurements = useMemo(() => {
     return measurements.map(m => {
       const mPayments = paymentsByMeasurement[m.id] || [];
-      const totalPaid = mPayments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+      const totalPaid = mPayments.reduce((sum: number, p) => sum + Number(p.amount), 0);
       const estimatedPrice = Number(m.estimated_price) || 0;
       const remaining = Math.max(0, estimatedPrice - totalPaid);
       const isPaidInFull = remaining <= 0 && estimatedPrice > 0;
@@ -99,7 +110,7 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
       if (paymentStatusFilter === 'partial' && (m.totalPaid === 0 || m.isPaidInFull)) return false;
       if (paymentStatusFilter === 'unpaid' && m.totalPaid > 0) return false;
       if (methodFilter !== 'all') {
-        const hasMethod = m.payments.some((p: any) => p.payment_method === methodFilter);
+        const hasMethod = m.payments.some((p) => p.payment_method === methodFilter);
         if (!hasMethod) return false;
       }
       return true;
@@ -159,21 +170,21 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
           .eq('user_id', userId)
           .order('payment_date', { ascending: false }),
       ]);
-      setMeasurements(mData || []);
+      setMeasurements((mData || []) as MeasurementRow[]);
       setPayments(pData || []);
-    } catch (err: any) {
-      toast.error(err.message || 'Errore durante la registrazione');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Errore durante la registrazione'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const generateReceiptText = (m: any, payment: any) => {
+  const generateReceiptText = (m: MeasurementRow, payment: PaymentRow) => {
     const method = PAYMENT_METHODS.find(pm => pm.value === payment.payment_method);
     return `RICEVUTA DI PAGAMENTO\n\nCliente: ${m.client_name}\nProdotto: ${productLabels[m.product_type] || m.product_type}\nImporto: €${Number(payment.amount).toLocaleString('it-IT')}\nMetodo: ${method?.label || payment.payment_method}\nData: ${new Date(payment.payment_date).toLocaleDateString('it-IT')}\nRiferimento: ${payment.reference_number || '-'}\nN. Fattura: ${payment.invoice_number || '-'}\n\n---\nGenerato automaticamente dal Portale Misurazioni`;
   };
 
-  const downloadReceipt = (m: any, payment: any) => {
+  const downloadReceipt = (m: MeasurementRow, payment: PaymentRow) => {
     const text = generateReceiptText(m, payment);
     const blob = new Blob([text], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -258,7 +269,7 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
         </Card>
       ) : (
         <div className="space-y-2">
-          {filtered.map((m: any) => {
+          {filtered.map((m) => {
             const estimated = Number(m.estimated_price) || 0;
             const progress = estimated > 0 ? Math.min(100, (m.totalPaid / estimated) * 100) : 0;
             return (
@@ -300,7 +311,7 @@ export default function PaymentSummary({ userId }: PaymentSummaryProps) {
                   {/* Payment history */}
                   {m.payments.length > 0 && (
                     <div className="mt-2 space-y-1">
-                      {m.payments.map((p: any) => {
+                      {m.payments.map((p) => {
                         const method = PAYMENT_METHODS.find(pm => pm.value === p.payment_method);
                         return (
                           <div key={p.id} className="flex items-center justify-between text-[10px] text-muted-foreground bg-muted/50 rounded px-2 py-1">

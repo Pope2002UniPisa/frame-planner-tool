@@ -29,13 +29,19 @@ serve(async (req) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { action, userId } = await req.json() as {
-      action: { type: string; data: Record<string, any> };
+      action: {
+        type: string;
+        data: {
+          title?: string; date?: string; type?: string; time?: string | null; location?: string | null;
+          newStatus?: string; oldStatus?: string | null; measurementId?: string; body?: string; tour?: string;
+        };
+      };
       userId: string;
     };
 
     if (!action || !userId) return json({ error: 'action e userId obbligatori' }, 400);
 
-    let result: Record<string, any> = { message: 'Azione non riconosciuta' };
+    let result: Record<string, unknown> = { message: 'Azione non riconosciuta' };
 
     // ── Crea appuntamento ───────────────────────────────────────────────────
     if (action.type === 'create_appointment') {

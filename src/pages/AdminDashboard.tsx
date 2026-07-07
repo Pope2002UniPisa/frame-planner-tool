@@ -21,6 +21,44 @@ import { recordStatusChange } from '@/lib/statusHistory';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
 import { productLabels, statusLabels } from '@/lib/constants';
+import type { Database } from '@/integrations/supabase/types';
+import { getErrorMessage } from '@/lib/errors';
+
+// status/created_at/product_type/user_id sono NOT NULL nel DB: restringiamo a non-null.
+type MeasurementRow = Database['public']['Tables']['measurements']['Row'] & {
+  status: string;
+  created_at: string;
+  product_type: string;
+  user_id: string;
+};
+type ProfileRow = Database['public']['Tables']['profiles']['Row'] & {
+  user_id: string;
+};
+type NewsRow = Database['public']['Tables']['news']['Row'];
+type PortfolioRow = Database['public']['Tables']['portfolio_images']['Row'];
+type SalesObjectiveRow = Database['public']['Tables']['sales_objectives']['Row'] & {
+  user_id: string;
+  target_count: number;
+  target_amount: number;
+};
+type SupplierCatalogRow = Database['public']['Tables']['supplier_catalogs']['Row'];
+
+interface ClientStat {
+  user_id: string;
+  name: string | null;
+  email: string | null;
+  approved: boolean | null;
+  total: number; drafts: number; quoted: number; ordered: number; completed: number;
+  revenue: number; realizedRevenue: number; collectedRevenue: number;
+  byProduct: Record<string, number>;
+}
+
+interface ObjectiveProgress extends SalesObjectiveRow {
+  currentCount: number;
+  currentAmount: number;
+  progressCount: number;
+  progressAmount: number;
+}
 
 const LINE_COLORS: Record<string, string> = {
   Finestra: '#3b82f6', 'Porta Finestra': '#8b5cf6', Porta: '#a855f7',
@@ -51,22 +89,22 @@ export default function AdminDashboard() {
     return () => clearInterval(id);
   }, []);
 
-  const [measurements, setMeasurements] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<any[]>([]);
-  const [news, setNews] = useState<any[]>([]);
-  const [portfolio, setPortfolio] = useState<any[]>([]);
-  const [salesObjectives, setSalesObjectives] = useState<any[]>([]);
+  const [measurements, setMeasurements] = useState<MeasurementRow[]>([]);
+  const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+  const [news, setNews] = useState<NewsRow[]>([]);
+  const [portfolio, setPortfolio] = useState<PortfolioRow[]>([]);
+  const [salesObjectives, setSalesObjectives] = useState<SalesObjectiveRow[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   // Measurement management dialog
-  const [manageMeasurement, setManageMeasurement] = useState<any>(null);
+  const [manageMeasurement, setManageMeasurement] = useState<MeasurementRow | null>(null);
   const [managePrice, setManagePrice] = useState('');
   const [manageDeliveryDate, setManageDeliveryDate] = useState('');
   const [manageNotes, setManageNotes] = useState('');
 
   // News form
   const [newsDialog, setNewsDialog] = useState(false);
-  const [editingNews, setEditingNews] = useState<any>(null);
+  const [editingNews, setEditingNews] = useState<NewsRow | null>(null);
   const [newsForm, setNewsForm] = useState({ title: '', summary: '', tag: 'Novità', image_url: '', image_position: '50% 50%', link: '', social_link: '', published: true });
 
   const imgDragActive = useRef(false);
@@ -78,7 +116,7 @@ export default function AdminDashboard() {
   const [clientFilter, setClientFilter] = useState<'all' | 'pending' | 'approved'>('all');
 
   // Catalogs
-  const [catalogs, setCatalogs] = useState<any[]>([]);
+  const [catalogs, setCatalogs] = useState<SupplierCatalogRow[]>([]);
   const [catalogDialog, setCatalogDialog] = useState(false);
   const [catalogForm, setCatalogForm] = useState({ supplier_id: '', name: '', pdf_url: '', sort_order: 0 });
   const [uploadingCatalog, setUploadingCatalog] = useState(false);
@@ -100,11 +138,12 @@ export default function AdminDashboard() {
         supabase.from('sales_objectives').select('*').order('created_at', { ascending: false }),
         supabase.from('supplier_catalogs').select('*').order('sort_order', { ascending: true }),
       ]);
-      setMeasurements(m || []);
-      setProfiles(p || []);
+      // Colonne NOT NULL nel DB ma tipizzate nullable dai tipi generati: cast ai tipi raffinati.
+      setMeasurements((m || []) as MeasurementRow[]);
+      setProfiles((p || []) as ProfileRow[]);
       setNews(n || []);
       setPortfolio(pf || []);
-      setSalesObjectives(so || []);
+      setSalesObjectives((so || []) as SalesObjectiveRow[]);
       setCatalogs(cat || []);
       const { data: logoFiles } = await supabase.storage.from('logos').list('suppliers');
       const logos: Record<string, string> = {};
@@ -171,7 +210,7 @@ export default function AdminDashboard() {
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
 
   const clientStats = useMemo(() => {
-    const map: Record<string, any> = {};
+    const map: Record<string, ClientStat> = {};
     profiles.forEach(p => {
       map[p.user_id] = {
         user_id: p.user_id, name: p.company_name || p.email, email: p.email, approved: p.approved,
@@ -199,12 +238,12 @@ export default function AdminDashboard() {
         }
       }
     });
-    return Object.values(map).sort((a: any, b: any) => (a.name || '').localeCompare(b.name || '', 'it'));
+    return Object.values(map).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'it'));
   }, [profiles, measurements]);
 
   const filteredClients = useMemo(() => {
-    if (clientFilter === 'approved') return clientStats.filter((c: any) => c.approved);
-    if (clientFilter === 'pending') return clientStats.filter((c: any) => !c.approved);
+    if (clientFilter === 'approved') return clientStats.filter((c) => c.approved);
+    if (clientFilter === 'pending') return clientStats.filter((c) => !c.approved);
     return clientStats;
   }, [clientStats, clientFilter]);
 
@@ -212,18 +251,18 @@ export default function AdminDashboard() {
 
   // Objective progress per client
   const objectiveProgressByUser = useMemo(() => {
-    const map = new Map<string, any[]>();
-    const userIds = [...new Set(salesObjectives.map((o: any) => o.user_id as string))];
+    const map = new Map<string, ObjectiveProgress[]>();
+    const userIds = [...new Set(salesObjectives.map((o) => o.user_id))];
     for (const userId of userIds) {
-      const objs = salesObjectives.filter((o: any) => o.user_id === userId);
+      const objs = salesObjectives.filter((o) => o.user_id === userId);
       const clientMeasurements = measurements.filter(m => m.user_id === userId && m.status !== 'bozza');
-      map.set(userId, objs.map((obj: any) => {
+      map.set(userId, objs.map((obj) => {
         const current = obj.product_type
           ? clientMeasurements.filter(m => m.product_type === obj.product_type).length
           : clientMeasurements.length;
         const currentAmount = obj.product_type
-          ? clientMeasurements.filter(m => m.product_type === obj.product_type).reduce((s: number, m: any) => s + (Number(m.estimated_price) || 0), 0)
-          : clientMeasurements.reduce((s: number, m: any) => s + (Number(m.estimated_price) || 0), 0);
+          ? clientMeasurements.filter(m => m.product_type === obj.product_type).reduce((s, m) => s + (Number(m.estimated_price) || 0), 0)
+          : clientMeasurements.reduce((s, m) => s + (Number(m.estimated_price) || 0), 0);
         return {
           ...obj,
           currentCount: current,
@@ -238,7 +277,7 @@ export default function AdminDashboard() {
 
   const getObjectiveProgress = (userId: string) => objectiveProgressByUser.get(userId) ?? [];
 
-  const openManageDialog = (m: any) => {
+  const openManageDialog = (m: MeasurementRow) => {
     setManageMeasurement(m);
     setManagePrice(m.estimated_price ? String(m.estimated_price) : '');
     setManageDeliveryDate(m.estimated_delivery_date || '');
@@ -247,7 +286,7 @@ export default function AdminDashboard() {
 
   const handleUpdateMeasurementStatus = async (newStatus: string) => {
     if (!manageMeasurement) return;
-    const updates: any = { status: newStatus };
+    const updates: Partial<MeasurementRow> = { status: newStatus };
     if (managePrice) updates.estimated_price = parseFloat(managePrice);
     if (manageDeliveryDate) updates.estimated_delivery_date = manageDeliveryDate;
     if (manageNotes !== manageMeasurement.notes) updates.notes = manageNotes;
@@ -310,13 +349,13 @@ export default function AdminDashboard() {
         product_type: objForm.product_type === ALL_PRODUCTS_VALUE ? null : objForm.product_type,
         brand: objForm.brand === ALL_BRANDS_VALUE ? null : objForm.brand,
       };
-      const { data, error } = await supabase.from('sales_objectives').insert(payload as any).select().single();
+      const { data, error } = await supabase.from('sales_objectives').insert(payload).select().single();
       if (error) throw error;
-      setSalesObjectives(prev => [data, ...prev]);
+      setSalesObjectives(prev => [data as SalesObjectiveRow, ...prev]);
       setObjectiveDialog(false);
       setObjForm({ user_id: '', product_type: ALL_PRODUCTS_VALUE, brand: ALL_BRANDS_VALUE, target_count: 0, target_amount: 0, period: 'monthly', year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
       toast.success('Obiettivo di vendita creato!');
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err) { toast.error(getErrorMessage(err)); }
   };
 
   const handleDeleteObjective = async (id: string) => {
@@ -343,7 +382,7 @@ export default function AdminDashboard() {
       setNewsDialog(false);
       setEditingNews(null);
       setNewsForm({ title: '', summary: '', tag: 'Novità', image_url: '', image_position: '50% 50%', link: '', social_link: '', published: true });
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err) { toast.error(getErrorMessage(err)); }
   };
 
   const handleDeleteNews = async (id: string) => {
@@ -362,7 +401,7 @@ export default function AdminDashboard() {
       setPortfolioDialog(false);
       setPortfolioForm({ title: '', description: '', image_url: '', sort_order: 0 });
       toast.success('Immagine aggiunta!');
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err) { toast.error(getErrorMessage(err)); }
   };
 
   const handleDeletePortfolio = async (id: string) => {
@@ -425,7 +464,7 @@ export default function AdminDashboard() {
       setCatalogDialog(false);
       setCatalogForm({ supplier_id: '', name: '', pdf_url: '', sort_order: 0 });
       toast.success('Catalogo aggiunto!');
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err) { toast.error(getErrorMessage(err)); }
   };
 
   const handleDeleteCatalog = async (id: string) => {
@@ -587,7 +626,7 @@ export default function AdminDashboard() {
                           <p className="text-[10px] text-muted-foreground">Cliente: {profile?.company_name || profile?.email || 'N/A'}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          {m.estimated_price > 0 && <span className="text-xs font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
+                          {(m.estimated_price ?? 0) > 0 && <span className="text-xs font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/misurazione/${m.id}`)}>
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
@@ -605,7 +644,7 @@ export default function AdminDashboard() {
           <TabsContent value="clients" className="space-y-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <Select value={clientFilter} onValueChange={(v: any) => setClientFilter(v)}>
+                <Select value={clientFilter} onValueChange={(v) => setClientFilter(v as typeof clientFilter)}>
                   <SelectTrigger className="w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -623,7 +662,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="space-y-4">
-              {filteredClients.map((c: any, i: number) => {
+              {filteredClients.map((c, i) => {
                 const objProgress = getObjectiveProgress(c.user_id);
                 const isExpanded = expandedClient === c.user_id;
                 const clientMeasurements = measurements.filter(m => m.user_id === c.user_id && m.status !== 'bozza');
@@ -694,7 +733,7 @@ export default function AdminDashboard() {
                                 <p className="text-[10px] text-muted-foreground">{m.client_name} • {m.client_address}</p>
                               </div>
                               <div className="flex items-center gap-2">
-                                {m.estimated_price > 0 && <span className="text-xs font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
+                                {(m.estimated_price ?? 0) > 0 && <span className="text-xs font-medium text-accent">€{Number(m.estimated_price).toLocaleString('it-IT')}</span>}
                                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(`/misurazione/${m.id}`)}>
                                   <Eye className="h-3 w-3" />
                                 </Button>
@@ -709,7 +748,7 @@ export default function AdminDashboard() {
                       {objProgress.length > 0 && (
                         <div className="space-y-2 pt-2 border-t border-border">
                           <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><Target className="h-3 w-3" /> Obiettivi di vendita</p>
-                          {objProgress.map((obj: any) => (
+                          {objProgress.map((obj) => (
                             <div key={obj.id} className="space-y-1">
                               <div className="flex items-center justify-between text-xs">
                                 <span className="text-foreground">
@@ -754,9 +793,9 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {salesObjectives.map((obj: any) => {
+                  {salesObjectives.map((obj) => {
                     const clientProfile = profiles.find(p => p.user_id === obj.user_id);
-                    const progress = getObjectiveProgress(obj.user_id).find((o: any) => o.id === obj.id);
+                    const progress = getObjectiveProgress(obj.user_id).find((o) => o.id === obj.id);
                     return (
                       <div key={obj.id} className="rounded-xl border border-border p-4 space-y-2">
                         <div className="flex items-center justify-between">
@@ -910,7 +949,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
                           setEditingNews(n);
-                          setNewsForm({ title: n.title, summary: n.summary, tag: n.tag, image_url: n.image_url || '', image_position: n.image_position || '50% 50%', link: n.link || '', social_link: n.social_link || '', published: n.published });
+                          setNewsForm({ title: n.title, summary: n.summary || '', tag: n.tag || '', image_url: n.image_url || '', image_position: n.image_position || '50% 50%', link: n.link || '', social_link: n.social_link || '', published: n.published ?? true });
                           setNewsDialog(true);
                         }}>
                           <Edit3 className="h-3.5 w-3.5" />
@@ -1203,7 +1242,7 @@ export default function AdminDashboard() {
               <DialogTitle className="font-heading">Gestione Misurazione</DialogTitle>
             </DialogHeader>
             {manageMeasurement && (() => {
-              const mp = profiles.find((p: any) => p.user_id === manageMeasurement.user_id);
+              const mp = profiles.find((p) => p.user_id === manageMeasurement.user_id);
               const currentStatus = manageMeasurement.status;
               return (
                 <div className="space-y-4">
@@ -1299,8 +1338,8 @@ const BUSINESS_INDICES = [
     name: 'Fatturato Totale',
     desc: 'Somma dei prezzi stimati di tutte le misurazioni non in bozza. Indica il volume d\'affari complessivo.',
     ideal: 'Più alto è, meglio è. Confronta con i periodi precedenti.',
-    calc: (m: any[]) => {
-      const val = m.filter(x => x.status !== 'bozza').reduce((s: number, x: any) => s + (Number(x.estimated_price) || 0), 0);
+    calc: (m: MeasurementRow[]) => {
+      const val = m.filter(x => x.status !== 'bozza').reduce((s: number, x) => s + (Number(x.estimated_price) || 0), 0);
       return `€${Math.round(val).toLocaleString('it-IT')}`;
     },
   },
@@ -1308,8 +1347,8 @@ const BUSINESS_INDICES = [
     name: 'Margine Lordo',
     desc: 'Differenza percentuale tra fatturato stimato e costi stimati. Indica la redditività delle vendite prima delle spese operative.',
     ideal: 'Settore infissi: 40-60%. Sotto il 30% è critico.',
-    calc: (m: any[]) => {
-      const rev = m.filter(x => x.status !== 'bozza').reduce((s: number, x: any) => s + (Number(x.estimated_price) || 0), 0);
+    calc: (m: MeasurementRow[]) => {
+      const rev = m.filter(x => x.status !== 'bozza').reduce((s: number, x) => s + (Number(x.estimated_price) || 0), 0);
       return rev > 0 ? `${Math.round(rev * 0.52 / rev * 100)}%` : 'N/D';
     },
   },
@@ -1317,7 +1356,7 @@ const BUSINESS_INDICES = [
     name: 'Tasso di Conversione',
     desc: 'Percentuale di misurazioni che passano da "Inviata" a "Completata/Ordinata". Misura l\'efficacia commerciale.',
     ideal: '> 60% è ottimo, 40-60% buono, < 40% da migliorare.',
-    calc: (m: any[]) => {
+    calc: (m: MeasurementRow[]) => {
       const sent = m.filter(x => x.status !== 'bozza').length;
       const done = m.filter(x => ['completed', 'ordered'].includes(x.status)).length;
       return sent > 0 ? `${Math.round(done / sent * 100)}%` : 'N/D';
@@ -1327,9 +1366,9 @@ const BUSINESS_INDICES = [
     name: 'Valore Medio Ordine',
     desc: 'Fatturato stimato medio per misurazione inviata. Utile per capire la dimensione media delle commesse.',
     ideal: 'Dipende dal mix prodotti. Monitorare i trend nel tempo.',
-    calc: (m: any[]) => {
+    calc: (m: MeasurementRow[]) => {
       const sent = m.filter(x => x.status !== 'bozza');
-      const avg = sent.length > 0 ? sent.reduce((s: number, x: any) => s + (Number(x.estimated_price) || 0), 0) / sent.length : 0;
+      const avg = sent.length > 0 ? sent.reduce((s: number, x) => s + (Number(x.estimated_price) || 0), 0) / sent.length : 0;
       return `€${Math.round(avg).toLocaleString('it-IT')}`;
     },
   },
@@ -1337,10 +1376,10 @@ const BUSINESS_INDICES = [
     name: 'Tasso di Incasso',
     desc: 'Percentuale di fatturato completato effettivamente incassato. Indica la capacità di riscossione.',
     ideal: '> 90% è ottimo, 70-90% nella norma, < 70% è critico.',
-    calc: (m: any[]) => {
+    calc: (m: MeasurementRow[]) => {
       const completed = m.filter(x => ['completed', 'ordered'].includes(x.status));
-      const totalCompleted = completed.reduce((s: number, x: any) => s + (Number(x.estimated_price) || 0), 0);
-      const paid = completed.filter(x => x.payment_status === 'pagato').reduce((s: number, x: any) => s + (Number(x.amount_paid) || Number(x.estimated_price) || 0), 0);
+      const totalCompleted = completed.reduce((s: number, x) => s + (Number(x.estimated_price) || 0), 0);
+      const paid = completed.filter(x => x.payment_status === 'pagato').reduce((s: number, x) => s + (Number(x.amount_paid) || Number(x.estimated_price) || 0), 0);
       return totalCompleted > 0 ? `${Math.round(paid / totalCompleted * 100)}%` : 'N/D';
     },
   },
@@ -1348,7 +1387,7 @@ const BUSINESS_INDICES = [
     name: 'Tasso Contestazioni',
     desc: 'Percentuale di misurazioni con contestazione aperta rispetto al totale inviate. Indica la qualità del servizio.',
     ideal: '< 5% è eccellente, 5-10% accettabile, > 10% critico.',
-    calc: (m: any[]) => {
+    calc: (m: MeasurementRow[]) => {
       const sent = m.filter(x => x.status !== 'bozza');
       const disputes = sent.filter(x => x.has_dispute).length;
       return sent.length > 0 ? `${Math.round(disputes / sent.length * 100)}%` : 'N/D';
@@ -1358,7 +1397,7 @@ const BUSINESS_INDICES = [
     name: 'Tasso Modifiche',
     desc: 'Percentuale di ordini con modifiche rispetto alla configurazione originale. Indica la precisione delle misurazioni iniziali.',
     ideal: '< 10% è ottimo. Un tasso alto può indicare problemi nella rilevazione.',
-    calc: (m: any[]) => {
+    calc: (m: MeasurementRow[]) => {
       const sent = m.filter(x => x.status !== 'bozza');
       const mods = sent.filter(x => x.has_modification).length;
       return sent.length > 0 ? `${Math.round(mods / sent.length * 100)}%` : 'N/D';
@@ -1368,12 +1407,12 @@ const BUSINESS_INDICES = [
     name: 'Tempo Medio Evasione',
     desc: 'Giorni medi tra la data di invio e il completamento dell\'ordine. Misura la velocità operativa.',
     ideal: '< 15 giorni è ottimo nel settore infissi, < 30 nella norma.',
-    calc: (m: any[]) => {
+    calc: (m: MeasurementRow[]) => {
       const completed = m.filter(x => ['completed', 'ordered'].includes(x.status));
       if (completed.length === 0) return 'N/D';
-      const avgDays = completed.reduce((s: number, x: any) => {
+      const avgDays = completed.reduce((s: number, x) => {
         const created = new Date(x.created_at).getTime();
-        const updated = new Date(x.updated_at).getTime();
+        const updated = new Date(x.updated_at ?? x.created_at).getTime();
         return s + (updated - created) / (1000 * 60 * 60 * 24);
       }, 0) / completed.length;
       return `${Math.round(avgDays)} giorni`;
@@ -1383,7 +1422,7 @@ const BUSINESS_INDICES = [
     name: 'Mix Prodotto Principale',
     desc: 'Tipologia di prodotto più venduta in percentuale. Utile per capire la composizione del portafoglio.',
     ideal: 'Un mix equilibrato riduce il rischio di dipendenza da un solo prodotto.',
-    calc: (m: any[]) => {
+    calc: (m: MeasurementRow[]) => {
       const sent = m.filter(x => x.status !== 'bozza');
       if (sent.length === 0) return 'N/D';
       const counts: Record<string, number> = {};
@@ -1395,7 +1434,7 @@ const BUSINESS_INDICES = [
   },
 ];
 
-function BusinessIndicesCard({ measurements }: { measurements: any[] }) {
+function BusinessIndicesCard({ measurements }: { measurements: MeasurementRow[] }) {
   return (
     <Card>
       <CardHeader>

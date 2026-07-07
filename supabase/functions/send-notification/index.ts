@@ -343,7 +343,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...CORS } });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: CORS });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: CORS });
   }
 });
