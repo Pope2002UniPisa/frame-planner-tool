@@ -37,7 +37,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico,woff,woff2}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,jpg,jpeg,ico,woff,woff2,mp4}"],
         // SPA: naviga sempre all'app shell in offline (escluse API/edge functions).
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/rest\//, /^\/auth\//, /^\/functions\//, /^\/storage\//],
